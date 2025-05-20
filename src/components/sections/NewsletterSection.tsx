@@ -14,9 +14,11 @@ export const NewsletterSection: React.FC = () => {
   return (
     <section className="bg-gray-100 px-4 md:px-12 lg:px-24 py-20">
       <div className="container mx-auto">
-        <h2 className="text-[#383C41] text-[56px] leading-[67.2px] tracking-[0.4px] mb-[13px]">
-          NEWSLETTER
-        </h2>
+        <div className="text-left">
+          <h3 className="text-[#1D1D1F] text-[56px] font-bold mb-6 tracking-tight leading-none uppercase">
+            NEWSLETTER
+          </h3>
+        </div>
         
         <form onSubmit={handleSubmit} className="flex gap-2.5 mt-5 max-sm:flex-col">
           <input

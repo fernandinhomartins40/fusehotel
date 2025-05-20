@@ -28,16 +28,18 @@ export const HighlightsSection: React.FC = () => {
   return (
     <section id="highlights" className="px-4 md:px-12 lg:px-24 py-20">
       <div className="container mx-auto">
-        <h2 className="text-[#676C76] text-[12.8px] tracking-[2.7px] mb-2.5">
-          EXPERIÊNCIAS INCRÍVEIS ESPERAM POR VOCÊ
-        </h2>
-        <h3 className="text-[#383C41] text-[56px] leading-[67.2px] tracking-[0.4px] mb-[13px]">
-          DESTAQUES
-        </h3>
-        <p className="text-[#676C76] text-base leading-[27.2px] mb-10">
-          Descubra as experiências que tornam nosso resort único. De relaxamento
-          absoluto a aventuras emocionantes.
-        </p>
+        <div className="text-left">
+          <h2 className="text-[#676C76] text-[13px] uppercase tracking-[2px] mb-2 font-normal">
+            EXPERIÊNCIAS INCRÍVEIS ESPERAM POR VOCÊ
+          </h2>
+          <h3 className="text-[#1D1D1F] text-[56px] font-bold mb-4 tracking-tight leading-none uppercase">
+            DESTAQUES
+          </h3>
+          <p className="text-[#676C76] text-base leading-relaxed mb-10 max-w-2xl">
+            Descubra as experiências que tornam nosso resort único. De relaxamento
+            absoluto a aventuras emocionantes.
+          </p>
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {highlights.map((highlight, index) => (
