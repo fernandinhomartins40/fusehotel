@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Calendar, Home, Menu } from 'lucide-react';
+import { LayoutDashboard, Calendar, Home, Menu, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sidebar,
@@ -69,6 +69,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                       <Link to="/admin/reservations">
                         <Calendar />
                         <span>Reservas</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={isActive('/admin/settings')}>
+                      <Link to="/admin/settings">
+                        <Settings />
+                        <span>Configurações</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

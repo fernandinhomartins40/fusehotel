@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import Accommodations from "./pages/admin/Accommodations";
 import Reservations from "./pages/admin/Reservations";
+import Settings from "./pages/admin/Settings";
 
 // Create a client with default options
 const queryClient = new QueryClient({
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/accommodations" element={<Accommodations />} />
             <Route path="/admin/reservations" element={<Reservations />} />
+            <Route path="/admin/settings" element={<Settings />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
