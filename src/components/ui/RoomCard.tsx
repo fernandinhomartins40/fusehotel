@@ -1,5 +1,7 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from './button';
 
 interface RoomCardProps {
   title: string;
@@ -18,6 +20,13 @@ export const RoomCard: React.FC<RoomCardProps> = ({
   capacity,
   price
 }) => {
+  // Generate a URL-friendly slug from the title
+  const slug = title
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
   return (
     <div className="w-full border overflow-hidden rounded-lg border-solid border-gray-200 bg-white">
       <div className="relative">
@@ -55,9 +64,17 @@ export const RoomCard: React.FC<RoomCardProps> = ({
           </div>
         </div>
 
-        <div className="text-gray-600 text-sm pt-4">
-          <span>A partir de: </span>
-          <span className="font-bold text-black">{price}</span>
+        <div className="flex items-center justify-between pt-4">
+          <div className="text-gray-600 text-sm">
+            <span>A partir de: </span>
+            <span className="font-bold text-black">{price}</span>
+          </div>
+          
+          <Link to={`/acomodacoes/${slug}`}>
+            <Button variant="outline" className="border-[#0466C8] text-[#0466C8] hover:bg-[#0466C8] hover:text-white">
+              Ver detalhes
+            </Button>
+          </Link>
         </div>
       </div>
     </div>
