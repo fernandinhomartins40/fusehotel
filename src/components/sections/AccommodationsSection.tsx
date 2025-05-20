@@ -7,7 +7,7 @@ export const AccommodationsSection: React.FC = () => {
     {
       title: "Suíte Praia Dourada",
       description: "Perfeita para quem deseja uma vista panorâmica do mar, com varanda privativa e hidromassagem.",
-      image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=2070",
+      image: "/lovable-uploads/a8a98421-6373-495b-bd09-09fe23f32aed.png",
       area: "50m²",
       capacity: "Até 4 pessoas",
       price: "R$699,00"
@@ -15,7 +15,7 @@ export const AccommodationsSection: React.FC = () => {
     {
       title: "Suíte Paraíso Tropical",
       description: "Perfeita para quem deseja uma vista panorâmica do mar, com varanda privativa e hidromassagem.",
-      image: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=2070",
+      image: "/lovable-uploads/e5ecb0e1-d687-4ba0-bddc-9a5649e7c187.png",
       area: "40m²",
       capacity: "Até 3 pessoas",
       price: "R$599,00"
@@ -23,7 +23,7 @@ export const AccommodationsSection: React.FC = () => {
     {
       title: "Suíte Oceano Azul",
       description: "Perfeita para quem deseja uma vista panorâmica do mar, com varanda privativa e hidromassagem.",
-      image: "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=2070",
+      image: "/lovable-uploads/4861900e-89af-4479-9863-976662f284ca.png",
       area: "30m²",
       capacity: "Até 2 pessoas",
       price: "R$499,00"
