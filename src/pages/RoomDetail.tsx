@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { Calendar, Wifi, Tv, AirVent, Bed, Fridge, HairDryer, Key, DoorOpen, Pool, Utensils, Spa, MapPin, Clock, Check } from "lucide-react";
+import { Calendar, Wifi, Tv, AirVent, Bed, DoorOpen, Utensils, MapPin, Clock, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
