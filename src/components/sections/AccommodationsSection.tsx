@@ -7,7 +7,7 @@ export const AccommodationsSection: React.FC = () => {
     {
       title: "Suíte Praia Dourada",
       description: "Perfeita para quem deseja uma vista panorâmica do mar, com varanda privativa e hidromassagem.",
-      image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070",
+      image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=2070",
       area: "50m²",
       capacity: "Até 4 pessoas",
       price: "R$699,00"
@@ -15,7 +15,7 @@ export const AccommodationsSection: React.FC = () => {
     {
       title: "Suíte Paraíso Tropical",
       description: "Perfeita para quem deseja uma vista panorâmica do mar, com varanda privativa e hidromassagem.",
-      image: "https://images.unsplash.com/photo-1500673922987-e212871fec22?q=80&w=2070",
+      image: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=2070",
       area: "40m²",
       capacity: "Até 3 pessoas",
       price: "R$599,00"
@@ -23,7 +23,7 @@ export const AccommodationsSection: React.FC = () => {
     {
       title: "Suíte Oceano Azul",
       description: "Perfeita para quem deseja uma vista panorâmica do mar, com varanda privativa e hidromassagem.",
-      image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=2070",
+      image: "https://images.unsplash.com/photo-1540541338287-41700207dee6?q=80&w=2070",
       area: "30m²",
       capacity: "Até 2 pessoas",
       price: "R$499,00"
@@ -31,20 +31,20 @@ export const AccommodationsSection: React.FC = () => {
   ];
 
   return (
-    <section id="accommodations" className="px-4 md:px-12 lg:px-24 py-20">
+    <section id="accommodations" className="px-4 md:px-12 lg:px-24 py-20 bg-[#f9f9f9]">
       <div className="container mx-auto">
-        <h2 className="text-[#676C76] text-[12.8px] tracking-[2.7px] mb-2.5">
+        <h2 className="text-gray-600 text-sm uppercase tracking-wider mb-2">
           CONFORTO, LUXO E SOFISTICAÇÃO
         </h2>
-        <h3 className="text-[#383C41] text-[56px] leading-[67.2px] tracking-[0.4px] mb-[13px]">
+        <h3 className="text-[#2D2D2D] text-[46px] font-bold mb-4 uppercase">
           ACOMODAÇÕES
         </h3>
-        <p className="text-[#676C76] text-base leading-[27.2px] mb-10">
-          Nossas suítes foram projetadas para oferecer o máximo de conforto e
-          privacidade, com vista para o mar.
+        <p className="text-gray-600 text-base mb-12 max-w-2xl">
+          Nossas suítes foram projetadas para oferecer o máximo de
+          conforto e privacidade, com vista para o mar.
         </p>
         
-        <div className="flex flex-col md:flex-row gap-5 max-md:items-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {rooms.map((room, index) => (
             <RoomCard key={index} {...room} />
           ))}
