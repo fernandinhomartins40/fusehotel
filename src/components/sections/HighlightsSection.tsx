@@ -26,32 +26,44 @@ export const HighlightsSection: React.FC = () => {
   ];
 
   return (
-    <section id="highlights" className="px-4 md:px-12 lg:px-24 py-20">
+    <section id="highlights" className="px-4 md:px-12 lg:px-24 py-24 bg-hotel-sand">
       <div className="container mx-auto">
-        <div className="text-left">
-          <h2 className="text-[#676C76] text-[13px] uppercase tracking-[2px] mb-2 font-normal">
+        <div className="text-left mb-16">
+          <h2 className="section-title">
             EXPERIÊNCIAS INCRÍVEIS ESPERAM POR VOCÊ
           </h2>
-          <h3 className="text-[#1D1D1F] text-[56px] font-bold mb-4 tracking-tight leading-none uppercase">
+          <h3 className="section-heading font-playfair">
             DESTAQUES
           </h3>
-          <p className="text-[#676C76] text-base leading-relaxed mb-10 max-w-2xl">
+          <p className="section-description">
             Descubra as experiências que tornam nosso resort único. De relaxamento
             absoluto a aventuras emocionantes.
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {highlights.map((highlight, index) => (
-            <div key={index} className="relative overflow-hidden rounded-[5px]">
+            <div 
+              key={index} 
+              className="relative overflow-hidden rounded-lg card-shadow group transition-transform duration-300 hover:scale-[1.02]"
+            >
               <img
                 src={highlight.image}
                 alt={highlight.title}
-                className="w-full h-[333px] object-cover"
+                className="w-full h-[333px] object-cover transition-transform duration-700 group-hover:scale-110"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
-                <h4 className="text-white text-4xl font-bold mb-1">{highlight.title}</h4>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-8 text-left">
+                <h4 className="text-white text-3xl md:text-4xl font-bold mb-1 font-playfair">{highlight.title}</h4>
                 <p className="text-white text-lg">{highlight.subtitle}</p>
+                
+                <div className="mt-4 overflow-hidden h-0 group-hover:h-8 transition-all duration-300">
+                  <button className="text-hotel-gold hover:text-white transition-colors flex items-center gap-2 text-sm uppercase font-medium">
+                    Saiba mais 
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           ))}
