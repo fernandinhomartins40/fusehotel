@@ -1,7 +1,9 @@
 
 import React from 'react';
-import { Phone, MessageSquare, Mail } from 'lucide-react';
+import { Phone, MessageSquare, Mail, LayoutDashboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 export const Footer: React.FC = () => {
   return (
@@ -41,6 +43,16 @@ export const Footer: React.FC = () => {
             <Mail size={18} />
             <span>contato@aguasclaras.com</span>
           </a>
+        </div>
+        
+        {/* Admin Access Button */}
+        <div className="mb-6">
+          <Button variant="outline" size="sm" className="bg-transparent text-white border-white hover:bg-white hover:text-black" asChild>
+            <Link to="/admin">
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              Acesso Hoteleiro
+            </Link>
+          </Button>
         </div>
         
         {/* Copyright */}
