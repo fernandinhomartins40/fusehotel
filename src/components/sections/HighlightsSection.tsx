@@ -2,6 +2,29 @@
 import React from 'react';
 
 export const HighlightsSection: React.FC = () => {
+  const highlights = [
+    {
+      image: "/lovable-uploads/bca108a5-820b-418c-bb37-1fdfb497dc24.png",
+      title: "SPA DE LUXO",
+      subtitle: "Relaxamento e Rejuvenescimento"
+    },
+    {
+      image: "/lovable-uploads/1e861110-a179-4f1f-aa1a-caeb85c10609.png",
+      title: "FESTAS INCRÍVEIS",
+      subtitle: "Diversão para toda família"
+    },
+    {
+      image: "/lovable-uploads/a7433b3a-710f-49d8-b286-8066127891b0.png",
+      title: "GASTRONOMIA",
+      subtitle: "Experiência culinária internacional"
+    },
+    {
+      image: "/lovable-uploads/6cff717e-9bcc-4de2-8466-11400c267a66.png",
+      title: "PÉ NA AREIA",
+      subtitle: "Um mergulho no Paraíso"
+    }
+  ];
+
   return (
     <section id="highlights" className="px-4 md:px-12 lg:px-24 py-20">
       <div className="container mx-auto">
@@ -17,26 +40,19 @@ export const HighlightsSection: React.FC = () => {
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <img
-            src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=2070"
-            alt="SPA de Luxo"
-            className="w-full h-[333px] object-cover rounded-[5px]"
-          />
-          <img
-            src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=2070"
-            alt="Festas Incríveis"
-            className="w-full h-[333px] object-cover rounded-[5px]"
-          />
-          <img
-            src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070"
-            alt="Gastronomia"
-            className="w-full h-[333px] object-cover rounded-[5px]"
-          />
-          <img
-            src="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?q=80&w=2070"
-            alt="Pé na Areia"
-            className="w-full h-[333px] object-cover rounded-[5px]"
-          />
+          {highlights.map((highlight, index) => (
+            <div key={index} className="relative overflow-hidden rounded-[5px]">
+              <img
+                src={highlight.image}
+                alt={highlight.title}
+                className="w-full h-[333px] object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
+                <h4 className="text-white text-4xl font-bold mb-1">{highlight.title}</h4>
+                <p className="text-white text-lg">{highlight.subtitle}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
