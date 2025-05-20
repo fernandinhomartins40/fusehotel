@@ -6,7 +6,7 @@ export const HeroSection: React.FC = () => {
   return (
     <section className="h-[700px] bg-cover bg-center relative overflow-hidden" 
       style={{ 
-        backgroundImage: 'linear-gradient(90deg, rgba(4, 34, 65, 0.8) 0%, rgba(4, 34, 65, 0.5) 45%, rgba(4, 34, 65, 0) 100%), url("https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2070")'
+        backgroundImage: 'linear-gradient(90deg, rgba(4, 34, 65, 0.8) 0%, rgba(4, 34, 65, 0.5) 45%, rgba(4, 34, 65, 0) 100%), url("/lovable-uploads/c04646a7-93df-4e87-b81e-e131b503402c.png")'
       }}>
       <div className="absolute inset-0 flex flex-col justify-center px-4 md:px-12 lg:px-24">
         <div className="container mx-auto flex flex-col items-start text-left">
