@@ -43,6 +43,11 @@ export function ImageCropUpload({
   const [completedCrop, setCompletedCrop] = useState<CropType | null>(null);
   const imageRef = React.useRef<HTMLImageElement | null>(null);
 
+  // Check if the value is a lovable-uploads path
+  const isLovableUploadsPath = (path: string | null): boolean => {
+    return !!path && path.startsWith('/lovable-uploads/');
+  };
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
@@ -97,7 +102,7 @@ export function ImageCropUpload({
       canvas.height
     );
 
-    // As a blog
+    // Apply compression - quality factor of 0.85 gives good balance
     return new Promise<string>((resolve) => {
       canvas.toBlob((blob) => {
         if (!blob) {
@@ -106,7 +111,7 @@ export function ImageCropUpload({
         }
         const croppedImageUrl = URL.createObjectURL(blob);
         resolve(croppedImageUrl);
-      }, 'image/jpeg', 0.92);
+      }, 'image/jpeg', 0.85); // Compression quality
     });
   }, [completedCrop, cropWidth, cropHeight]);
 
@@ -133,58 +138,91 @@ export function ImageCropUpload({
     <div className={cn("space-y-2", className)}>
       {label && <Label className="text-sm font-medium">{label}</Label>}
       
-      <div
-        {...getRootProps()}
-        className={cn(
-          "border-2 border-dashed rounded-md transition-colors cursor-pointer",
-          isDragActive ? "border-primary bg-muted" : "border-muted-foreground/25 hover:border-muted-foreground/50",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        )}
-      >
-        <input {...getInputProps()} />
-        
-        {preview ? (
-          <div className="relative">
-            <img
-              src={preview}
-              alt="Preview"
-              className="max-h-40 mx-auto object-contain p-2"
-            />
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded">
-              <div className="flex space-x-2">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCropDialogOpen(true);
-                    setCurrentImage(preview);
-                  }}
-                  className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
-                >
-                  Recortar
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeImage();
-                  }}
-                  className="bg-destructive text-destructive-foreground px-2 py-1 rounded text-xs"
-                >
-                  Remover
-                </button>
-              </div>
+      {/* If the value is a lovable-uploads path, show it directly without using preview state */}
+      {isLovableUploadsPath(value) && !preview ? (
+        <div className="relative">
+          <img
+            src={value}
+            alt="Preview"
+            className="max-h-40 mx-auto object-contain p-2 border-2 border-dashed rounded-md"
+          />
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded">
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // For lovable paths, just open the dropzone to allow replacing it
+                  getRootProps().onClick?.(e);
+                }}
+                className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
+              >
+                Substituir
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeImage();
+                }}
+                className="bg-destructive text-destructive-foreground px-2 py-1 rounded text-xs"
+              >
+                Remover
+              </button>
             </div>
           </div>
-        ) : (
+        </div>
+      ) : preview ? (
+        <div className="relative">
+          <img
+            src={preview}
+            alt="Preview"
+            className="max-h-40 mx-auto object-contain p-2 border-2 border-dashed rounded-md"
+          />
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded">
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCropDialogOpen(true);
+                  setCurrentImage(preview);
+                }}
+                className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
+              >
+                Recortar
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeImage();
+                }}
+                className="bg-destructive text-destructive-foreground px-2 py-1 rounded text-xs"
+              >
+                Remover
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div
+          {...getRootProps()}
+          className={cn(
+            "border-2 border-dashed rounded-md transition-colors cursor-pointer",
+            isDragActive ? "border-primary bg-muted" : "border-muted-foreground/25 hover:border-muted-foreground/50",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          )}
+        >
+          <input {...getInputProps()} />
           <div className="flex flex-col items-center justify-center p-4 text-muted-foreground text-sm">
             <UploadCloud className="h-10 w-10 mb-2" />
             <p className="font-medium">Arraste uma imagem ou clique para selecionar</p>
             <p className="text-xs">{dimensionsText}</p>
             {cropDescription && <p className="text-xs text-muted-foreground mt-1">{cropDescription}</p>}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <Dialog open={cropDialogOpen} onOpenChange={setCropDialogOpen}>
         <DialogContent className="sm:max-w-md">
