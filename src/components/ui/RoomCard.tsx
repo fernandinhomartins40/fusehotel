@@ -2,6 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from './button';
+import { AspectRatio } from './aspect-ratio';
 
 interface RoomCardProps {
   title: string;
@@ -30,11 +31,13 @@ export const RoomCard: React.FC<RoomCardProps> = ({
   return (
     <div className="w-full border overflow-hidden rounded-lg border-solid border-gray-200 bg-white">
       <div className="relative">
-        <img
-          src={image}
-          alt={title}
-          className="w-full h-[240px] object-cover"
-        />
+        <AspectRatio ratio={16/9}>
+          <img
+            src={image}
+            alt={title}
+            className="w-full h-full object-cover"
+          />
+        </AspectRatio>
         <div className="absolute text-white text-sm font-medium uppercase bg-[#0466C8] px-4 py-1.5 top-4 left-4">
           Café da Manhã Incluso
         </div>

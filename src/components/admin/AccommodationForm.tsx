@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ImageCropUpload } from '@/components/admin/ImageCropUpload';
 
 interface AccommodationFormProps {
   accommodation?: any;
@@ -28,7 +29,7 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
     capacity: accommodation?.capacity || 2,
     price: accommodation?.price || 0,
     description: accommodation?.description || '',
-    image: accommodation?.image || '/placeholder.svg',
+    image: accommodation?.image || '',
     isAvailable: accommodation?.isAvailable !== undefined ? accommodation.isAvailable : true,
   };
   
@@ -36,14 +37,6 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
   const form = useForm({
     defaultValues
   });
-
-  // Mock image options (in a real app, this would be from file upload)
-  const imageOptions = [
-    '/lovable-uploads/1e861110-a179-4f1f-aa1a-caeb85c10609.png',
-    '/lovable-uploads/2b637749-b3cc-4943-8c7b-195634e4be2d.png',
-    '/lovable-uploads/4861900e-89af-4479-9863-976662f284ca.png',
-    '/lovable-uploads/6cff717e-9bcc-4de2-8466-11400c267a66.png',
-  ];
 
   const handleSubmit = (data: any) => {
     onSubmit(data);
@@ -140,21 +133,16 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
           render={({ field }) => (
             <FormItem>
               <FormLabel>Imagem</FormLabel>
-              <div className="grid grid-cols-4 gap-2">
-                {imageOptions.map((image) => (
-                  <div 
-                    key={image}
-                    className={`border-2 rounded cursor-pointer p-2 ${field.value === image ? 'border-primary' : 'border-muted'}`}
-                    onClick={() => field.onChange(image)}
-                  >
-                    <img 
-                      src={image} 
-                      alt="Option" 
-                      className="h-20 w-full object-cover rounded"
-                    />
-                  </div>
-                ))}
-              </div>
+              <FormControl>
+                <ImageCropUpload
+                  value={field.value}
+                  onChange={field.onChange}
+                  aspectRatio={16/9}
+                  cropWidth={800}
+                  cropHeight={450}
+                  cropDescription="A imagem será exibida nos cards de acomodações e na página de detalhes. Recomendamos usar imagens de alta qualidade."
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

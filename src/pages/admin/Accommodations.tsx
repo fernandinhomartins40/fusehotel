@@ -17,11 +17,11 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Plus, Edit, Trash } from 'lucide-react';
 import { AccommodationForm } from '@/components/admin/AccommodationForm';
 import { toast } from 'sonner';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 // Mock data for accommodations
 const initialAccommodations = [
@@ -131,11 +131,15 @@ export function Accommodations() {
                 {accommodations.map((accommodation) => (
                   <TableRow key={accommodation.id}>
                     <TableCell>
-                      <img 
-                        src={accommodation.image} 
-                        alt={accommodation.name} 
-                        className="h-12 w-16 object-cover rounded"
-                      />
+                      <div className="w-20 h-12 relative overflow-hidden rounded">
+                        <AspectRatio ratio={16/9} className="bg-muted">
+                          <img 
+                            src={accommodation.image} 
+                            alt={accommodation.name} 
+                            className="object-cover w-full h-full"
+                          />
+                        </AspectRatio>
+                      </div>
                     </TableCell>
                     <TableCell className="font-medium">{accommodation.name}</TableCell>
                     <TableCell>{accommodation.type}</TableCell>
