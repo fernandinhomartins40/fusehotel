@@ -12,6 +12,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { SettingsImageUpload } from '@/components/admin/SettingsImageUpload';
 import { ColorPicker } from '@/components/admin/ColorPicker';
+import { RichTextEditor } from '@/components/admin/RichTextEditor';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type SiteInfoFormValues = {
   companyName: string;
@@ -26,6 +28,8 @@ type SiteInfoFormValues = {
 
 type VisualIdentityFormValues = {
   logo: string;
+  footerLogo: string;
+  favicon: string;
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
@@ -51,8 +55,15 @@ type SEOFormValues = {
   keywords: string;
 };
 
+type PageContentValues = {
+  selectedPage: string;
+  pageContent: string;
+};
+
 const Settings = () => {
   const [activeTab, setActiveTab] = useState("site-info");
+  const [selectedPage, setSelectedPage] = useState("home");
+  const [pageContent, setPageContent] = useState("<p>Conteúdo da página inicial</p>");
   
   const siteInfoForm = useForm<SiteInfoFormValues>({
     defaultValues: {
@@ -70,6 +81,8 @@ const Settings = () => {
   const visualForm = useForm<VisualIdentityFormValues>({
     defaultValues: {
       logo: "",
+      footerLogo: "",
+      favicon: "",
       primaryColor: "#1A1F2C",
       secondaryColor: "#6E59A5",
       accentColor: "#9b87f5",
@@ -100,6 +113,39 @@ const Settings = () => {
     },
   });
 
+  const pageContentForm = useForm<PageContentValues>({
+    defaultValues: {
+      selectedPage: "home",
+      pageContent: "<p>Conteúdo da página inicial</p>",
+    }
+  });
+
+  const pageOptions = [
+    { value: "home", label: "Página Inicial" },
+    { value: "about", label: "Sobre Nós" },
+    { value: "services", label: "Serviços" },
+    { value: "faq", label: "FAQ" },
+    { value: "contact", label: "Contato" },
+    { value: "privacy", label: "Política de Privacidade" },
+  ];
+
+  const handlePageChange = (value: string) => {
+    // In a real application, you would fetch page content from a database
+    setSelectedPage(value);
+    const demoContent = {
+      home: "<p>Conteúdo da página inicial</p>",
+      about: "<p>Conteúdo da página Sobre Nós</p>",
+      services: "<p>Conteúdo da página Serviços</p>",
+      faq: "<p>Conteúdo da página FAQ</p>",
+      contact: "<p>Conteúdo da página Contato</p>",
+      privacy: "<p>Conteúdo da página Política de Privacidade</p>",
+    };
+    
+    setPageContent(demoContent[value as keyof typeof demoContent]);
+    pageContentForm.setValue("selectedPage", value);
+    pageContentForm.setValue("pageContent", demoContent[value as keyof typeof demoContent]);
+  };
+
   const onSiteInfoSubmit = (data: SiteInfoFormValues) => {
     console.log("Site info saved:", data);
     // In a real app, you would save this to a database or API
@@ -108,7 +154,11 @@ const Settings = () => {
 
   const onVisualSubmit = (data: VisualIdentityFormValues) => {
     console.log("Visual identity saved:", data);
-    // In a real app, you would save this to a database or API
+    // Update favicon in index.html
+    if (data.favicon) {
+      // In a real app, you would save favicon reference to a database and update on page load
+      console.log("Favicon would be updated to:", data.favicon);
+    }
     toast.success("Identidade visual salva com sucesso!");
   };
 
@@ -124,6 +174,12 @@ const Settings = () => {
     toast.success("Configurações de SEO salvas com sucesso!");
   };
 
+  const onPageContentSubmit = (data: PageContentValues) => {
+    console.log("Page content saved:", data);
+    // In a real app, you would save this to a database or API
+    toast.success(`Conteúdo da página ${data.selectedPage} salvo com sucesso!`);
+  };
+
   return (
     <AdminLayout>
       <div className="container py-6 space-y-6">
@@ -135,10 +191,11 @@ const Settings = () => {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid grid-cols-2 md:grid-cols-4">
+          <TabsList className="grid grid-cols-2 md:grid-cols-5">
             <TabsTrigger value="site-info">Informações do Site</TabsTrigger>
             <TabsTrigger value="visual-identity">Identidade Visual</TabsTrigger>
             <TabsTrigger value="content">Conteúdo</TabsTrigger>
+            <TabsTrigger value="pages">Páginas</TabsTrigger>
             <TabsTrigger value="seo">SEO</TabsTrigger>
           </TabsList>
           
@@ -251,12 +308,36 @@ const Settings = () => {
                   className="space-y-4"
                   onSubmit={visualForm.handleSubmit(onVisualSubmit)}
                 >
-                  <div className="space-y-2">
-                    <Label htmlFor="logo">Logo</Label>
-                    <SettingsImageUpload
-                      value={visualForm.watch("logo")}
-                      onChange={(url) => visualForm.setValue("logo", url)}
-                    />
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="logo">Logo Principal</Label>
+                      <SettingsImageUpload
+                        value={visualForm.watch("logo")}
+                        onChange={(url) => visualForm.setValue("logo", url)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="footerLogo">Logo do Rodapé</Label>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Esta logo será exibida no rodapé do site. Se não for definida, será usada a logo principal.
+                      </p>
+                      <SettingsImageUpload
+                        value={visualForm.watch("footerLogo")}
+                        onChange={(url) => visualForm.setValue("footerLogo", url)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="favicon">Favicon</Label>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Ícone que aparece na aba do navegador. Recomendado: imagem PNG quadrada (32x32 pixels).
+                      </p>
+                      <SettingsImageUpload
+                        value={visualForm.watch("favicon")}
+                        onChange={(url) => visualForm.setValue("favicon", url)}
+                      />
+                    </div>
                   </div>
                   
                   <Separator className="my-4" />
@@ -353,12 +434,14 @@ const Settings = () => {
                         <button
                           className="px-4 py-2 rounded-md text-white"
                           style={{ backgroundColor: visualForm.watch("accentColor") }}
+                          type="button"
                         >
                           Botão Principal
                         </button>
                         <button
                           className="px-4 py-2 rounded-md text-white"
                           style={{ backgroundColor: visualForm.watch("secondaryColor") }}
+                          type="button"
                         >
                           Botão Secundário
                         </button>
@@ -459,6 +542,56 @@ const Settings = () => {
                   
                   <Button type="submit" className="w-full md:w-auto">
                     Salvar Conteúdo
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="pages">
+            <Card>
+              <CardHeader>
+                <CardTitle>Editor de Páginas</CardTitle>
+                <CardDescription>
+                  Edite o conteúdo das páginas do seu site usando o editor rico abaixo.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form 
+                  className="space-y-4"
+                  onSubmit={pageContentForm.handleSubmit(onPageContentSubmit)}
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="selectedPage">Selecione a Página</Label>
+                    <Select 
+                      value={selectedPage} 
+                      onValueChange={handlePageChange}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecione uma página" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {pageOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Conteúdo da Página</Label>
+                    <RichTextEditor
+                      value={pageContent}
+                      onChange={(content) => {
+                        setPageContent(content);
+                        pageContentForm.setValue("pageContent", content);
+                      }}
+                      className="min-h-[400px]"
+                    />
+                  </div>
+                  
+                  <Button type="submit" className="w-full md:w-auto">
+                    Salvar Página
                   </Button>
                 </form>
               </CardContent>

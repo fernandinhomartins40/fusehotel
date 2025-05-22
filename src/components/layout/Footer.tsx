@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
 export const Footer: React.FC = () => {
+  // In a real app, you would load this from your settings/configuration
+  const footerLogo = "/lovable-uploads/91e13e81-bbd9-4aab-b810-d81bb336ecb8.png"; // Default logo
+
   return (
     <footer className="w-full bg-black text-white">
       {/* Main Footer Content */}
@@ -18,7 +21,7 @@ export const Footer: React.FC = () => {
             <div className="mb-4">
               <Link to="/">
                 <img 
-                  src="/lovable-uploads/91e13e81-bbd9-4aab-b810-d81bb336ecb8.png" 
+                  src={footerLogo} 
                   alt="Águas Claras" 
                   className="h-12"
                 />
