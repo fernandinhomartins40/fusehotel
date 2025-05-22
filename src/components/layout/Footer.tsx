@@ -16,11 +16,13 @@ export const Footer: React.FC = () => {
           {/* Column 1: About */}
           <div className="flex flex-col">
             <div className="mb-4">
-              <img 
-                src="/lovable-uploads/91e13e81-bbd9-4aab-b810-d81bb336ecb8.png" 
-                alt="Águas Claras" 
-                className="h-12"
-              />
+              <Link to="/">
+                <img 
+                  src="/lovable-uploads/91e13e81-bbd9-4aab-b810-d81bb336ecb8.png" 
+                  alt="Águas Claras" 
+                  className="h-12"
+                />
+              </Link>
             </div>
             <p className="text-gray-400 mb-4">
               Bem-vindo ao Águas Claras, onde conforto e natureza se encontram para proporcionar uma experiência única de hospedagem. Nosso hotel oferece acomodações de qualidade em um ambiente tranquilo e acolhedor.
@@ -46,16 +48,19 @@ export const Footer: React.FC = () => {
                 <Link to="/" className="text-gray-400 hover:text-white transition-colors">Início</Link>
               </li>
               <li>
-                <Link to="#accommodations" className="text-gray-400 hover:text-white transition-colors">Acomodações</Link>
+                <Link to="/acomodacoes" className="text-gray-400 hover:text-white transition-colors">Acomodações</Link>
               </li>
               <li>
-                <Link to="#gallery" className="text-gray-400 hover:text-white transition-colors">Galeria</Link>
+                <Link to="/servicos" className="text-gray-400 hover:text-white transition-colors">Serviços</Link>
               </li>
               <li>
-                <Link to="#services" className="text-gray-400 hover:text-white transition-colors">Serviços</Link>
+                <Link to="/sobre-nos" className="text-gray-400 hover:text-white transition-colors">Sobre Nós</Link>
               </li>
               <li>
-                <Link to="#newsletter" className="text-gray-400 hover:text-white transition-colors">Contato</Link>
+                <Link to="/faq" className="text-gray-400 hover:text-white transition-colors">Perguntas Frequentes</Link>
+              </li>
+              <li>
+                <Link to="/contato" className="text-gray-400 hover:text-white transition-colors">Contato</Link>
               </li>
             </ul>
           </div>
@@ -126,7 +131,7 @@ export const Footer: React.FC = () => {
             </p>
             <div className="mt-4 md:mt-0">
               <ul className="flex space-x-4 text-sm text-gray-500">
-                <li><a href="#" className="hover:text-white transition-colors">Política de Privacidade</a></li>
+                <li><Link to="/politicas-de-privacidade" className="hover:text-white transition-colors">Política de Privacidade</Link></li>
                 <li><a href="#" className="hover:text-white transition-colors">Termos de Uso</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Cookies</a></li>
               </ul>

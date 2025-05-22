@@ -13,6 +13,11 @@ import Accommodations from "./pages/admin/Accommodations";
 import Reservations from "./pages/admin/Reservations";
 import Settings from "./pages/admin/Settings";
 import PackagesPromotions from "./pages/admin/PackagesPromotions";
+import AboutUs from "./pages/AboutUs";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import FAQ from "./pages/FAQ";
+import Contact from "./pages/Contact";
+import Services from "./pages/Services";
 
 // Create a client with default options
 const queryClient = new QueryClient({
@@ -33,6 +38,11 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/acomodacoes/:roomId" element={<RoomDetail />} />
+            <Route path="/sobre-nos" element={<AboutUs />} />
+            <Route path="/politicas-de-privacidade" element={<PrivacyPolicy />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/contato" element={<Contact />} />
+            <Route path="/servicos" element={<Services />} />
             
             {/* Admin routes */}
             <Route path="/admin" element={<AdminDashboard />} />
