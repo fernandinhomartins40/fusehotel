@@ -29,22 +29,24 @@ export const PromotionsSection = () => {
         </div>
 
         {featuredPromotions.length <= 2 ? (
-          // Show grid for 1-2 promotions
+          // Show grid for 1-2 promotions with improved responsiveness
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {featuredPromotions.map((promotion) => (
-              <div key={promotion.id}>
+              <div key={promotion.id} className="h-full">
                 <PromotionCard promotion={promotion} />
               </div>
             ))}
           </div>
         ) : (
-          // Show carousel for 3+ promotions
+          // Show carousel for 3+ promotions with improved responsiveness
           <div className="max-w-5xl mx-auto">
             <Carousel className="w-full" opts={{ align: "start" }}>
               <CarouselContent className="-ml-4">
                 {featuredPromotions.map((promotion) => (
-                  <CarouselItem key={promotion.id} className="pl-4 md:basis-1/2">
-                    <PromotionCard promotion={promotion} />
+                  <CarouselItem key={promotion.id} className="pl-4 md:basis-1/2 lg:basis-1/3">
+                    <div className="h-full">
+                      <PromotionCard promotion={promotion} />
+                    </div>
                   </CarouselItem>
                 ))}
               </CarouselContent>

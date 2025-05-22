@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { mockPromotions, Promotion } from '@/models/promotion';
@@ -49,6 +48,7 @@ import { Switch } from '@/components/ui/switch';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
+import { ImageCropUpload } from '@/components/admin/ImageCropUpload';
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('pt-BR', {
@@ -431,16 +431,15 @@ const PackagesPromotions = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="image">URL da Imagem</Label>
-              <Input
-                id="image"
-                {...form.register('image')}
-                required
-                placeholder="/lovable-uploads/image.png"
+              <Label htmlFor="image">Imagem da Promoção</Label>
+              <ImageCropUpload
+                value={form.watch('image')}
+                onChange={(url) => form.setValue('image', url)}
+                aspectRatio={3/2}
+                cropWidth={600}
+                cropHeight={400}
+                cropDescription="Imagem será exibida nos cards de promoção em 600x400px"
               />
-              <p className="text-xs text-muted-foreground">
-                Insira o caminho para uma imagem no formato /lovable-uploads/nome-da-imagem.png
-              </p>
             </div>
             
             <div className="space-y-2">
