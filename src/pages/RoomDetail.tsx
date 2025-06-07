@@ -1,17 +1,21 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { Calendar, Wifi, Tv, AirVent, Bed, DoorOpen, Utensils, MapPin, Clock, Check } from "lucide-react";
+import { Check, ArrowLeft, Star, MapPin, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ImageGallery } from "@/components/ui/ImageGallery";
+import { BookingCard } from "@/components/ui/BookingCard";
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
-} from "@/components/ui/carousel";
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 // Mock data for room details - in a real app this would come from an API
 const roomsData = {
@@ -85,8 +89,6 @@ const roomsData = {
 
 const RoomDetail: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
-  
-  // Find the room data based on the URL parameter
   const room = roomsData[roomId as keyof typeof roomsData];
   
   if (!room) {
@@ -98,7 +100,7 @@ const RoomDetail: React.FC = () => {
             <h1 className="text-4xl font-bold text-gray-800 mb-4">Acomodação não encontrada</h1>
             <p className="text-lg text-gray-600 mb-6">A acomodação que você está procurando não está disponível.</p>
             <Button className="bg-[#0466C8] hover:bg-[#0355A6]">
-              <a href="#accommodations">Ver todas acomodações</a>
+              <Link to="/#accommodations">Ver todas acomodações</Link>
             </Button>
           </div>
         </main>
@@ -107,87 +109,111 @@ const RoomDetail: React.FC = () => {
     );
   }
 
+  const maxGuests = parseInt(room.capacity.match(/\d+/)?.[0] || "2");
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       
       <main className="flex-grow">
-        {/* Room Image Gallery Carousel */}
-        <div className="w-full bg-gray-100">
-          <Carousel className="max-w-7xl mx-auto">
-            <CarouselContent>
-              {room.images.map((image, index) => (
-                <CarouselItem key={index} className="md:basis-full">
-                  <div className="h-[500px] relative">
-                    <img 
-                      src={image} 
-                      alt={`${room.title} - Imagem ${index + 1}`} 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="-left-5 md:-left-10 bg-white/90" />
-            <CarouselNext className="-right-5 md:-right-10 bg-white/90" />
-          </Carousel>
+        {/* Breadcrumbs */}
+        <div className="bg-gray-50 py-4">
+          <div className="max-w-7xl mx-auto px-4">
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link to="/">Início</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link to="/#accommodations">Acomodações</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbPage>{room.title}</BreadcrumbPage>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
         </div>
 
+        {/* Image Gallery */}
+        <ImageGallery images={room.images} title={room.title} />
+
+        {/* Content */}
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Room Details - Left Column */}
-            <div className="md:col-span-2 space-y-8">
-              {/* Room Header with Breakfast Badge */}
-              <div className="relative">
-                <div className="inline-block bg-[#0466C8] text-white text-sm font-medium uppercase px-4 py-1.5 mb-4">
-                  Café da Manhã Incluso
+            <div className="lg:col-span-2 space-y-8">
+              {/* Room Header */}
+              <div>
+                <div className="flex items-center gap-4 mb-4">
+                  <Badge className="bg-[#0466C8] hover:bg-[#0355A6] text-white">
+                    Café da Manhã Incluso
+                  </Badge>
+                  <div className="flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                    ))}
+                    <span className="text-sm text-gray-600 ml-1">4.8 (124 avaliações)</span>
+                  </div>
                 </div>
-                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">{room.title}</h1>
-                <p className="text-lg text-gray-700 mb-6">{room.description}</p>
+                
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{room.title}</h1>
+                
+                <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-6">
+                  <div className="flex items-center gap-2">
+                    <MapPin size={18} className="text-[#0466C8]" />
+                    <span>Av Paulista, 900 - São Paulo</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock size={18} className="text-[#0466C8]" />
+                    <span>Check-in 14:00 • Check-out 12:00</span>
+                  </div>
+                </div>
+                
+                <p className="text-lg text-gray-700 leading-relaxed">{room.description}</p>
               </div>
+
+              <Separator />
 
               {/* Room Description */}
               <div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Descrição do quarto</h2>
-                {room.longDescription.map((paragraph, idx) => (
-                  <p key={idx} className="text-gray-700 mb-4">{paragraph}</p>
-                ))}
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Sobre a acomodação</h2>
+                <div className="space-y-4">
+                  {room.longDescription.map((paragraph, idx) => (
+                    <p key={idx} className="text-gray-700 leading-relaxed">{paragraph}</p>
+                  ))}
+                </div>
               </div>
+
+              <Separator />
 
               {/* Room Amenities */}
               <div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Informações do quarto</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-y-2">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Comodidades do quarto</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {room.amenities.map((amenity, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <Check size={16} className="text-[#0466C8]" />
+                    <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <Check size={18} className="text-[#0466C8] flex-shrink-0" />
                       <span className="text-gray-700">{amenity}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
+              <Separator />
+
               {/* Resort Features */}
               <div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Diferenciais do resort</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-y-2">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Facilidades do resort</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {room.resortFeatures.map((feature, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <Check size={16} className="text-[#0466C8]" />
-                      <span className="text-gray-700">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Additional Info */}
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Outras informações</h2>
-                <div className="space-y-2">
-                  {room.additionalInfo.map((info, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <Check size={16} className="text-[#0466C8]" />
-                      <span className="text-gray-700">{info}</span>
+                    <div key={idx} className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                      <Check size={16} className="text-[#0466C8] flex-shrink-0" />
+                      <span className="text-gray-700 text-sm">{feature}</span>
                     </div>
                   ))}
                 </div>
@@ -195,65 +221,26 @@ const RoomDetail: React.FC = () => {
             </div>
 
             {/* Booking Card - Right Column */}
-            <div className="md:col-span-1">
-              <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-6 sticky top-8">
-                <h3 className="text-2xl font-bold text-center mb-6">Reserva online</h3>
-                
-                <div className="space-y-4 mb-6">
-                  <div className="flex items-center gap-3">
-                    <Calendar size={20} className="text-[#0466C8]" />
-                    <span className="text-gray-700">A partir de: <span className="font-bold text-black">{room.price}</span></span>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <Bed size={20} className="text-[#0466C8]" />
-                    <span className="text-gray-700">{room.capacity}</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <AirVent size={20} className="text-[#0466C8]" />
-                    <span className="text-gray-700">{room.area}</span>
-                  </div>
-                </div>
-                
-                <div className="space-y-4 mb-6">
-                  <div>
-                    <label htmlFor="check-in" className="block text-sm font-medium text-gray-700 mb-1">Data de Check-in</label>
-                    <Input 
-                      type="date" 
-                      id="check-in" 
-                      className="w-full border-gray-300" 
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="check-out" className="block text-sm font-medium text-gray-700 mb-1">Data de Check-out</label>
-                    <Input 
-                      type="date" 
-                      id="check-out" 
-                      className="w-full border-gray-300" 
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="guests" className="block text-sm font-medium text-gray-700 mb-1">Número de hóspedes</label>
-                    <select 
-                      id="guests" 
-                      className="w-full rounded-md border border-gray-300 px-3 py-2"
-                    >
-                      <option value="1">1 pessoa</option>
-                      <option value="2">2 pessoas</option>
-                      <option value="3">3 pessoas</option>
-                      <option value="4">4 pessoas</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <Button className="w-full bg-[#0466C8] hover:bg-[#0355A6] text-white py-3 rounded-md transition-colors font-medium text-lg">
-                  Fazer Reserva
-                </Button>
-              </div>
+            <div className="lg:col-span-1">
+              <BookingCard 
+                price={room.price}
+                capacity={room.capacity}
+                area={room.area}
+                maxGuests={maxGuests}
+              />
             </div>
+          </div>
+        </div>
+
+        {/* Back to Accommodations */}
+        <div className="bg-gray-50 py-8">
+          <div className="max-w-7xl mx-auto px-4 text-center">
+            <Button variant="outline" asChild className="border-[#0466C8] text-[#0466C8] hover:bg-[#0466C8] hover:text-white">
+              <Link to="/#accommodations" className="flex items-center gap-2">
+                <ArrowLeft size={18} />
+                Ver todas as acomodações
+              </Link>
+            </Button>
           </div>
         </div>
       </main>
