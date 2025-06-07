@@ -28,6 +28,14 @@ export const RoomCard: React.FC<RoomCardProps> = ({
     .replace(/[\s_-]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
+  const linkPath = `/acomodacoes/${slug}`;
+  
+  console.log('RoomCard rendered:', { title, slug, linkPath });
+
+  const handleLinkClick = () => {
+    console.log('Link clicked for:', title, 'navigating to:', linkPath);
+  };
+
   return (
     <div className="w-full border overflow-hidden rounded-lg border-solid border-gray-200 bg-white">
       <div className="relative">
@@ -73,7 +81,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({
             <span className="font-bold text-black">{price}</span>
           </div>
           
-          <Link to={`/acomodacoes/${slug}`}>
+          <Link to={linkPath} onClick={handleLinkClick}>
             <Button variant="outline" className="border-[#0466C8] text-[#0466C8] hover:bg-[#0466C8] hover:text-white">
               Ver detalhes
             </Button>

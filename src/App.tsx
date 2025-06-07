@@ -28,8 +28,10 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <React.Fragment>
+const App = () => {
+  console.log('App component rendered');
+  
+  return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
@@ -57,7 +59,7 @@ const App = () => (
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
-  </React.Fragment>
-);
+  );
+};
 
 export default App;

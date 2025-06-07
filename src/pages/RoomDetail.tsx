@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Header } from "@/components/layout/Header";
@@ -89,9 +90,16 @@ const roomsData = {
 
 const RoomDetail: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
+  
+  console.log('RoomDetail component rendered with roomId:', roomId);
+  console.log('Available room keys:', Object.keys(roomsData));
+  
   const room = roomsData[roomId as keyof typeof roomsData];
   
+  console.log('Found room data:', room ? 'Yes' : 'No', room?.title);
+  
   if (!room) {
+    console.log('Room not found, rendering 404 page');
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -110,6 +118,8 @@ const RoomDetail: React.FC = () => {
   }
 
   const maxGuests = parseInt(room.capacity.match(/\d+/)?.[0] || "2");
+
+  console.log('Rendering room detail page for:', room.title);
 
   return (
     <div className="min-h-screen flex flex-col">
