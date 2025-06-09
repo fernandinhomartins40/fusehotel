@@ -21,12 +21,14 @@ export const RoomCard: React.FC<RoomCardProps> = ({
   capacity,
   price
 }) => {
-  // Generate a URL-friendly slug from the title
+  // Generate a URL-friendly slug from the title that matches roomsData keys
   const slug = title
     .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .normalize('NFD') // Normalize to decomposed form
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics/accents
+    .replace(/[^\w\s-]/g, '') // Remove special characters except word chars, spaces, hyphens
+    .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
+    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
 
   const linkPath = `/acomodacoes/${slug}`;
   
