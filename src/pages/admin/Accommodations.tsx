@@ -100,7 +100,24 @@ export function Accommodations() {
       // Edit existing accommodation
       const updatedAccommodation: Accommodation = {
         id: currentAccommodation.id,
-        ...data,
+        name: data.name,
+        type: data.type,
+        capacity: data.capacity,
+        price: data.price,
+        description: data.description,
+        shortDescription: data.shortDescription,
+        images: data.images,
+        amenities: data.amenities,
+        location: data.location,
+        seo: data.seo,
+        isAvailable: data.isAvailable,
+        featured: data.featured,
+        checkInTime: data.checkInTime,
+        checkOutTime: data.checkOutTime,
+        cancellationPolicy: data.cancellationPolicy,
+        extraBeds: data.extraBeds,
+        maxExtraBeds: data.maxExtraBeds,
+        extraBedPrice: data.extraBedPrice,
       };
       setAccommodations(accommodations.map(acc => 
         acc.id === currentAccommodation.id ? updatedAccommodation : acc
@@ -110,7 +127,24 @@ export function Accommodations() {
       // Add new accommodation
       const newAccommodation: Accommodation = {
         id: String(accommodations.length + 1),
-        ...data,
+        name: data.name,
+        type: data.type,
+        capacity: data.capacity,
+        price: data.price,
+        description: data.description,
+        shortDescription: data.shortDescription,
+        images: data.images,
+        amenities: data.amenities,
+        location: data.location,
+        seo: data.seo,
+        isAvailable: data.isAvailable,
+        featured: data.featured,
+        checkInTime: data.checkInTime,
+        checkOutTime: data.checkOutTime,
+        cancellationPolicy: data.cancellationPolicy,
+        extraBeds: data.extraBeds,
+        maxExtraBeds: data.maxExtraBeds,
+        extraBedPrice: data.extraBedPrice,
       };
       setAccommodations([...accommodations, newAccommodation]);
       toast.success("Nova acomodação adicionada com sucesso!");
