@@ -94,11 +94,8 @@ const RoomDetail: React.FC = () => {
   console.log('RoomDetail component rendered with roomId:', roomId);
   console.log('Available room keys:', Object.keys(roomsData));
   
-  const room = roomsData[roomId as keyof typeof roomsData];
-  
-  console.log('Found room data:', room ? 'Yes' : 'No', room?.title);
-  
-  if (!room) {
+  // Verificar se roomId existe e se há dados para essa sala
+  if (!roomId || !roomsData[roomId as keyof typeof roomsData]) {
     console.log('Room not found, rendering 404 page');
     return (
       <div className="min-h-screen flex flex-col">
@@ -107,8 +104,8 @@ const RoomDetail: React.FC = () => {
           <div className="text-center p-8">
             <h1 className="text-4xl font-bold text-gray-800 mb-4">Acomodação não encontrada</h1>
             <p className="text-lg text-gray-600 mb-6">A acomodação que você está procurando não está disponível.</p>
-            <Button className="bg-[#0466C8] hover:bg-[#0355A6]">
-              <Link to="/#accommodations">Ver todas acomodações</Link>
+            <Button className="bg-[#0466C8] hover:bg-[#0355A6]" asChild>
+              <Link to="/acomodacoes">Ver todas acomodações</Link>
             </Button>
           </div>
         </main>
@@ -117,6 +114,7 @@ const RoomDetail: React.FC = () => {
     );
   }
 
+  const room = roomsData[roomId as keyof typeof roomsData];
   const maxGuests = parseInt(room.capacity.match(/\d+/)?.[0] || "2");
 
   console.log('Rendering room detail page for:', room.title);
@@ -139,7 +137,7 @@ const RoomDetail: React.FC = () => {
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
                   <BreadcrumbLink asChild>
-                    <Link to="/#accommodations">Acomodações</Link>
+                    <Link to="/acomodacoes">Acomodações</Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
@@ -246,7 +244,7 @@ const RoomDetail: React.FC = () => {
         <div className="bg-gray-50 py-8">
           <div className="max-w-7xl mx-auto px-4 text-center">
             <Button variant="outline" asChild className="border-[#0466C8] text-[#0466C8] hover:bg-[#0466C8] hover:text-white">
-              <Link to="/#accommodations" className="flex items-center gap-2">
+              <Link to="/acomodacoes" className="flex items-center gap-2">
                 <ArrowLeft size={18} />
                 Ver todas as acomodações
               </Link>

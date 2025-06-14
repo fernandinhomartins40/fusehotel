@@ -34,10 +34,6 @@ export const RoomCard: React.FC<RoomCardProps> = ({
   
   console.log('RoomCard rendered:', { title, slug, linkPath });
 
-  const handleLinkClick = () => {
-    console.log('Link clicked for:', title, 'navigating to:', linkPath);
-  };
-
   return (
     <div className="w-full border overflow-hidden rounded-lg border-solid border-gray-200 bg-white">
       <div className="relative">
@@ -83,7 +79,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({
             <span className="font-bold text-black">{price}</span>
           </div>
           
-          <Link to={linkPath} onClick={handleLinkClick}>
+          <Link to={linkPath}>
             <Button variant="outline" className="border-[#0466C8] text-[#0466C8] hover:bg-[#0466C8] hover:text-white">
               Ver detalhes
             </Button>
