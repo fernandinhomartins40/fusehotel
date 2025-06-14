@@ -7,9 +7,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import RoomDetail from "./pages/RoomDetail";
+import Accommodations from "./pages/Accommodations";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import Accommodations from "./pages/admin/Accommodations";
+import AdminAccommodations from "./pages/admin/Accommodations";
 import Reservations from "./pages/admin/Reservations";
 import Settings from "./pages/admin/Settings";
 import PackagesPromotions from "./pages/admin/PackagesPromotions";
@@ -39,6 +40,7 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/acomodacoes" element={<Accommodations />} />
             <Route path="/acomodacoes/:roomId" element={<RoomDetail />} />
             <Route path="/sobre-nos" element={<AboutUs />} />
             <Route path="/politicas-de-privacidade" element={<PrivacyPolicy />} />
@@ -48,7 +50,7 @@ const App = () => {
             
             {/* Admin routes */}
             <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/accommodations" element={<Accommodations />} />
+            <Route path="/admin/accommodations" element={<AdminAccommodations />} />
             <Route path="/admin/reservations" element={<Reservations />} />
             <Route path="/admin/packages-promotions" element={<PackagesPromotions />} />
             <Route path="/admin/settings" element={<Settings />} />
