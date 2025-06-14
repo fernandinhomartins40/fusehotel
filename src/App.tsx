@@ -20,17 +20,19 @@ import FAQ from "./pages/FAQ";
 import Contact from "./pages/Contact";
 import Services from "./pages/Services";
 
-// Create a client with default options
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
 const App = () => {
   console.log('App component rendered');
+  
+  // Create QueryClient inside component to avoid SSR issues
+  const [queryClient] = React.useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: false,
+        retry: 1,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+      },
+    },
+  }));
   
   return (
     <QueryClientProvider client={queryClient}>
