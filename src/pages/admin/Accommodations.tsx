@@ -99,8 +99,8 @@ export function Accommodations() {
     if (currentAccommodation?.id) {
       // Edit existing accommodation
       const updatedAccommodation: Accommodation = {
-        ...data,
         id: currentAccommodation.id,
+        ...data,
       };
       setAccommodations(accommodations.map(acc => 
         acc.id === currentAccommodation.id ? updatedAccommodation : acc
@@ -109,8 +109,8 @@ export function Accommodations() {
     } else {
       // Add new accommodation
       const newAccommodation: Accommodation = {
-        ...data,
         id: String(accommodations.length + 1),
+        ...data,
       };
       setAccommodations([...accommodations, newAccommodation]);
       toast.success("Nova acomodação adicionada com sucesso!");
