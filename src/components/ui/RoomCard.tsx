@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, Wifi, Car, Coffee, Star } from "lucide-react";
 import { Link } from "react-router-dom";
-import { FavoriteButton } from '@/components/customer/FavoriteButton';
 
 interface Room {
   id: string;
@@ -49,13 +48,6 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, className }) => {
           alt={room.name}
           className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        <div className="absolute top-3 right-3">
-          <FavoriteButton 
-            itemId={room.id} 
-            itemType="accommodation"
-            size="sm"
-          />
-        </div>
         <div className="absolute bottom-3 left-3">
           <Badge className="bg-white/90 text-gray-800 hover:bg-white">
             <Users size={14} className="mr-1" />

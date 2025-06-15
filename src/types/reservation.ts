@@ -9,7 +9,7 @@ export interface Reservation {
   checkOut: string;
   guests: number;
   totalPrice: number;
-  status: 'confirmed' | 'pending' | 'cancelled';
+  status: 'confirmed' | 'pending' | 'cancelled' | 'checked-in' | 'checked-out' | 'no-show';
   createdAt: string;
   specialRequests?: string;
 }

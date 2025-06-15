@@ -7,7 +7,6 @@ import { Clock, Users, Tag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Promotion } from '@/models/promotion';
 import { generateSlug } from '@/utils/slugUtils';
-import { FavoriteButton } from '@/components/customer/FavoriteButton';
 
 interface PromotionCardProps {
   promotion: Promotion;
@@ -36,13 +35,6 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, classNa
           alt={promotion.title}
           className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        <div className="absolute top-3 right-3">
-          <FavoriteButton 
-            itemId={promotion.id} 
-            itemType="promotion"
-            size="sm"
-          />
-        </div>
         <div className="absolute top-3 left-3">
           <Badge className="bg-red-500 text-white">
             <Tag size={14} className="mr-1" />

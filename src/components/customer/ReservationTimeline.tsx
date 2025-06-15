@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Calendar, CheckCircle, Clock, AlertCircle, XCircle } from 'lucide-react';
 import { Reservation } from '@/types/reservation';
@@ -45,7 +44,7 @@ export const ReservationTimeline: React.FC<ReservationTimelineProps> = ({ reserv
 
     // Check-in
     const checkInStatus = reservation.status === 'cancelled' ? 'cancelled' :
-                         reservation.status === 'checked-in' || reservation.status === 'checked-out' ? 'completed' :
+                         (reservation.status === 'checked-in' || reservation.status === 'checked-out') ? 'completed' :
                          checkInDate <= now ? 'current' : 'upcoming';
     
     events.push({
