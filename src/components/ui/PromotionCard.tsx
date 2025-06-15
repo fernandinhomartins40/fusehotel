@@ -15,7 +15,6 @@ interface PromotionCardProps {
 
 export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, className }) => {
   if (!promotion) {
-    console.warn('PromotionCard: promotion is undefined');
     return null;
   }
 
@@ -25,7 +24,7 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, classNa
   const highlights = promotion.highlights || [];
   
   return (
-    <Card className={`group hover:shadow-lg transition-all duration-300 overflow-hidden ${className}`}>
+    <Card className={`group hover:shadow-lg transition-all duration-300 overflow-hidden ${className || ''}`}>
       <div className="relative">
         <img 
           src={promotion.image} 
@@ -71,7 +70,7 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, classNa
             <div className="text-sm text-gray-500">por pessoa</div>
           </div>
         </div>
-        <CardDescription className="text-sm">
+        <CardDescription className="text-sm text-gray-600">
           {promotion.description}
         </CardDescription>
       </CardHeader>
@@ -83,13 +82,15 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, classNa
             <span>Válido até {validUntil.toLocaleDateString('pt-BR')}</span>
           </div>
           
-          <div className="flex flex-wrap gap-1">
-            {highlights.map((highlight, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {highlight}
-              </Badge>
-            ))}
-          </div>
+          {highlights.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {highlights.map((highlight, index) => (
+                <Badge key={index} variant="secondary" className="text-xs">
+                  {highlight}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
         
         <Button 

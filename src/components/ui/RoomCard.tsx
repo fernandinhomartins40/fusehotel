@@ -41,7 +41,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, className }) => {
   };
 
   return (
-    <Card className={`group hover:shadow-lg transition-all duration-300 overflow-hidden ${className}`}>
+    <Card className={`group hover:shadow-lg transition-all duration-300 overflow-hidden ${className || ''}`}>
       <div className="relative">
         <img 
           src={room.image} 
@@ -79,7 +79,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({ room, className }) => {
             <div className="text-sm text-gray-500">por noite</div>
           </div>
         </div>
-        <CardDescription className="text-sm">
+        <CardDescription className="text-sm text-gray-600">
           {room.description}
         </CardDescription>
       </CardHeader>
