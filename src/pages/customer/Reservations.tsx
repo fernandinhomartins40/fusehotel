@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ReservationCard } from '@/components/customer/ReservationCard';
+import { EnhancedReservationCard } from '@/components/customer/EnhancedReservationCard';
+import { ReservationFiltersComponent, ReservationFilters } from '@/components/customer/ReservationFilters';
 import { Reservation } from '@/types/reservation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -55,6 +56,7 @@ const Reservations: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [reservations, setReservations] = useState<Reservation[]>(mockReservations);
+  const [filters, setFilters] = useState<ReservationFilters>({});
 
   const handleCancelReservation = (reservationId: string) => {
     setReservations(prev =>
@@ -71,15 +73,86 @@ const Reservations: React.FC = () => {
     });
   };
 
-  const upcomingReservations = reservations.filter(r => 
+  const handleEditReservation = (reservationId: string) => {
+    toast({
+      title: "Editar Reserva",
+      description: "Funcionalidade de edição será implementada em breve.",
+    });
+  };
+
+  const handleRescheduleReservation = (reservationId: string) => {
+    toast({
+      title: "Reagendar Reserva",
+      description: "Funcionalidade de reagendamento será implementada em breve.",
+    });
+  };
+
+  const handleDuplicateReservation = (reservationId: string) => {
+    const reservation = reservations.find(r => r.id === reservationId);
+    if (reservation) {
+      const newReservation: Reservation = {
+        ...reservation,
+        id: (Math.random() * 1000).toString(),
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        checkIn: '', // User will need to select new dates
+        checkOut: ''
+      };
+      
+      toast({
+        title: "Reserva Duplicada",
+        description: "Uma nova reserva foi criada baseada na selecionada. Selecione as novas datas.",
+      });
+    }
+  };
+
+  const handleDownloadVoucher = (reservationId: string) => {
+    toast({
+      title: "Download do Voucher",
+      description: "O voucher da reserva está sendo preparado para download.",
+    });
+  };
+
+  const handleRequestServices = (reservationId: string) => {
+    toast({
+      title: "Solicitar Serviços",
+      description: "Redirecionando para a página de serviços adicionais.",
+    });
+  };
+
+  const handleContact = (reservationId: string) => {
+    toast({
+      title: "Contato",
+      description: "Redirecionando para os canais de atendimento.",
+    });
+  };
+
+  const clearFilters = () => {
+    setFilters({});
+  };
+
+  // Filter reservations based on current filters
+  const filteredReservations = useMemo(() => {
+    return reservations.filter(reservation => {
+      if (filters.status && reservation.status !== filters.status) return false;
+      if (filters.roomName && !reservation.roomName.toLowerCase().includes(filters.roomName.toLowerCase())) return false;
+      if (filters.priceMin && reservation.totalPrice < filters.priceMin) return false;
+      if (filters.priceMax && reservation.totalPrice > filters.priceMax) return false;
+      if (filters.dateFrom && new Date(reservation.checkIn) < filters.dateFrom) return false;
+      if (filters.dateTo && new Date(reservation.checkOut) > filters.dateTo) return false;
+      return true;
+    });
+  }, [reservations, filters]);
+
+  const upcomingReservations = filteredReservations.filter(r => 
     new Date(r.checkIn) > new Date() && r.status !== 'cancelled'
   );
   
-  const pastReservations = reservations.filter(r => 
+  const pastReservations = filteredReservations.filter(r => 
     new Date(r.checkOut) < new Date() || r.status === 'cancelled'
   );
   
-  const allReservations = reservations;
+  const allReservations = filteredReservations;
 
   return (
     <div className="space-y-6">
@@ -91,6 +164,13 @@ const Reservations: React.FC = () => {
           </CardDescription>
         </CardHeader>
       </Card>
+
+      {/* Filters */}
+      <ReservationFiltersComponent
+        filters={filters}
+        onFiltersChange={setFilters}
+        onClearFilters={clearFilters}
+      />
 
       <Tabs defaultValue="upcoming" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
@@ -109,10 +189,16 @@ const Reservations: React.FC = () => {
           {upcomingReservations.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {upcomingReservations.map((reservation) => (
-                <ReservationCard
+                <EnhancedReservationCard
                   key={reservation.id}
                   reservation={reservation}
                   onCancel={handleCancelReservation}
+                  onEdit={handleEditReservation}
+                  onReschedule={handleRescheduleReservation}
+                  onDuplicate={handleDuplicateReservation}
+                  onDownloadVoucher={handleDownloadVoucher}
+                  onRequestServices={handleRequestServices}
+                  onContact={handleContact}
                 />
               ))}
             </div>
@@ -134,9 +220,12 @@ const Reservations: React.FC = () => {
           {pastReservations.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {pastReservations.map((reservation) => (
-                <ReservationCard
+                <EnhancedReservationCard
                   key={reservation.id}
                   reservation={reservation}
+                  onDuplicate={handleDuplicateReservation}
+                  onDownloadVoucher={handleDownloadVoucher}
+                  onContact={handleContact}
                 />
               ))}
             </div>
@@ -157,10 +246,16 @@ const Reservations: React.FC = () => {
         <TabsContent value="all" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {allReservations.map((reservation) => (
-              <ReservationCard
+              <EnhancedReservationCard
                 key={reservation.id}
                 reservation={reservation}
                 onCancel={handleCancelReservation}
+                onEdit={handleEditReservation}
+                onReschedule={handleRescheduleReservation}
+                onDuplicate={handleDuplicateReservation}
+                onDownloadVoucher={handleDownloadVoucher}
+                onRequestServices={handleRequestServices}
+                onContact={handleContact}
               />
             ))}
           </div>
