@@ -14,7 +14,6 @@ interface PromotionCardProps {
 }
 
 export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, className }) => {
-  // Add safety checks for undefined values
   if (!promotion) {
     console.warn('PromotionCard: promotion is undefined');
     return null;
@@ -22,9 +21,7 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, classNa
 
   const discountPercentage = Math.round(((promotion.originalPrice - promotion.discountedPrice) / promotion.originalPrice) * 100);
   const validUntil = new Date(promotion.validUntil);
-  const isExpiringSoon = (validUntil.getTime() - Date.now()) < 7 * 24 * 60 * 60 * 1000; // 7 days
-  
-  // Add default values for potentially undefined arrays
+  const isExpiringSoon = (validUntil.getTime() - Date.now()) < 7 * 24 * 60 * 60 * 1000;
   const highlights = promotion.highlights || [];
   
   return (
