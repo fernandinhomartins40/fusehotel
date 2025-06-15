@@ -70,12 +70,14 @@ export const MobileMenu: React.FC = () => {
               </ul>
               
               <div className="mt-8 pt-6 border-t">
-                <Button 
-                  className="w-full bg-[#0466C8] hover:bg-[#0355A6] text-white rounded-full py-3"
-                  onClick={toggleMenu}
-                >
-                  Área do Cliente
-                </Button>
+                <Link to="/area-do-cliente">
+                  <Button 
+                    className="w-full bg-[#0466C8] hover:bg-[#0355A6] text-white rounded-full py-3"
+                    onClick={toggleMenu}
+                  >
+                    Área do Cliente
+                  </Button>
+                </Link>
               </div>
             </nav>
           </div>

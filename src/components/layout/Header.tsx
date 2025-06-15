@@ -47,18 +47,22 @@ export const Header: React.FC = () => {
       </nav>
 
       <div className="flex items-center gap-4">
-        <Button 
-          className="hidden md:flex bg-[#0466C8] hover:bg-[#0355A6] text-white rounded-full px-6 py-2 items-center gap-2"
-        >
-          <User size={18} />
-          <span className="uppercase font-medium">Área do cliente</span>
-        </Button>
+        <Link to="/area-do-cliente">
+          <Button 
+            className="hidden md:flex bg-[#0466C8] hover:bg-[#0355A6] text-white rounded-full px-6 py-2 items-center gap-2"
+          >
+            <User size={18} />
+            <span className="uppercase font-medium">Área do cliente</span>
+          </Button>
+        </Link>
         
-        <Button 
-          className="md:hidden bg-[#0466C8] hover:bg-[#0355A6] text-white rounded-full p-2"
-        >
-          <User size={18} />
-        </Button>
+        <Link to="/area-do-cliente">
+          <Button 
+            className="md:hidden bg-[#0466C8] hover:bg-[#0355A6] text-white rounded-full p-2"
+          >
+            <User size={18} />
+          </Button>
+        </Link>
         
         <MobileMenu />
       </div>
