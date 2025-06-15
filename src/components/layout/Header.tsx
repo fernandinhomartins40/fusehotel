@@ -4,12 +4,8 @@ import { Button } from "@/components/ui/button";
 import { User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { MobileMenu } from './MobileMenu';
-import { UserMenu } from '@/components/customer/UserMenu';
-import { useAuth } from '@/contexts/AuthContext';
 
 export const Header: React.FC = () => {
-  const { user } = useAuth();
-
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
@@ -51,30 +47,18 @@ export const Header: React.FC = () => {
       </nav>
 
       <div className="flex items-center gap-4">
-        {user ? (
-          <UserMenu />
-        ) : (
-          <>
-            <Button 
-              className="hidden md:flex bg-[#0466C8] hover:bg-[#0355A6] text-white rounded-full px-6 py-2 items-center gap-2"
-              asChild
-            >
-              <Link to="/login">
-                <User size={18} />
-                <span className="uppercase font-medium">Área do cliente</span>
-              </Link>
-            </Button>
-            
-            <Button 
-              className="md:hidden bg-[#0466C8] hover:bg-[#0355A6] text-white rounded-full p-2"
-              asChild
-            >
-              <Link to="/login">
-                <User size={18} />
-              </Link>
-            </Button>
-          </>
-        )}
+        <Button 
+          className="hidden md:flex bg-[#0466C8] hover:bg-[#0355A6] text-white rounded-full px-6 py-2 items-center gap-2"
+        >
+          <User size={18} />
+          <span className="uppercase font-medium">Área do cliente</span>
+        </Button>
+        
+        <Button 
+          className="md:hidden bg-[#0466C8] hover:bg-[#0355A6] text-white rounded-full p-2"
+        >
+          <User size={18} />
+        </Button>
         
         <MobileMenu />
       </div>
