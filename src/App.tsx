@@ -8,6 +8,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import RoomDetail from "./pages/RoomDetail";
 import Accommodations from "./pages/Accommodations";
+import Promotions from "./pages/Promotions";
+import PromotionDetail from "./pages/PromotionDetail";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminAccommodations from "./pages/admin/Accommodations";
@@ -44,6 +46,8 @@ const App = () => {
             <Route path="/" element={<Index />} />
             <Route path="/acomodacoes" element={<Accommodations />} />
             <Route path="/acomodacoes/:roomId" element={<RoomDetail />} />
+            <Route path="/promocoes" element={<Promotions />} />
+            <Route path="/promocoes/:promotionId" element={<PromotionDetail />} />
             <Route path="/sobre-nos" element={<AboutUs />} />
             <Route path="/politicas-de-privacidade" element={<PrivacyPolicy />} />
             <Route path="/faq" element={<FAQ />} />

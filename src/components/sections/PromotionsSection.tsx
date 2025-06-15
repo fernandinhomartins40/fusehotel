@@ -1,7 +1,9 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Promotion, mockPromotions } from '@/models/promotion';
 import { PromotionCard } from '@/components/ui/PromotionCard';
+import { Button } from '@/components/ui/button';
 import { 
   Carousel, 
   CarouselContent, 
@@ -23,9 +25,12 @@ export const PromotionsSection = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-2">Pacotes e Promoções</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-muted-foreground max-w-2xl mx-auto mb-6">
             Confira nossas ofertas especiais para tornar sua estadia ainda mais memorável.
           </p>
+          <Button variant="outline" asChild>
+            <Link to="/promocoes">Ver todas as promoções</Link>
+          </Button>
         </div>
 
         {featuredPromotions.length <= 2 ? (

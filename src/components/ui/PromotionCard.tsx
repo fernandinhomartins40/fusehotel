@@ -1,10 +1,12 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Promotion } from '@/models/promotion';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Tag } from 'lucide-react';
 import { format } from 'date-fns';
+import { generateSlug } from '@/utils/slugUtils';
 
 interface PromotionCardProps {
   promotion: Promotion;
@@ -17,6 +19,9 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion }) => {
       currency: 'BRL'
     }).format(value);
   }
+
+  const slug = generateSlug(promotion.title);
+  const linkPath = `/promocoes/${slug}`;
 
   return (
     <Card className="h-full flex flex-col overflow-hidden group transition-all duration-300 hover:shadow-lg">
@@ -69,9 +74,11 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion }) => {
           </span>
         </div>
         
-        <Button size="sm">
-          Ver detalhes
-        </Button>
+        <Link to={linkPath}>
+          <Button size="sm">
+            Ver detalhes
+          </Button>
+        </Link>
       </CardFooter>
     </Card>
   );
