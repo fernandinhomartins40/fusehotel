@@ -1,104 +1,77 @@
-/**
- * Auth Controller
- *
- * Controller de autenticação
- */
-
 import { Request, Response, NextFunction } from 'express';
-import authService from '../services/auth.service';
-import { success, created } from '../utils/response';
-import { asyncHandler } from '../middlewares/error.middleware';
-import { SUCCESS_MESSAGES } from '../utils/constants';
+import { AuthService } from '../services/auth.service';
+import { sendSuccess } from '../utils/response';
+import { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema, changePasswordSchema, refreshTokenSchema } from '@fusehotel/shared';
 
 export class AuthController {
-  /**
-   * POST /auth/register
-   * Registra um novo usuário
-   */
-  register = asyncHandler(async (req: Request, res: Response) => {
-    const result = await authService.register(req.body);
-    return created(res, result, SUCCESS_MESSAGES.REGISTER_SUCCESS);
-  });
+  static async register(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = registerSchema.parse(req.body);
+      const result = await AuthService.register(data);
+      return sendSuccess(res, result, 'Usuário registrado com sucesso', 201);
+    } catch (error) {
+      next(error);
+    }
+  }
 
-  /**
-   * POST /auth/login
-   * Faz login de um usuário
-   */
-  login = asyncHandler(async (req: Request, res: Response) => {
-    const result = await authService.login(req.body);
-    return success(res, result, SUCCESS_MESSAGES.LOGIN_SUCCESS);
-  });
+  static async login(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = loginSchema.parse(req.body);
+      const result = await AuthService.login(data);
+      return sendSuccess(res, result, 'Login realizado com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
 
-  /**
-   * POST /auth/logout
-   * Faz logout de um usuário
-   */
-  logout = asyncHandler(async (req: Request, res: Response) => {
-    const { refreshToken } = req.body;
-    await authService.logout(refreshToken);
-    return success(res, null, SUCCESS_MESSAGES.LOGOUT_SUCCESS);
-  });
+  static async refreshToken(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = refreshTokenSchema.parse(req.body);
+      const result = await AuthService.refreshToken(data.refreshToken);
+      return sendSuccess(res, result, 'Token atualizado com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
 
-  /**
-   * POST /auth/refresh
-   * Atualiza o access token
-   */
-  refresh = asyncHandler(async (req: Request, res: Response) => {
-    const { refreshToken } = req.body;
-    const result = await authService.refreshAccessToken(refreshToken);
-    return success(res, result, 'Token refreshed successfully');
-  });
+  static async logout(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { refreshToken } = req.body;
+      await AuthService.logout(refreshToken);
+      return sendSuccess(res, null, 'Logout realizado com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
 
-  /**
-   * POST /auth/forgot-password
-   * Solicita reset de senha
-   */
-  forgotPassword = asyncHandler(async (req: Request, res: Response) => {
-    const { email } = req.body;
-    await authService.forgotPassword(email);
-    return success(res, null, SUCCESS_MESSAGES.PASSWORD_RESET_EMAIL_SENT);
-  });
+  static async forgotPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = forgotPasswordSchema.parse(req.body);
+      await AuthService.forgotPassword(data.email);
+      return sendSuccess(res, null, 'Email de recuperação enviado com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
 
-  /**
-   * POST /auth/reset-password
-   * Reseta a senha usando token
-   */
-  resetPassword = asyncHandler(async (req: Request, res: Response) => {
-    const { token, newPassword } = req.body;
-    await authService.resetPassword(token, newPassword);
-    return success(res, null, SUCCESS_MESSAGES.PASSWORD_RESET_SUCCESS);
-  });
+  static async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = resetPasswordSchema.parse(req.body);
+      await AuthService.resetPassword(data.token, data.newPassword);
+      return sendSuccess(res, null, 'Senha alterada com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
 
-  /**
-   * POST /auth/change-password
-   * Altera a senha do usuário autenticado
-   */
-  changePassword = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user!.userId;
-    const { currentPassword, newPassword } = req.body;
-    await authService.changePassword(userId, currentPassword, newPassword);
-    return success(res, null, SUCCESS_MESSAGES.PASSWORD_CHANGED);
-  });
-
-  /**
-   * GET /auth/check-email
-   * Verifica se um email está disponível
-   */
-  checkEmail = asyncHandler(async (req: Request, res: Response) => {
-    const { email } = req.query;
-    const available = await authService.checkEmailAvailability(email as string);
-    return success(res, { available });
-  });
-
-  /**
-   * GET /auth/check-cpf
-   * Verifica se um CPF está disponível
-   */
-  checkCpf = asyncHandler(async (req: Request, res: Response) => {
-    const { cpf } = req.query;
-    const available = await authService.checkCpfAvailability(cpf as string);
-    return success(res, { available });
-  });
+  static async changePassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = changePasswordSchema.parse(req.body);
+      const userId = req.user!.id;
+      await AuthService.changePassword(userId, data.currentPassword, data.newPassword);
+      return sendSuccess(res, null, 'Senha alterada com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
 }
-
-export default new AuthController();

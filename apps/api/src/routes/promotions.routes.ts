@@ -1,24 +1,13 @@
-/**
- * Promotions Routes
- */
-
 import { Router } from 'express';
-import promotionsController from '../controllers/promotions.controller';
-import { authenticateOptional, authenticate } from '../middlewares/auth.middleware';
-import { requireManager } from '../middlewares/role.middleware';
-import { validateIdParam, validateSlugParam } from '../middlewares/validate.middleware';
+import { PromotionController } from '../controllers/promotions.controller';
+import { authenticate } from '../middlewares/auth.middleware';
+import { requireRole } from '../middlewares/role.middleware';
 
 const router = Router();
 
-// Public routes
-router.get('/', authenticateOptional, promotionsController.getAll);
-router.get('/slug/:slug', validateSlugParam, authenticateOptional, promotionsController.getBySlug);
-router.get('/:id', validateIdParam, authenticateOptional, promotionsController.getById);
-router.post('/validate-code', promotionsController.validateCode);
-
-// Protected routes (Manager and above)
-router.post('/', authenticate, requireManager, promotionsController.create);
-router.put('/:id', validateIdParam, authenticate, requireManager, promotionsController.update);
-router.delete('/:id', validateIdParam, authenticate, requireManager, promotionsController.delete);
+router.get('/', PromotionController.list);
+router.get('/:id', PromotionController.getById);
+router.get('/slug/:slug', PromotionController.getBySlug);
+router.post('/', authenticate, requireRole(['ADMIN', 'MANAGER']), PromotionController.create);
 
 export default router;

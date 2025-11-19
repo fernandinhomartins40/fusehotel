@@ -1,100 +1,41 @@
-/**
- * Promotions Controller
- *
- * Controller de gerenciamento de promoções
- */
+import { Request, Response, NextFunction } from 'express';
+import { PromotionService } from '../services/promotions.service';
+import { sendSuccess } from '../utils/response';
 
-import { Request, Response } from 'express';
-import promotionsService from '../services/promotions.service';
-import { success, created, updated, deleted, paginated } from '../utils/response';
-import { asyncHandler } from '../middlewares/error.middleware';
-import { normalizePagination } from '../utils/response';
+export class PromotionController {
+  static async list(req: Request, res: Response, next: NextFunction) {
+    try {
+      const promotions = await PromotionService.list(req.query);
+      return sendSuccess(res, promotions);
+    } catch (error) {
+      next(error);
+    }
+  }
 
-export class PromotionsController {
-  /**
-   * GET /promotions
-   * Lista todas as promoções
-   */
-  getAll = asyncHandler(async (req: Request, res: Response) => {
-    const { page, limit } = normalizePagination(req.query.page, req.query.limit);
+  static async getById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const promotion = await PromotionService.getById(req.params.id);
+      return sendSuccess(res, promotion);
+    } catch (error) {
+      next(error);
+    }
+  }
 
-    const filters: any = {
-      type: req.query.type as any,
-      isActive: req.query.isActive === 'true',
-      isFeatured: req.query.isFeatured === 'true',
-      discountType: req.query.discountType as any,
-    };
+  static async getBySlug(req: Request, res: Response, next: NextFunction) {
+    try {
+      const promotion = await PromotionService.getBySlug(req.params.slug);
+      return sendSuccess(res, promotion);
+    } catch (error) {
+      next(error);
+    }
+  }
 
-    const { promotions, total } = await promotionsService.findAll(page, limit, filters);
-    return paginated(res, promotions, page, limit, total);
-  });
-
-  /**
-   * GET /promotions/:id
-   * Busca uma promoção por ID
-   */
-  getById = asyncHandler(async (req: Request, res: Response) => {
-    const promotion = await promotionsService.findById(req.params.id);
-    return success(res, promotion);
-  });
-
-  /**
-   * GET /promotions/slug/:slug
-   * Busca uma promoção por slug
-   */
-  getBySlug = asyncHandler(async (req: Request, res: Response) => {
-    const promotion = await promotionsService.findBySlug(req.params.slug);
-    return success(res, promotion);
-  });
-
-  /**
-   * POST /promotions
-   * Cria uma nova promoção
-   */
-  create = asyncHandler(async (req: Request, res: Response) => {
-    const data = {
-      ...req.body,
-      startDate: new Date(req.body.startDate),
-      endDate: new Date(req.body.endDate),
-    };
-
-    const promotion = await promotionsService.create(data);
-    return created(res, promotion, 'Promotion created successfully');
-  });
-
-  /**
-   * PUT /promotions/:id
-   * Atualiza uma promoção
-   */
-  update = asyncHandler(async (req: Request, res: Response) => {
-    const data = {
-      ...req.body,
-      startDate: req.body.startDate ? new Date(req.body.startDate) : undefined,
-      endDate: req.body.endDate ? new Date(req.body.endDate) : undefined,
-    };
-
-    const promotion = await promotionsService.update(req.params.id, data);
-    return updated(res, promotion, 'Promotion updated successfully');
-  });
-
-  /**
-   * DELETE /promotions/:id
-   * Deleta uma promoção
-   */
-  delete = asyncHandler(async (req: Request, res: Response) => {
-    await promotionsService.delete(req.params.id);
-    return deleted(res, 'Promotion deleted successfully');
-  });
-
-  /**
-   * POST /promotions/validate-code
-   * Valida código promocional
-   */
-  validateCode = asyncHandler(async (req: Request, res: Response) => {
-    const { code } = req.body;
-    const result = await promotionsService.validateCode(code);
-    return success(res, result, 'Promotion code validated successfully');
-  });
+  static async create(req: Request, res: Response, next: NextFunction) {
+    try {
+      const promotion = await PromotionService.create(req.body);
+      return sendSuccess(res, promotion, 'Promoção criada com sucesso', 201);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
-
-export default new PromotionsController();

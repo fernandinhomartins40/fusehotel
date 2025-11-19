@@ -1,29 +1,14 @@
-/**
- * Users Routes
- */
-
 import { Router } from 'express';
-import usersController from '../controllers/users.controller';
+import { UserController } from '../controllers/users.controller';
 import { authenticate } from '../middlewares/auth.middleware';
-import { requireAdmin, requireManager, requireOwnerOrAdmin } from '../middlewares/role.middleware';
-import { validateIdParam } from '../middlewares/validate.middleware';
+import { requireRole } from '../middlewares/role.middleware';
 
 const router = Router();
 
-// All routes require authentication
-router.use(authenticate);
-
-// Profile routes
-router.get('/profile', usersController.getProfile);
-router.put('/profile', usersController.updateProfile);
-
-// Admin routes
-router.get('/', requireManager, usersController.getAll);
-router.get('/stats', requireManager, usersController.getStats);
-router.get('/:id', validateIdParam, usersController.getById);
-router.put('/:id', validateIdParam, requireOwnerOrAdmin((req) => req.params.id), usersController.update);
-router.delete('/:id', validateIdParam, requireAdmin, usersController.delete);
-router.put('/:id/role', validateIdParam, requireAdmin, usersController.changeRole);
-router.put('/:id/toggle-active', validateIdParam, requireAdmin, usersController.toggleActive);
+router.get('/profile', authenticate, UserController.getProfile);
+router.put('/profile', authenticate, UserController.updateProfile);
+router.get('/', authenticate, requireRole(['ADMIN', 'MANAGER']), UserController.list);
+router.get('/:id', authenticate, UserController.getById);
+router.delete('/:id', authenticate, requireRole(['ADMIN']), UserController.delete);
 
 export default router;

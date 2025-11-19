@@ -1,25 +1,15 @@
-/**
- * Auth Routes
- */
-
 import { Router } from 'express';
-import authController from '../controllers/auth.controller';
+import { AuthController } from '../controllers/auth.controller';
 import { authenticate } from '../middlewares/auth.middleware';
-import { authRateLimiter, registerRateLimiter, passwordResetRateLimiter } from '../middlewares/rate-limiter.middleware';
 
 const router = Router();
 
-// Public routes
-router.post('/register', registerRateLimiter, authController.register);
-router.post('/login', authRateLimiter, authController.login);
-router.post('/logout', authController.logout);
-router.post('/refresh', authController.refresh);
-router.post('/forgot-password', passwordResetRateLimiter, authController.forgotPassword);
-router.post('/reset-password', authController.resetPassword);
-router.get('/check-email', authController.checkEmail);
-router.get('/check-cpf', authController.checkCpf);
-
-// Protected routes
-router.post('/change-password', authenticate, authController.changePassword);
+router.post('/register', AuthController.register);
+router.post('/login', AuthController.login);
+router.post('/refresh', AuthController.refreshToken);
+router.post('/logout', AuthController.logout);
+router.post('/forgot-password', AuthController.forgotPassword);
+router.post('/reset-password', AuthController.resetPassword);
+router.put('/change-password', authenticate, AuthController.changePassword);
 
 export default router;
