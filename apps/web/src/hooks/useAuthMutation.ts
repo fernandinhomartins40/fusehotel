@@ -1,9 +1,11 @@
 import { useMutation } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 export function useLogin() {
   const { toast } = useToast();
+  const { setUser } = useAuth();
 
   return useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
@@ -14,12 +16,15 @@ export function useLogin() {
       localStorage.setItem('accessToken', data.data.tokens.accessToken);
       localStorage.setItem('refreshToken', data.data.tokens.refreshToken);
       localStorage.setItem('user', JSON.stringify(data.data.user));
-      
+
+      // Atualizar contexto de autenticação
+      setUser(data.data.user);
+
       toast({
         title: 'Login realizado!',
         description: `Bem-vindo, ${data.data.user.name}!`,
       });
-      
+
       window.location.href = '/';
     },
     onError: (error: any) => {
@@ -34,6 +39,7 @@ export function useLogin() {
 
 export function useRegister() {
   const { toast } = useToast();
+  const { setUser } = useAuth();
 
   return useMutation({
     mutationFn: async (data: {
@@ -52,12 +58,15 @@ export function useRegister() {
       localStorage.setItem('accessToken', data.data.tokens.accessToken);
       localStorage.setItem('refreshToken', data.data.tokens.refreshToken);
       localStorage.setItem('user', JSON.stringify(data.data.user));
-      
+
+      // Atualizar contexto de autenticação
+      setUser(data.data.user);
+
       toast({
         title: 'Cadastro realizado!',
         description: 'Seja bem-vindo ao FuseHotel!',
       });
-      
+
       window.location.href = '/';
     },
     onError: (error: any) => {
@@ -72,14 +81,13 @@ export function useRegister() {
 
 export function useLogout() {
   const { toast } = useToast();
+  const { logout } = useAuth();
 
   return useMutation({
     mutationFn: async () => {
-      const refreshToken = localStorage.getItem('refreshToken');
-      await apiClient.post('/auth/logout', { refreshToken });
+      await logout();
     },
     onSuccess: () => {
-      localStorage.clear();
       toast({
         title: 'Logout realizado',
         description: 'Até logo!',

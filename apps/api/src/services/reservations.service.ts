@@ -2,10 +2,16 @@ import { prisma } from '../config/database';
 import { NotFoundError, BadRequestError } from '../utils/errors';
 import { v4 as uuidv4 } from 'uuid';
 import { differenceInDays } from 'date-fns';
+import {
+  CreateReservationDto,
+  ReservationFilters,
+  CancelReservationDto
+} from '@fusehotel/shared';
+import { Prisma } from '@prisma/client';
 
 export class ReservationService {
-  static async list(filters: any) {
-    const where: any = {};
+  static async list(filters: ReservationFilters) {
+    const where: Prisma.ReservationWhereInput = {};
 
     if (filters.userId) where.userId = filters.userId;
     if (filters.accommodationId) where.accommodationId = filters.accommodationId;
@@ -72,7 +78,7 @@ export class ReservationService {
     return reservation;
   }
 
-  static async create(data: any, userId?: string) {
+  static async create(data: CreateReservationDto, userId?: string) {
     const accommodation = await prisma.accommodation.findUnique({
       where: { id: data.accommodationId }
     });

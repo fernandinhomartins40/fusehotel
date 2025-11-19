@@ -1,17 +1,26 @@
 import { prisma } from '../config/database';
 import { NotFoundError } from '../utils/errors';
-import { generateSlug } from '@fusehotel/shared';
+import {
+  generateSlug,
+  CreateAccommodationDto,
+  UpdateAccommodationDto,
+  AccommodationFilters
+} from '@fusehotel/shared';
+import { Prisma } from '@prisma/client';
 
 export class AccommodationService {
-  static async list(filters: any) {
-    const where: any = {};
+  static async list(filters: AccommodationFilters) {
+    const where: Prisma.AccommodationWhereInput = {};
     
     if (filters.type) where.type = filters.type;
-    if (filters.isAvailable !== undefined) where.isAvailable = filters.isAvailable === 'true';
-    if (filters.isFeatured !== undefined) where.isFeatured = filters.isFeatured === 'true';
-    if (filters.minPrice) where.pricePerNight = { ...where.pricePerNight, gte: parseFloat(filters.minPrice) };
-    if (filters.maxPrice) where.pricePerNight = { ...where.pricePerNight, lte: parseFloat(filters.maxPrice) };
-    if (filters.minCapacity) where.capacity = { gte: parseInt(filters.minCapacity) };
+    if (filters.isAvailable !== undefined) where.isAvailable = filters.isAvailable;
+    if (filters.isFeatured !== undefined) where.isFeatured = filters.isFeatured;
+    if (filters.minPrice || filters.maxPrice) {
+      where.pricePerNight = {};
+      if (filters.minPrice) where.pricePerNight.gte = filters.minPrice;
+      if (filters.maxPrice) where.pricePerNight.lte = filters.maxPrice;
+    }
+    if (filters.minCapacity) where.capacity = { gte: filters.minCapacity };
 
     return prisma.accommodation.findMany({
       where,
@@ -61,7 +70,7 @@ export class AccommodationService {
     return accommodation;
   }
 
-  static async create(data: any) {
+  static async create(data: CreateAccommodationDto) {
     const slug = generateSlug(data.name);
 
     const accommodation = await prisma.accommodation.create({
@@ -105,7 +114,7 @@ export class AccommodationService {
     return accommodation;
   }
 
-  static async update(id: string, data: any) {
+  static async update(id: string, data: UpdateAccommodationDto) {
     await this.getById(id);
 
     return prisma.accommodation.update({
