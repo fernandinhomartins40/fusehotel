@@ -1,0 +1,28 @@
+{
+  "name": "@fusehotel/shared",
+  "version": "1.0.0",
+  "description": "FuseHotel - Tipos e utilitários compartilhados entre frontend e backend",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "shared",
+    "types",
+    "typescript"
+  ],
+  "author": "FuseHotel Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.5.3"
+  },
+  "dependencies": {
+    "zod": "^3.25.64"
+  }
+}
