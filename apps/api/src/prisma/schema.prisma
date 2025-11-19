@@ -1,0 +1,407 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  CUSTOMER
+}
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  password       String
+  name           String
+  phone          String?
+  cpf            String?  @unique
+  role           UserRole @default(CUSTOMER)
+  isActive       Boolean  @default(true)
+  emailVerified  Boolean  @default(false)
+  profileImage   String?
+  lastLoginAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  refreshTokens     RefreshToken[]
+  passwordResets    PasswordReset[]
+  reservations      Reservation[]
+  reviews           Review[]
+  auditLogs         AuditLog[]
+
+  @@index([email])
+  @@index([cpf])
+  @@index([role])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+enum AccommodationType {
+  ROOM
+  SUITE
+  CHALET
+  VILLA
+  APARTMENT
+}
+
+model Accommodation {
+  id                  String            @id @default(uuid())
+  name                String
+  slug                String            @unique
+  type                AccommodationType
+  capacity            Int
+  pricePerNight       Decimal           @db.Decimal(10, 2)
+  description         String            @db.Text
+  shortDescription    String?
+  floor               Int?
+  view                String?
+  area                Decimal?          @db.Decimal(10, 2)
+  checkInTime         String            @default("14:00")
+  checkOutTime        String            @default("12:00")
+  extraBeds           Int               @default(0)
+  maxExtraBeds        Int               @default(0)
+  extraBedPrice       Decimal           @default(0) @db.Decimal(10, 2)
+  cancellationPolicy  String?           @db.Text
+  metaTitle           String?
+  metaDescription     String?
+  keywords            String[]
+  isAvailable         Boolean           @default(true)
+  isFeatured          Boolean           @default(false)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  images       AccommodationImage[]
+  amenities    AccommodationAmenity[]
+  reservations Reservation[]
+  reviews      Review[]
+
+  @@index([slug])
+  @@index([type])
+  @@index([isAvailable])
+  @@index([isFeatured])
+}
+
+model AccommodationImage {
+  id              String @id @default(uuid())
+  accommodationId String
+  url             String
+  alt             String
+  order           Int
+  isPrimary       Boolean @default(false)
+
+  accommodation Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+
+  @@index([accommodationId])
+}
+
+enum AmenityCategory {
+  BEDROOM
+  BATHROOM
+  ENTERTAINMENT
+  KITCHEN
+  OUTDOOR
+  ACCESSIBILITY
+  GENERAL
+}
+
+model Amenity {
+  id          String          @id @default(uuid())
+  name        String
+  icon        String
+  category    AmenityCategory
+  description String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  accommodations AccommodationAmenity[]
+
+  @@index([category])
+}
+
+model AccommodationAmenity {
+  accommodationId String
+  amenityId       String
+
+  accommodation Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  amenity       Amenity       @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([accommodationId, amenityId])
+  @@index([accommodationId])
+  @@index([amenityId])
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  PIX
+  BANK_TRANSFER
+  CASH
+  VOUCHER
+}
+
+model Reservation {
+  id                String            @id @default(uuid())
+  reservationCode   String            @unique
+  accommodationId   String
+  userId            String?
+  checkInDate       DateTime
+  checkOutDate      DateTime
+  numberOfNights    Int
+  numberOfGuests    Int
+  numberOfExtraBeds Int               @default(0)
+  guestName         String
+  guestEmail        String
+  guestPhone        String
+  guestCpf          String?
+  pricePerNight     Decimal           @db.Decimal(10, 2)
+  subtotal          Decimal           @db.Decimal(10, 2)
+  extraBedsCost     Decimal           @default(0) @db.Decimal(10, 2)
+  serviceFee        Decimal           @default(0) @db.Decimal(10, 2)
+  taxes             Decimal           @default(0) @db.Decimal(10, 2)
+  discount          Decimal           @default(0) @db.Decimal(10, 2)
+  totalAmount       Decimal           @db.Decimal(10, 2)
+  status            ReservationStatus @default(PENDING)
+  paymentStatus     PaymentStatus     @default(PENDING)
+  paymentMethod     PaymentMethod?
+  specialRequests   String?           @db.Text
+  cancelledAt       DateTime?
+  cancellationReason String?          @db.Text
+  checkedInAt       DateTime?
+  checkedOutAt      DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  accommodation Accommodation @relation(fields: [accommodationId], references: [id])
+  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  payments      Payment[]
+  review        Review?
+
+  @@index([reservationCode])
+  @@index([userId])
+  @@index([accommodationId])
+  @@index([status])
+  @@index([checkInDate])
+  @@index([checkOutDate])
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  reservationId   String
+  amount          Decimal       @db.Decimal(10, 2)
+  method          PaymentMethod
+  status          PaymentStatus @default(PENDING)
+  transactionId   String?       @unique
+  gateway         String?
+  gatewayResponse Json?
+  paidAt          DateTime?
+  refundedAt      DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  reservation Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([reservationId])
+  @@index([transactionId])
+}
+
+model Review {
+  id              String   @id @default(uuid())
+  reservationId   String   @unique
+  accommodationId String
+  userId          String
+  rating          Int
+  title           String
+  comment         String   @db.Text
+  isApproved      Boolean  @default(false)
+  approvedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  reservation   Reservation   @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  accommodation Accommodation @relation(fields: [accommodationId], references: [id])
+  user          User          @relation(fields: [userId], references: [id])
+
+  @@index([accommodationId])
+  @@index([isApproved])
+}
+
+enum PromotionType {
+  PACKAGE
+  DISCOUNT
+  SEASONAL
+  SPECIAL_OFFER
+  EARLY_BIRD
+  LAST_MINUTE
+}
+
+model Promotion {
+  id                 String        @id @default(uuid())
+  title              String
+  slug               String        @unique
+  shortDescription   String
+  longDescription    String        @db.Text
+  image              String?
+  startDate          DateTime
+  endDate            DateTime
+  originalPrice      Decimal?      @db.Decimal(10, 2)
+  discountedPrice    Decimal?      @db.Decimal(10, 2)
+  discountPercent    Decimal?      @db.Decimal(5, 2)
+  type               PromotionType
+  isActive           Boolean       @default(true)
+  isFeatured         Boolean       @default(false)
+  termsAndConditions String?       @db.Text
+  maxRedemptions     Int?
+  currentRedemptions Int           @default(0)
+  promotionCode      String?       @unique
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  features PromotionFeature[]
+
+  @@index([slug])
+  @@index([isActive])
+  @@index([isFeatured])
+  @@index([startDate])
+  @@index([endDate])
+}
+
+model PromotionFeature {
+  id          String @id @default(uuid())
+  promotionId String
+  feature     String
+  order       Int
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@index([promotionId])
+}
+
+enum SettingsCategory {
+  SITE_INFO
+  BRANDING
+  CONTENT
+  SEO
+  EMAIL
+  PAYMENT
+  BOOKING
+  NOTIFICATIONS
+  SOCIAL_MEDIA
+  GENERAL
+}
+
+model Settings {
+  id          String           @id @default(uuid())
+  key         String           @unique
+  value       Json
+  category    SettingsCategory
+  description String?
+  isPublic    Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([key])
+  @@index([category])
+}
+
+model NewsletterSubscription {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  name           String?
+  isActive       Boolean   @default(true)
+  userId         String?
+  subscribedAt   DateTime  @default(now())
+  unsubscribedAt DateTime?
+
+  @@index([email])
+  @@index([isActive])
+}
+
+enum ContactMessageStatus {
+  UNREAD
+  READ
+  REPLIED
+  ARCHIVED
+}
+
+model ContactMessage {
+  id        String               @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String               @db.Text
+  status    ContactMessageStatus @default(UNREAD)
+  readAt    DateTime?
+  repliedAt DateTime?
+  createdAt DateTime             @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  changes   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entity])
+  @@index([createdAt])
+}
