@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { slugSchema, timeSchema, uuidSchema } from './common.validators';
+import { timeSchema, uuidSchema } from './common.validators';
 import { AccommodationType } from '../types';
 
 /**

@@ -9,7 +9,7 @@ import { Request } from 'express';
 import path from 'path';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
-import { config } from './environment';
+import { env } from './environment';
 import sharp from 'sharp';
 
 /**
@@ -42,7 +42,7 @@ const storage = multer.memoryStorage();
  * Filtro de arquivos
  */
 const fileFilter = (
-  req: Request,
+  _req: Request,
   file: Express.Multer.File,
   cb: FileFilterCallback
 ): void => {
@@ -69,7 +69,7 @@ export const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: config.upload.maxFileSize,
+    fileSize: env.MAX_FILE_SIZE,
     files: 10,
   },
 });
@@ -106,7 +106,7 @@ export const processAndSaveImage = async (
 
   // Gera nome único para o arquivo
   const filename = `${uuidv4()}.${opts.format}`;
-  const uploadDir = path.join(config.upload.uploadPath, destinationFolder);
+  const uploadDir = path.join(env.UPLOAD_PATH, destinationFolder);
   const filepath = path.join(uploadDir, filename);
 
   // Garante que o diretório existe
@@ -219,7 +219,7 @@ export const generateImageVersions = async (
  * Deleta um arquivo
  */
 export const deleteFile = async (filepath: string): Promise<void> => {
-  const fullPath = path.join(config.upload.uploadPath, filepath);
+  const fullPath = path.join(env.UPLOAD_PATH, filepath);
   if (fs.existsSync(fullPath)) {
     fs.unlinkSync(fullPath);
   }
@@ -236,7 +236,7 @@ export const deleteMultipleFiles = async (filepaths: string[]): Promise<void> =>
  * Verifica se um arquivo existe
  */
 export const fileExists = (filepath: string): boolean => {
-  const fullPath = path.join(config.upload.uploadPath, filepath);
+  const fullPath = path.join(env.UPLOAD_PATH, filepath);
   return fs.existsSync(fullPath);
 };
 
@@ -251,7 +251,7 @@ export interface FileInfo {
 }
 
 export const getFileInfo = (filepath: string): FileInfo => {
-  const fullPath = path.join(config.upload.uploadPath, filepath);
+  const fullPath = path.join(env.UPLOAD_PATH, filepath);
 
   if (!fs.existsSync(fullPath)) {
     return { exists: false };
@@ -283,7 +283,7 @@ export const initializeUploadDirectories = (): void => {
   ];
 
   directories.forEach((dir) => {
-    ensureUploadDirectory(path.join(config.upload.uploadPath, dir));
+    ensureUploadDirectory(path.join(env.UPLOAD_PATH, dir));
   });
 
   console.log('✅ Upload directories initialized');

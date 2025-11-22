@@ -1,6 +1,7 @@
 import { prisma } from '../../config/database';
 import { hashPassword } from '../../utils/crypto';
 import { logger } from '../../utils/logger';
+import { AmenityCategory, SettingsCategory } from '@prisma/client';
 
 async function seedUsers() {
   logger.info('🌱 Seeding users...');
@@ -26,18 +27,18 @@ async function seedUsers() {
 
 async function seedAmenities() {
   logger.info('🌱 Seeding amenities...');
-  
+
   const amenities = [
-    { name: 'Wi-Fi', icon: 'wifi', category: 'GENERAL' },
-    { name: 'Ar Condicionado', icon: 'wind', category: 'BEDROOM' },
-    { name: 'TV', icon: 'tv', category: 'ENTERTAINMENT' },
-    { name: 'Frigobar', icon: 'refrigerator', category: 'KITCHEN' },
-    { name: 'Cofre', icon: 'lock', category: 'BEDROOM' },
-    { name: 'Secador de Cabelo', icon: 'wind', category: 'BATHROOM' },
-    { name: 'Roupa de Cama', icon: 'bed', category: 'BEDROOM' },
-    { name: 'Toalhas', icon: 'bath', category: 'BATHROOM' },
-    { name: 'Chuveiro', icon: 'shower', category: 'BATHROOM' },
-    { name: 'Estacionamento', icon: 'car', category: 'GENERAL' },
+    { name: 'Wi-Fi', icon: 'wifi', category: AmenityCategory.GENERAL },
+    { name: 'Ar Condicionado', icon: 'wind', category: AmenityCategory.BEDROOM },
+    { name: 'TV', icon: 'tv', category: AmenityCategory.ENTERTAINMENT },
+    { name: 'Frigobar', icon: 'refrigerator', category: AmenityCategory.KITCHEN },
+    { name: 'Cofre', icon: 'lock', category: AmenityCategory.BEDROOM },
+    { name: 'Secador de Cabelo', icon: 'wind', category: AmenityCategory.BATHROOM },
+    { name: 'Roupa de Cama', icon: 'bed', category: AmenityCategory.BEDROOM },
+    { name: 'Toalhas', icon: 'bath', category: AmenityCategory.BATHROOM },
+    { name: 'Chuveiro', icon: 'shower', category: AmenityCategory.BATHROOM },
+    { name: 'Estacionamento', icon: 'car', category: AmenityCategory.GENERAL },
   ];
 
   for (const amenity of amenities) {
@@ -58,28 +59,28 @@ async function seedSettings() {
     {
       key: 'site_name',
       value: 'FuseHotel',
-      category: 'SITE_INFO',
+      category: SettingsCategory.SITE_INFO,
       description: 'Nome do site',
       isPublic: true
     },
     {
       key: 'site_description',
       value: 'Hotel completo com as melhores acomodações',
-      category: 'SITE_INFO',
+      category: SettingsCategory.SITE_INFO,
       description: 'Descrição do site',
       isPublic: true
     },
     {
       key: 'contact_email',
       value: 'contato@fusehotel.com',
-      category: 'SITE_INFO',
+      category: SettingsCategory.SITE_INFO,
       description: 'Email de contato',
       isPublic: true
     },
     {
       key: 'contact_phone',
       value: '(11) 1234-5678',
-      category: 'SITE_INFO',
+      category: SettingsCategory.SITE_INFO,
       description: 'Telefone de contato',
       isPublic: true
     },

@@ -8,40 +8,44 @@ import { z } from 'zod';
 import { PromotionType, DiscountType } from '../types';
 
 /**
- * Schema de criação de promoção
+ * Schema base de promoção (sem validações)
  */
-export const createPromotionSchema = z
-  .object({
-    title: z.string().min(3, 'Título deve ter no mínimo 3 caracteres').max(100),
-    shortDescription: z.string().min(10, 'Descrição curta deve ter no mínimo 10 caracteres').max(200),
-    longDescription: z.string().min(50, 'Descrição longa deve ter no mínimo 50 caracteres'),
-    image: z.string().url('URL da imagem inválida').optional(),
-    startDate: z.string().datetime('Data de início inválida'),
-    endDate: z.string().datetime('Data de fim inválida'),
-    originalPrice: z.number().positive().optional(),
-    discountedPrice: z.number().positive().optional(),
-    discountPercent: z.number().min(0).max(100).optional(),
-    discountType: z.nativeEnum(DiscountType),
-    type: z.nativeEnum(PromotionType),
-    isActive: z.boolean().default(true),
-    isFeatured: z.boolean().default(false),
-    features: z.array(z.string()).optional(),
-    rules: z
-      .object({
-        minNights: z.number().int().positive().optional(),
-        maxNights: z.number().int().positive().optional(),
-        minGuests: z.number().int().positive().optional(),
-        maxGuests: z.number().int().positive().optional(),
-        applicableDays: z.array(z.number().int().min(0).max(6)).optional(),
-        blackoutDates: z.array(z.string().datetime()).optional(),
-        accommodationTypes: z.array(z.string()).optional(),
-        accommodationIds: z.array(z.string().uuid()).optional(),
-      })
-      .optional(),
-    termsAndConditions: z.string().optional(),
-    maxRedemptions: z.number().int().positive().optional(),
-    promotionCode: z.string().max(50).optional(),
-  })
+const promotionBaseSchema = z.object({
+  title: z.string().min(3, 'Título deve ter no mínimo 3 caracteres').max(100),
+  shortDescription: z.string().min(10, 'Descrição curta deve ter no mínimo 10 caracteres').max(200),
+  longDescription: z.string().min(50, 'Descrição longa deve ter no mínimo 50 caracteres'),
+  image: z.string().url('URL da imagem inválida').optional(),
+  startDate: z.string().datetime('Data de início inválida'),
+  endDate: z.string().datetime('Data de fim inválida'),
+  originalPrice: z.number().positive().optional(),
+  discountedPrice: z.number().positive().optional(),
+  discountPercent: z.number().min(0).max(100).optional(),
+  discountType: z.nativeEnum(DiscountType),
+  type: z.nativeEnum(PromotionType),
+  isActive: z.boolean().default(true),
+  isFeatured: z.boolean().default(false),
+  features: z.array(z.string()).optional(),
+  rules: z
+    .object({
+      minNights: z.number().int().positive().optional(),
+      maxNights: z.number().int().positive().optional(),
+      minGuests: z.number().int().positive().optional(),
+      maxGuests: z.number().int().positive().optional(),
+      applicableDays: z.array(z.number().int().min(0).max(6)).optional(),
+      blackoutDates: z.array(z.string().datetime()).optional(),
+      accommodationTypes: z.array(z.string()).optional(),
+      accommodationIds: z.array(z.string().uuid()).optional(),
+    })
+    .optional(),
+  termsAndConditions: z.string().optional(),
+  maxRedemptions: z.number().int().positive().optional(),
+  promotionCode: z.string().max(50).optional(),
+});
+
+/**
+ * Schema de criação de promoção (com validações)
+ */
+export const createPromotionSchema = promotionBaseSchema
   .refine(
     (data) => {
       const start = new Date(data.startDate);
@@ -81,7 +85,7 @@ export const createPromotionSchema = z
 /**
  * Schema de atualização de promoção
  */
-export const updatePromotionSchema = createPromotionSchema.partial();
+export const updatePromotionSchema = promotionBaseSchema.partial();
 
 /**
  * Schema de filtros de promoção
