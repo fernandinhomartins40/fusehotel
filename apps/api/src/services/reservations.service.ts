@@ -15,7 +15,9 @@ export class ReservationService {
 
     if (filters.userId) where.userId = filters.userId;
     if (filters.accommodationId) where.accommodationId = filters.accommodationId;
-    if (filters.status) where.status = filters.status;
+    if (filters.status) {
+      where.status = Array.isArray(filters.status) ? { in: filters.status } : filters.status;
+    }
     if (filters.reservationCode) where.reservationCode = { contains: filters.reservationCode };
 
     return prisma.reservation.findMany({
@@ -97,7 +99,7 @@ export class ReservationService {
     }
 
     const subtotal = Number(accommodation.pricePerNight) * numberOfNights;
-    const extraBedsCost = data.numberOfExtraBeds * Number(accommodation.extraBedPrice) * numberOfNights;
+    const extraBedsCost = (data.numberOfExtraBeds || 0) * Number(accommodation.extraBedPrice) * numberOfNights;
     const serviceFee = subtotal * 0.05;
     const taxes = subtotal * 0.02;
     const totalAmount = subtotal + extraBedsCost + serviceFee + taxes;
