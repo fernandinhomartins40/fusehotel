@@ -4,32 +4,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/hooks/useAuth';
+import { useLogin } from '@/hooks/useAuthMutation';
 import { toast } from 'sonner';
 import { User, Lock } from 'lucide-react';
 
 export const LoginForm: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const loginMutation = useLogin();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast.error('Por favor, preencha todos os campos');
       return;
     }
 
-    setIsLoading(true);
-    
-    // Simulate login process
-    setTimeout(() => {
-      login({ email, name: 'Cliente Demo' });
-      toast.success('Login realizado com sucesso!');
-      setIsLoading(false);
-    }, 1500);
+    loginMutation.mutate({ email, password });
   };
 
   return (
@@ -66,12 +58,12 @@ export const LoginForm: React.FC = () => {
             />
           </div>
           
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className="w-full bg-[#0466C8] hover:bg-[#0355A6]"
-            disabled={isLoading}
+            disabled={loginMutation.isPending}
           >
-            {isLoading ? (
+            {loginMutation.isPending ? (
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Entrando...
@@ -83,10 +75,6 @@ export const LoginForm: React.FC = () => {
               </div>
             )}
           </Button>
-          
-          <div className="text-center text-sm text-gray-600 mt-4">
-            <p>Demo: use qualquer e-mail e senha</p>
-          </div>
         </form>
       </CardContent>
     </Card>
