@@ -1,35 +1,62 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-
-interface User {
-  email: string;
-  name: string;
-}
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { PublicUser } from '@fusehotel/shared';
+import { apiClient } from '@/lib/api-client';
 
 interface AuthContextType {
-  user: User | null;
+  user: PublicUser | null;
   isAuthenticated: boolean;
-  login: (user: User) => void;
-  logout: () => void;
+  isLoading: boolean;
+  setUser: (user: PublicUser | null) => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<PublicUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = (userData: User) => {
-    setUser(userData);
-  };
+  useEffect(() => {
+    // Recuperar usuário do localStorage na inicialização
+    const storedUser = localStorage.getItem('user');
+    const accessToken = localStorage.getItem('accessToken');
 
-  const logout = () => {
-    setUser(null);
+    if (storedUser && accessToken) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+        localStorage.removeItem('user');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+      }
+    }
+    setIsLoading(false);
+  }, []);
+
+  const logout = async () => {
+    try {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (refreshToken) {
+        await apiClient.post('/auth/logout', { refreshToken });
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      // Limpar estado e localStorage independentemente do resultado da API
+      setUser(null);
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+    }
   };
 
   const value = {
     user,
     isAuthenticated: !!user,
-    login,
+    isLoading,
+    setUser,
     logout,
   };
 
