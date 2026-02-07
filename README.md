@@ -57,7 +57,7 @@ fusehotel/
 ```
 ┌─────────────────────────────────────────────────────┐
 │               Frontend (React + Vite)               │
-│          http://localhost:8080 (dev)                │
+│          http://localhost:3000 (dev)                │
 │          http://localhost (prod)                    │
 └──────────────────┬──────────────────────────────────┘
                    │ HTTP/HTTPS
@@ -199,7 +199,7 @@ npm run dev
 
 ```bash
 npm run dev:web
-# Acesse: http://localhost:8080
+# Acesse: http://localhost:3000
 ```
 
 ### Rodar apenas o backend
@@ -326,6 +326,124 @@ GET    /api/health/database          # Status do banco
 
 ## 📖 Documentação
 
+### Estrutura Detalhada do Backend
+
+**Controllers (apps/api/src/controllers/):**
+- `auth.controller.ts` - Autenticação e autorização
+- `users.controller.ts` - Gerenciamento de usuários
+- `accommodations.controller.ts` - Acomodações/quartos
+- `reservations.controller.ts` - Reservas
+- `promotions.controller.ts` - Promoções e pacotes
+- `settings.controller.ts` - Configurações do sistema
+- `newsletter.controller.ts` - Newsletter
+- `contact.controller.ts` - Mensagens de contato
+- `upload.controller.ts` - Upload de imagens
+
+**Services (apps/api/src/services/):**
+- Cada controller possui seu service correspondente
+- Lógica de negócio separada das rotas
+- Integração com Prisma ORM
+
+**Middlewares (apps/api/src/middlewares/):**
+- `auth.middleware.ts` - Validação JWT
+- `role.middleware.ts` - Validação de permissões (ADMIN, MANAGER)
+- `error.middleware.ts` - Tratamento de erros global
+- `rate-limiter.middleware.ts` - Rate limiting
+- `validate.middleware.ts` - Validação de dados com Zod
+
+### Estrutura Detalhada do Frontend
+
+**Componentes (apps/web/src/components/):**
+- `admin/` - Componentes do painel administrativo (13 componentes)
+- `auth/` - Componentes de autenticação
+- `customer/` - Componentes da área do cliente (4 componentes)
+- `layout/` - Header, Footer, MobileMenu
+- `sections/` - Seções da home (7 seções)
+- `ui/` - 55+ componentes ShadcnUI (Radix UI)
+
+**Páginas (apps/web/src/pages/):**
+- `Index.tsx` - Home page
+- `Accommodations.tsx`, `RoomDetail.tsx` - Acomodações
+- `Promotions.tsx`, `PromotionDetail.tsx` - Promoções
+- `CustomerArea.tsx` - Área do cliente
+- `Contact.tsx`, `AboutUs.tsx`, `Services.tsx`, `FAQ.tsx`
+- `admin/` - 5 páginas administrativas
+
+**Hooks Customizados (apps/web/src/hooks/):**
+- `useAuth.tsx` - Contexto de autenticação
+- `useAuthMutation.ts` - Mutations de autenticação
+- `useAccommodations.ts` - Queries de acomodações
+- `usePromotions.ts` - Queries de promoções
+- `useReservations.ts` - Queries de reservas
+- `use-mobile.tsx`, `use-toast.ts` - Utilitários
+
+### Modelos do Banco de Dados (Prisma)
+
+O schema Prisma define 14 modelos principais:
+
+**User** - Usuários do sistema
+- Roles: `ADMIN`, `MANAGER`, `CUSTOMER`
+- Relacionamentos: RefreshToken, PasswordReset, Reservation, Review
+
+**Accommodation** - Acomodações (quartos, suítes, chalés)
+- Types: `ROOM`, `SUITE`, `CHALET`, `VILLA`, `APARTMENT`
+- Relacionamentos: Images, Amenities, Reservations, Reviews
+
+**Amenity** - Comodidades disponíveis
+- Categories: `BEDROOM`, `BATHROOM`, `ENTERTAINMENT`, `KITCHEN`, `OUTDOOR`, `ACCESSIBILITY`, `GENERAL`
+
+**Reservation** - Reservas
+- Status: `PENDING`, `CONFIRMED`, `CHECKED_IN`, `CHECKED_OUT`, `CANCELLED`, `COMPLETED`, `NO_SHOW`
+- PaymentStatus: `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`, `REFUNDED`, `PARTIALLY_REFUNDED`
+- PaymentMethod: `CREDIT_CARD`, `DEBIT_CARD`, `PIX`, `BANK_TRANSFER`, `CASH`, `VOUCHER`
+
+**Promotion** - Promoções e pacotes
+- Types: `PACKAGE`, `DISCOUNT`, `SEASONAL`, `SPECIAL_OFFER`, `EARLY_BIRD`, `LAST_MINUTE`
+
+**Settings** - Configurações globais
+- Categories: `SITE_INFO`, `BRANDING`, `CONTENT`, `SEO`, `EMAIL`, `PAYMENT`, `BOOKING`, `NOTIFICATIONS`, `SOCIAL_MEDIA`, `GENERAL`
+
+**Outros modelos:**
+- `Payment` - Pagamentos
+- `Review` - Avaliações
+- `NewsletterSubscription` - Newsletter
+- `ContactMessage` - Mensagens de contato
+- `AuditLog` - Log de auditoria
+- `RefreshToken` - Tokens de refresh
+- `PasswordReset` - Reset de senha
+- `AccommodationImage`, `AccommodationAmenity`, `PromotionFeature` - Tabelas de relacionamento
+
+### Package @fusehotel/shared
+
+**Tipos TypeScript (packages/shared/src/types/):**
+- `common.types.ts` - BaseEntity, timestamps, pagination
+- `user.types.ts` - User, UserRole, UserProfile
+- `accommodation.types.ts` - Accommodation, AccommodationType
+- `reservation.types.ts` - Reservation, ReservationStatus, PaymentStatus
+- `promotion.types.ts` - Promotion, PromotionType
+- `settings.types.ts` - Settings, SettingsCategory
+- `auth.types.ts` - LoginRequest, RegisterRequest, TokenResponse
+- `api.types.ts` - ApiResponse, ApiError, PaginatedResponse
+
+**Validadores Zod (packages/shared/src/validators/):**
+- `auth.validators.ts` - Login, Register, ChangePassword
+- `user.validators.ts` - CreateUser, UpdateUser, UpdateProfile
+- `accommodation.validators.ts` - CreateAccommodation, UpdateAccommodation
+- `reservation.validators.ts` - CreateReservation, UpdateReservation
+- `promotion.validators.ts` - CreatePromotion, UpdatePromotion
+- `common.validators.ts` - Email, CPF, Phone, Date, Pagination
+
+**Constantes (packages/shared/src/constants/):**
+- `app.constants.ts` - USER_ROLES, ACCOMMODATION_TYPES, RESERVATION_STATUS
+- `validation.constants.ts` - Regex patterns, min/max lengths
+- `api.constants.ts` - Endpoints, HTTP status codes, headers
+
+**Utilitários (packages/shared/src/utils/):**
+- `date.utils.ts` - formatDate, parseDate, calculateDays
+- `number.utils.ts` - formatCurrency, formatPercentage
+- `string.utils.ts` - slugify, capitalize, truncate
+- `validation.utils.ts` - validateCPF, validatePhone, validateEmail
+
 ### Seeds Iniciais
 
 Ao executar `npm run prisma:seed` no backend, os seguintes dados são criados:
@@ -335,11 +453,25 @@ Ao executar `npm run prisma:seed` no backend, os seguintes dados são criados:
 - Senha: `Admin@123`
 - Role: ADMIN
 
-**Amenidades:**
-- Wi-Fi, Ar Condicionado, TV, Frigobar, Cofre, Secador, Roupa de Cama, Toalhas, Chuveiro, Estacionamento
+**Amenidades (10 comodidades):**
+- Wi-Fi Grátis (GENERAL)
+- Ar Condicionado (BEDROOM)
+- TV a Cabo (ENTERTAINMENT)
+- Frigobar (KITCHEN)
+- Cofre (BEDROOM)
+- Secador de Cabelo (BATHROOM)
+- Roupa de Cama Premium (BEDROOM)
+- Toalhas (BATHROOM)
+- Chuveiro Elétrico (BATHROOM)
+- Estacionamento Grátis (OUTDOOR)
 
-**Configurações:**
-- Nome do site, Descrição, Email de contato, Telefone
+**Configurações do Sistema:**
+- Nome do site: FuseHotel
+- Descrição: Sistema de Gestão Hoteleira
+- Email de contato: contato@fusehotel.com
+- Telefone: (11) 1234-5678
+- Logo, favicon, cores do tema
+- Configurações de SEO, email, pagamento
 
 ### Roles e Permissões
 
@@ -379,6 +511,53 @@ Todas as respostas da API seguem o padrão:
     timestamp: string
   }
 }
+```
+
+### Variáveis de Ambiente
+
+**Backend (apps/api/.env):**
+
+```bash
+# Ambiente
+NODE_ENV=development                    # development | production | test
+PORT=3001                               # Porta do servidor
+
+# Database
+DATABASE_URL=postgresql://user:pass@localhost:5432/fusehotel
+
+# JWT
+JWT_SECRET=your-super-secret-jwt-key                    # Obrigatório
+JWT_REFRESH_SECRET=your-super-secret-refresh-key        # Obrigatório
+JWT_EXPIRES_IN=15m                                       # Padrão: 15 minutos
+JWT_REFRESH_EXPIRES_IN=7d                                # Padrão: 7 dias
+
+# CORS
+FRONTEND_URL=http://localhost:3000                       # URL do frontend
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000                              # 15 minutos
+RATE_LIMIT_MAX_REQUESTS=100                              # 100 requisições
+
+# Upload
+MAX_FILE_SIZE=5242880                                    # 5MB em bytes
+UPLOAD_PATH=./uploads                                    # Pasta de uploads
+
+# Email (opcional - para produção)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=seu-email@gmail.com
+SMTP_PASS=sua-senha-app
+
+# Stripe (opcional - para pagamentos)
+STRIPE_PUBLIC_KEY=pk_test_...
+STRIPE_SECRET_KEY=sk_test_...
+```
+
+**Frontend (apps/web/.env):**
+
+```bash
+# API URL
+VITE_API_URL=http://localhost:3001/api   # URL da API backend
 ```
 
 ## 🔒 Segurança
@@ -440,9 +619,16 @@ cd apps/web
 npm run dev
 
 # Acesse:
-# - Frontend: http://localhost:8080
+# - Frontend: http://localhost:3000
 # - Backend: http://localhost:3001/api
 # - Health: http://localhost:3001/api/health
+```
+
+## 📂 Documentação Adicional
+
+- [BACKEND_IMPLEMENTATION_PLAN.md](BACKEND_IMPLEMENTATION_PLAN.md) - Plano de implementação do backend
+- [CONSOLIDATION_REPORT.md](CONSOLIDATION_REPORT.md) - Relatório de consolidação do projeto
+- [FINAL_STATUS.md](FINAL_STATUS.md) - Status final e conclusão do projeto
 ```
 
 ## 📞 Suporte

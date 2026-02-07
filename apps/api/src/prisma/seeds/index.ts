@@ -5,24 +5,125 @@ import { AmenityCategory, SettingsCategory } from '@prisma/client';
 
 async function seedUsers() {
   logger.info('🌱 Seeding users...');
-  
+
+  // Senhas para testes
   const adminPassword = await hashPassword('Admin@123');
-  
+  const managerPassword = await hashPassword('Manager@123');
+  const customerPassword = await hashPassword('Customer@123');
+
+  // Admin
   await prisma.user.upsert({
     where: { email: 'admin@fusehotel.com' },
     update: {},
     create: {
       email: 'admin@fusehotel.com',
       password: adminPassword,
-      name: 'Administrador',
+      name: 'Administrador do Sistema',
       phone: '(11) 99999-9999',
+      cpf: '111.111.111-11',
       role: 'ADMIN',
       isActive: true,
       emailVerified: true,
     }
   });
 
-  logger.info('✅ Users seeded');
+  // Manager
+  await prisma.user.upsert({
+    where: { email: 'gerente@fusehotel.com' },
+    update: {},
+    create: {
+      email: 'gerente@fusehotel.com',
+      password: managerPassword,
+      name: 'Carlos Gerente',
+      phone: '(11) 98888-8888',
+      cpf: '222.222.222-22',
+      role: 'MANAGER',
+      isActive: true,
+      emailVerified: true,
+    }
+  });
+
+  // Customer 1
+  await prisma.user.upsert({
+    where: { email: 'joao.silva@email.com' },
+    update: {},
+    create: {
+      email: 'joao.silva@email.com',
+      password: customerPassword,
+      name: 'João Silva',
+      phone: '(11) 97777-7777',
+      cpf: '333.333.333-33',
+      role: 'CUSTOMER',
+      isActive: true,
+      emailVerified: true,
+    }
+  });
+
+  // Customer 2
+  await prisma.user.upsert({
+    where: { email: 'maria.santos@email.com' },
+    update: {},
+    create: {
+      email: 'maria.santos@email.com',
+      password: customerPassword,
+      name: 'Maria Santos',
+      phone: '(11) 96666-6666',
+      cpf: '444.444.444-44',
+      role: 'CUSTOMER',
+      isActive: true,
+      emailVerified: true,
+    }
+  });
+
+  // Customer 3
+  await prisma.user.upsert({
+    where: { email: 'pedro.oliveira@email.com' },
+    update: {},
+    create: {
+      email: 'pedro.oliveira@email.com',
+      password: customerPassword,
+      name: 'Pedro Oliveira',
+      phone: '(11) 95555-5555',
+      cpf: '555.555.555-55',
+      role: 'CUSTOMER',
+      isActive: true,
+      emailVerified: true,
+    }
+  });
+
+  // Customer 4 (não verificado - para testar fluxo de verificação)
+  await prisma.user.upsert({
+    where: { email: 'ana.costa@email.com' },
+    update: {},
+    create: {
+      email: 'ana.costa@email.com',
+      password: customerPassword,
+      name: 'Ana Costa',
+      phone: '(11) 94444-4444',
+      cpf: '666.666.666-66',
+      role: 'CUSTOMER',
+      isActive: true,
+      emailVerified: false,
+    }
+  });
+
+  // Customer 5 (inativo - para testar bloqueio)
+  await prisma.user.upsert({
+    where: { email: 'lucas.ferreira@email.com' },
+    update: {},
+    create: {
+      email: 'lucas.ferreira@email.com',
+      password: customerPassword,
+      name: 'Lucas Ferreira',
+      phone: '(11) 93333-3333',
+      cpf: '777.777.777-77',
+      role: 'CUSTOMER',
+      isActive: false,
+      emailVerified: true,
+    }
+  });
+
+  logger.info('✅ Users seeded (6 total: 1 admin, 1 manager, 4 customers)');
 }
 
 async function seedAmenities() {

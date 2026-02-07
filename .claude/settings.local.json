@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(docker --version:*)",
+      "Bash([ ! -f \"c:/Projetos Cursor/fusehotel/apps/api/.env\" ])",
+      "Bash([ ! -f \"c:/Projetos Cursor/fusehotel/apps/web/.env\" ])",
+      "Bash(docker-compose up:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker rmi:*)",
+      "Bash(docker-compose build:*)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker-compose:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npm run prisma:seed:*)",
+      "Bash(ssh:*)",
+      "Bash(npm run dev:api:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run clean:*)",
+      "Bash(curl:*)",
+      "Bash(cat:*)",
+      "Bash(npm run dev:web:*)",
+      "Bash(dir /s /b \"c:\\\\Projetos Cursor\\\\fusehotel\\\\apps\\\\api\")",
+      "Bash(findstr:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

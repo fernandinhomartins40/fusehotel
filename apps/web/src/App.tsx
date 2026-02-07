@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import RoomDetail from "./pages/RoomDetail";
 import Accommodations from "./pages/Accommodations";
@@ -51,19 +52,61 @@ const App = () => {
               <Route path="/acomodacoes/:roomId" element={<RoomDetail />} />
               <Route path="/promocoes" element={<Promotions />} />
               <Route path="/promocoes/:promotionId" element={<PromotionDetail />} />
-              <Route path="/area-do-cliente" element={<CustomerArea />} />
+              <Route
+                path="/area-do-cliente"
+                element={
+                  <ProtectedRoute>
+                    <CustomerArea />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/sobre-nos" element={<AboutUs />} />
               <Route path="/politicas-de-privacidade" element={<PrivacyPolicy />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/contato" element={<Contact />} />
               <Route path="/servicos" element={<Services />} />
               
-              {/* Admin routes */}
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/accommodations" element={<AdminAccommodations />} />
-              <Route path="/admin/reservations" element={<Reservations />} />
-              <Route path="/admin/packages-promotions" element={<PackagesPromotions />} />
-              <Route path="/admin/settings" element={<Settings />} />
+              {/* Admin routes - Protected */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/accommodations"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <AdminAccommodations />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/reservations"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <Reservations />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/packages-promotions"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <PackagesPromotions />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/settings"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
