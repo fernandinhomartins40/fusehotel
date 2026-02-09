@@ -1,56 +1,107 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { RoomCard } from '../ui/RoomCard';
+import { useAccommodations } from '@/hooks/useAccommodations';
+import { useLandingSettings } from '@/hooks/useLanding';
+import { defaultAccommodationsConfig } from '@/types/landing-config';
+import { Loader2, ArrowRight } from 'lucide-react';
 
 export const AccommodationsSection: React.FC = () => {
-  const rooms = [
-    {
-      title: "Suíte Praia Dourada",
-      description: "Perfeita para quem deseja uma vista panorâmica do mar, com varanda privativa e hidromassagem.",
-      image: "/lovable-uploads/a8a98421-6373-495b-bd09-09fe23f32aed.png",
-      area: "50 m²",
-      capacity: "Até 4 Pessoas",
-      price: "R$699/diária"
-    },
-    {
-      title: "Suíte Paraíso Tropical",
-      description: "Proporciona uma imersão total na natureza, sendo cercada por palmeiras e jardins tropicais que criam uma atmosfera tranquila e relaxante.",
-      image: "/lovable-uploads/e5ecb0e1-d687-4ba0-bddc-9a5649e7c187.png",
-      area: "40 m²",
-      capacity: "Até 3 Pessoas",
-      price: "R$599/diária"
-    },
-    {
-      title: "Suíte Oceano Azul",
-      description: "Perfeita para quem deseja uma vista panorâmica do mar, com varanda privativa e hidromassagem.",
-      image: "/lovable-uploads/4861900e-89af-4479-9863-976662f284ca.png",
-      area: "30 m²",
-      capacity: "Até 2 Pessoas",
-      price: "R$499/diária"
-    }
-  ];
+  const { data: accommodations, isLoading, error } = useAccommodations({
+    isAvailable: true,
+    isFeatured: true
+  });
+
+  const { data: settingsData } = useLandingSettings('accommodations');
+  const config = settingsData?.config || defaultAccommodationsConfig;
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
 
   return (
-    <section id="accommodations" className="px-4 md:px-12 lg:px-24 py-20 bg-[#f9f9f9]">
+    <section
+      id="accommodations"
+      className="px-4 md:px-12 lg:px-24 py-20"
+      style={{ backgroundColor: config.backgroundColor || '#F9F9F9' }}
+    >
       <div className="container mx-auto">
-        <div className="text-left">
-          <h2 className="text-[#676C76] text-[13px] uppercase tracking-[2px] mb-2 font-normal">
-            CONFORTO, LUXO E SOFISTICAÇÃO
-          </h2>
-          <h3 className="text-[#1D1D1F] text-[56px] font-bold mb-4 tracking-tight leading-none uppercase">
-            ACOMODAÇÕES
-          </h3>
-          <p className="text-[#676C76] text-base leading-relaxed mb-12 max-w-2xl">
-            Nossas suites foram projetadas para oferecer o máximo de
-            conforto e privacidade, com vista para o mar.
-          </p>
+        <div className="text-left mb-12">
+          {config.subtitle && (
+            <h2
+              className="text-[13px] uppercase tracking-[2px] mb-2 font-normal"
+              style={{ color: config.subtitleColor || '#676C76' }}
+            >
+              {config.subtitle}
+            </h2>
+          )}
+          {config.title && (
+            <h3
+              className="text-[56px] font-bold mb-4 tracking-tight leading-none uppercase"
+              style={{ color: config.titleColor || '#1D1D1F' }}
+            >
+              {config.title}
+            </h3>
+          )}
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            {config.description && (
+              <p
+                className="text-base leading-relaxed max-w-2xl"
+                style={{ color: config.subtitleColor || '#676C76' }}
+              >
+                {config.description}
+              </p>
+            )}
+            <Link to="/acomodacoes">
+              <button
+                className="flex items-center gap-2.5 text-white font-medium text-sm px-8 py-4 rounded-full transition-colors duration-300 uppercase tracking-wide"
+                style={{ backgroundColor: config.buttonColor || '#0466C8' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = config.buttonHoverColor || '#0355A6'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = config.buttonColor || '#0466C8'}
+              >
+                {config.buttonText || 'VER MAIS'}
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </Link>
+          </div>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {rooms.map((room, index) => (
-            <RoomCard key={index} {...room} />
-          ))}
-        </div>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <span className="ml-3 text-lg">Carregando acomodações...</span>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-red-600 text-lg">
+              Erro ao carregar acomodações. Por favor, tente novamente mais tarde.
+            </p>
+          </div>
+        ) : accommodations && accommodations.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {accommodations.slice(0, 6).map((accommodation) => (
+              <RoomCard
+                key={accommodation.id}
+                title={accommodation.name}
+                description={accommodation.shortDescription || accommodation.description}
+                image={accommodation.images && accommodation.images.length > 0 ? accommodation.images[0].url : '/placeholder.jpg'}
+                area={accommodation.area ? `${accommodation.area} m²` : 'Área não informada'}
+                capacity={`Até ${accommodation.capacity} Pessoa${accommodation.capacity > 1 ? 's' : ''}`}
+                price={`${formatCurrency(Number(accommodation.pricePerNight))}/diária`}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-gray-600 text-lg">
+              Nenhuma acomodação em destaque no momento.
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );

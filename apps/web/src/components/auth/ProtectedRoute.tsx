@@ -31,8 +31,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Se allowedRoles foi especificado, verificar se o usuário tem permissão
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    // Usuário autenticado mas sem permissão - redirecionar para área do cliente
-    return <Navigate to="/area-do-cliente" replace />;
+    // Usuário autenticado mas sem permissão - redirecionar para home
+    return <Navigate to="/" replace />;
   }
 
   // Usuário autenticado e com permissão adequada

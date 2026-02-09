@@ -3,29 +3,37 @@ import { apiClient } from '@/lib/api-client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
-export function useLogin() {
+export function useLogin(redirectTo?: string) {
   const { toast } = useToast();
   const { setUser } = useAuth();
 
   return useMutation({
-    mutationFn: async (credentials: { email: string; password: string }) => {
+    mutationFn: async (credentials: { email: string; password: string; rememberMe?: boolean }) => {
       const { data } = await apiClient.post('/auth/login', credentials);
       return data;
     },
     onSuccess: (data) => {
-      localStorage.setItem('accessToken', data.data.tokens.accessToken);
-      localStorage.setItem('refreshToken', data.data.tokens.refreshToken);
-      localStorage.setItem('user', JSON.stringify(data.data.user));
+      // Tokens agora são armazenados em httpOnly cookies automaticamente pelo backend
+      // Apenas salvar dados do usuário no localStorage para acesso local
+      const user = data.data.user;
+      localStorage.setItem('user', JSON.stringify(user));
 
       // Atualizar contexto de autenticação
-      setUser(data.data.user);
+      setUser(user);
 
       toast({
         title: 'Login realizado!',
-        description: `Bem-vindo, ${data.data.user.name}!`,
+        description: `Bem-vindo, ${user.name}!`,
       });
 
-      window.location.href = '/';
+      // Redirecionar baseado no role do usuário ou redirectTo fornecido
+      if (redirectTo) {
+        window.location.href = redirectTo;
+      } else if (user.role === 'ADMIN' || user.role === 'MANAGER') {
+        window.location.href = '/admin';
+      } else {
+        window.location.href = '/area-do-cliente';
+      }
     },
     onError: (error: any) => {
       toast({
@@ -55,12 +63,13 @@ export function useRegister() {
       return response;
     },
     onSuccess: (data) => {
-      localStorage.setItem('accessToken', data.data.tokens.accessToken);
-      localStorage.setItem('refreshToken', data.data.tokens.refreshToken);
-      localStorage.setItem('user', JSON.stringify(data.data.user));
+      // Tokens agora são armazenados em httpOnly cookies automaticamente pelo backend
+      // Apenas salvar dados do usuário no localStorage para acesso local
+      const user = data.data.user;
+      localStorage.setItem('user', JSON.stringify(user));
 
       // Atualizar contexto de autenticação
-      setUser(data.data.user);
+      setUser(user);
 
       toast({
         title: 'Cadastro realizado!',

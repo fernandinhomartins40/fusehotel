@@ -1,33 +1,32 @@
 import { Router } from 'express';
 import { UploadController } from '../controllers/upload.controller';
+import { FileUploadService } from '../services/file-upload.service';
 import { authenticate } from '../middlewares/auth.middleware';
-import multer from 'multer';
-import path from 'path';
-
-const storage = multer.diskStorage({
-  destination: './uploads/',
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|webp|gif/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (mimetype && extname) {
-      return cb(null, true);
-    }
-    cb(new Error('Apenas imagens são permitidas'));
-  }
-});
 
 const router = Router();
 
-router.post('/image', authenticate, upload.single('image'), UploadController.uploadImage);
+router.use(authenticate);
+
+router.post(
+  '/single/:category',
+  (req, res, next) => {
+    const upload = FileUploadService.getMulterConfig(req.params.category);
+    upload.single('file')(req, res, next);
+  },
+  UploadController.uploadSingle
+);
+
+router.post(
+  '/multiple/:category',
+  (req, res, next) => {
+    const upload = FileUploadService.getMulterConfig(req.params.category);
+    upload.array('files', 10)(req, res, next);
+  },
+  UploadController.uploadMultiple
+);
+
+router.get('/', UploadController.listFiles);
+router.get('/:id', UploadController.getFile);
+router.delete('/:id', UploadController.deleteFile);
 
 export default router;

@@ -59,4 +59,23 @@ export class ReservationController {
       next(error);
     }
   }
+
+  static async updateStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { status } = req.body;
+      const reservation = await ReservationService.updateStatus(req.params.id, status);
+      return sendSuccess(res, reservation, 'Status da reserva atualizado com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const reservation = await ReservationService.update(req.params.id, req.body);
+      return sendSuccess(res, reservation, 'Reserva atualizada com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
 }

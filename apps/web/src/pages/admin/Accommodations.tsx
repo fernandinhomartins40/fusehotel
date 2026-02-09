@@ -1,156 +1,83 @@
-
 import React, { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash, Star, Eye } from 'lucide-react';
+import { Plus, Edit, Trash, Star, Eye, Loader2 } from 'lucide-react';
 import { AccommodationForm } from '@/components/admin/AccommodationForm';
-import { toast } from 'sonner';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Accommodation } from '@/types/accommodation';
-import { AccommodationFormData } from '@/lib/validations/accommodation';
+import { Accommodation, AccommodationFormData } from '@/types/accommodation';
+import { useAccommodations } from '@/hooks/useAccommodations';
+import {
+  useCreateAccommodation,
+  useUpdateAccommodation,
+  useDeleteAccommodation
+} from '@/hooks/useAccommodationMutations';
 
-// Mock data atualizado
-const initialAccommodations: Accommodation[] = [
-  {
-    id: '1',
-    name: 'Chalé de Luxo',
-    type: 'Chalé',
-    capacity: 4,
-    price: 450,
-    description: 'Chalé espaçoso com vista para o lago',
-    shortDescription: 'Chalé espaçoso com vista para o lago',
-    images: ['/lovable-uploads/1e861110-a179-4f1f-aa1a-caeb85c10609.png'],
-    amenities: ['Wi-Fi gratuito', 'Ar condicionado', 'Vista para o mar'],
-    isAvailable: true,
-    featured: true,
-    checkInTime: '15:00',
-    checkOutTime: '11:00',
-    location: {
-      floor: 'Térreo',
-      view: 'Lago',
-      area: 45
-    }
-  },
-  {
-    id: '2',
-    name: 'Suite Master',
-    type: 'Suite',
-    capacity: 2,
-    price: 320,
-    description: 'Suite com varanda e jacuzzi privativa',
-    shortDescription: 'Suite com varanda e jacuzzi',
-    images: ['/lovable-uploads/2b637749-b3cc-4943-8c7b-195634e4be2d.png'],
-    amenities: ['Wi-Fi gratuito', 'Banheira', 'Varanda'],
-    isAvailable: true,
-    featured: false,
-    checkInTime: '15:00',
-    checkOutTime: '11:00',
-    location: {
-      floor: '1º andar',
-      view: 'Jardim',
-      area: 32
-    }
-  },
-  {
-    id: '3',
-    name: 'Chalé Família',
-    type: 'Chalé',
-    capacity: 6,
-    price: 680,
-    description: 'Espaçoso chalé ideal para famílias',
-    shortDescription: 'Espaçoso chalé ideal para famílias',
-    images: ['/lovable-uploads/4861900e-89af-4479-9863-976662f284ca.png'],
-    amenities: ['Wi-Fi gratuito', 'Ar condicionado', 'Cozinha completa'],
-    isAvailable: false,
-    featured: true,
-    checkInTime: '15:00',
-    checkOutTime: '11:00',
-    location: {
-      floor: 'Térreo',
-      view: 'Montanha',
-      area: 65
-    }
-  },
-];
+const accommodationTypeLabels: Record<string, string> = {
+  ROOM: 'Quarto',
+  SUITE: 'Suíte',
+  CHALET: 'Chalé',
+  VILLA: 'Vila',
+  APARTMENT: 'Apartamento',
+};
 
 export function Accommodations() {
-  const [accommodations, setAccommodations] = useState<Accommodation[]>(initialAccommodations);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentAccommodation, setCurrentAccommodation] = useState<Accommodation | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const { data: accommodations, isLoading, error } = useAccommodations();
+  const createMutation = useCreateAccommodation();
+  const updateMutation = useUpdateAccommodation();
+  const deleteMutation = useDeleteAccommodation();
 
   const handleAddEditAccommodation = (data: AccommodationFormData) => {
     if (currentAccommodation?.id) {
       // Edit existing accommodation
-      const updatedAccommodation: Accommodation = {
-        id: currentAccommodation.id,
-        name: data.name,
-        type: data.type,
-        capacity: data.capacity,
-        price: data.price,
-        description: data.description,
-        shortDescription: data.shortDescription,
-        images: data.images,
-        amenities: data.amenities,
-        location: data.location,
-        seo: data.seo,
-        isAvailable: data.isAvailable,
-        featured: data.featured,
-        checkInTime: data.checkInTime,
-        checkOutTime: data.checkOutTime,
-        cancellationPolicy: data.cancellationPolicy,
-        extraBeds: data.extraBeds,
-        maxExtraBeds: data.maxExtraBeds,
-        extraBedPrice: data.extraBedPrice,
-      };
-      setAccommodations(accommodations.map(acc => 
-        acc.id === currentAccommodation.id ? updatedAccommodation : acc
-      ));
-      toast.success("Acomodação atualizada com sucesso!");
+      updateMutation.mutate(
+        { id: currentAccommodation.id, data },
+        {
+          onSuccess: () => {
+            setIsDialogOpen(false);
+            setCurrentAccommodation(null);
+          }
+        }
+      );
     } else {
       // Add new accommodation
-      const newAccommodation: Accommodation = {
-        id: String(accommodations.length + 1),
-        name: data.name,
-        type: data.type,
-        capacity: data.capacity,
-        price: data.price,
-        description: data.description,
-        shortDescription: data.shortDescription,
-        images: data.images,
-        amenities: data.amenities,
-        location: data.location,
-        seo: data.seo,
-        isAvailable: data.isAvailable,
-        featured: data.featured,
-        checkInTime: data.checkInTime,
-        checkOutTime: data.checkOutTime,
-        cancellationPolicy: data.cancellationPolicy,
-        extraBeds: data.extraBeds,
-        maxExtraBeds: data.maxExtraBeds,
-        extraBedPrice: data.extraBedPrice,
-      };
-      setAccommodations([...accommodations, newAccommodation]);
-      toast.success("Nova acomodação adicionada com sucesso!");
+      createMutation.mutate(data, {
+        onSuccess: () => {
+          setIsDialogOpen(false);
+          setCurrentAccommodation(null);
+        }
+      });
     }
-    setIsDialogOpen(false);
-    setCurrentAccommodation(null);
   };
 
   const handleEditClick = (accommodation: Accommodation) => {
@@ -164,8 +91,17 @@ export function Accommodations() {
   };
 
   const handleDeleteClick = (id: string) => {
-    setAccommodations(accommodations.filter(acc => acc.id !== id));
-    toast.success("Acomodação removida com sucesso!");
+    setDeleteId(id);
+  };
+
+  const confirmDelete = () => {
+    if (deleteId) {
+      deleteMutation.mutate(deleteId, {
+        onSuccess: () => {
+          setDeleteId(null);
+        }
+      });
+    }
   };
 
   const formatCurrency = (value: number) => {
@@ -175,6 +111,24 @@ export function Accommodations() {
     }).format(value);
   };
 
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center p-12 text-center">
+          <div className="text-red-600 mb-4">
+            <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold mb-2">Erro ao carregar acomodações</h2>
+          <p className="text-gray-600">
+            {(error as any)?.response?.data?.message || 'Ocorreu um erro ao carregar as acomodações'}
+          </p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       <div className="flex flex-col gap-6 p-6">
@@ -182,7 +136,7 @@ export function Accommodations() {
           <div>
             <h1 className="text-3xl font-bold">Gerenciar Acomodações</h1>
             <p className="text-gray-600 mt-1">
-              {accommodations.length} acomodações cadastradas
+              {isLoading ? 'Carregando...' : `${accommodations?.length || 0} acomodações cadastradas`}
             </p>
           </div>
           <Button onClick={handleAddClick} size="lg">
@@ -190,107 +144,135 @@ export function Accommodations() {
           </Button>
         </div>
 
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Imagem</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Capacidade</TableHead>
-                  <TableHead>Preço</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Comodidades</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {accommodations.map((accommodation) => (
-                  <TableRow key={accommodation.id}>
-                    <TableCell>
-                      <div className="w-20 h-12 relative overflow-hidden rounded">
-                        <AspectRatio ratio={16/9} className="bg-muted">
-                          <img 
-                            src={accommodation.images[0]} 
-                            alt={accommodation.name} 
-                            className="object-cover w-full h-full"
-                          />
-                        </AspectRatio>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="font-medium flex items-center gap-2">
-                          {accommodation.name}
-                          {accommodation.featured && (
-                            <Star className="h-4 w-4 text-yellow-500 fill-current" />
+        {isLoading ? (
+          <Card>
+            <CardContent className="flex items-center justify-center p-12">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <span className="ml-3 text-lg">Carregando acomodações...</span>
+            </CardContent>
+          </Card>
+        ) : accommodations && accommodations.length > 0 ? (
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Imagem</TableHead>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Capacidade</TableHead>
+                    <TableHead>Preço</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Comodidades</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {accommodations.map((accommodation) => (
+                    <TableRow key={accommodation.id}>
+                      <TableCell>
+                        <div className="w-20 h-12 relative overflow-hidden rounded">
+                          <AspectRatio ratio={16/9} className="bg-muted">
+                            {accommodation.images && accommodation.images.length > 0 ? (
+                              <img
+                                src={accommodation.images[0].url}
+                                alt={accommodation.images[0].alt}
+                                className="object-cover w-full h-full"
+                              />
+                            ) : (
+                              <div className="flex items-center justify-center w-full h-full bg-gray-200">
+                                <span className="text-xs text-gray-400">Sem imagem</span>
+                              </div>
+                            )}
+                          </AspectRatio>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="font-medium flex items-center gap-2">
+                            {accommodation.name}
+                            {accommodation.isFeatured && (
+                              <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {accommodation.shortDescription || 'Sem descrição'}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{accommodationTypeLabels[accommodation.type] || accommodation.type}</TableCell>
+                      <TableCell>{accommodation.capacity} pessoas</TableCell>
+                      <TableCell className="font-medium">
+                        {formatCurrency(Number(accommodation.pricePerNight))}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={accommodation.isAvailable ? "default" : "secondary"}>
+                          {accommodation.isAvailable ? 'Disponível' : 'Indisponível'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1 max-w-32">
+                          {accommodation.amenities && accommodation.amenities.length > 0 ? (
+                            <>
+                              {accommodation.amenities.slice(0, 2).map((item, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {item.amenity.name}
+                                </Badge>
+                              ))}
+                              {accommodation.amenities.length > 2 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{accommodation.amenities.length - 2}
+                                </Badge>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-xs text-gray-400">Nenhuma</span>
                           )}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {accommodation.shortDescription}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditClick(accommodation)}
+                            title="Editar"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteClick(accommodation.id)}
+                            className="text-red-600 hover:text-red-700"
+                            title="Excluir"
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{accommodation.type}</TableCell>
-                    <TableCell>{accommodation.capacity} pessoas</TableCell>
-                    <TableCell className="font-medium">
-                      {formatCurrency(accommodation.price)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={accommodation.isAvailable ? "default" : "secondary"}>
-                        {accommodation.isAvailable ? 'Disponível' : 'Indisponível'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1 max-w-32">
-                        {accommodation.amenities.slice(0, 2).map((amenity, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {amenity}
-                          </Badge>
-                        ))}
-                        {accommodation.amenities.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{accommodation.amenities.length - 2}
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => {/* View details */}}
-                          title="Ver detalhes"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleEditClick(accommodation)}
-                          title="Editar"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleDeleteClick(accommodation.id!)}
-                          className="text-red-600 hover:text-red-700"
-                          title="Excluir"
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center p-12 text-center">
+              <div className="text-gray-400 mb-4">
+                <svg className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Nenhuma acomodação cadastrada</h3>
+              <p className="text-gray-600 mb-4">Comece adicionando sua primeira acomodação</p>
+              <Button onClick={handleAddClick}>
+                <Plus className="mr-2 h-4 w-4" /> Adicionar Primeira Acomodação
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -299,18 +281,40 @@ export function Accommodations() {
                 {currentAccommodation ? 'Editar Acomodação' : 'Adicionar Acomodação'}
               </DialogTitle>
               <DialogDescription>
-                {currentAccommodation 
+                {currentAccommodation
                   ? 'Modifique os detalhes da acomodação abaixo.'
                   : 'Preencha os detalhes da nova acomodação.'
                 }
               </DialogDescription>
             </DialogHeader>
-            <AccommodationForm 
+            <AccommodationForm
               accommodation={currentAccommodation}
               onSubmit={handleAddEditAccommodation}
+              isLoading={createMutation.isPending || updateMutation.isPending}
             />
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação não pode ser desfeita. A acomodação será permanentemente removida do sistema.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDelete}
+                className="bg-red-600 hover:bg-red-700"
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? 'Removendo...' : 'Remover'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminLayout>
   );

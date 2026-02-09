@@ -5,12 +5,12 @@ Sistema completo de gestão hoteleira com arquitetura monorepo, desenvolvido com
 ## 📋 Índice
 
 - [Visão Geral](#visão-geral)
+- [🚀 Quick Start](#-quick-start)
 - [Arquitetura](#arquitetura)
 - [Tecnologias](#tecnologias)
-- [Instalação](#instalação)
-- [Desenvolvimento](#desenvolvimento)
+- [🐳 Desenvolvimento com Docker](#-desenvolvimento-com-docker)
+- [Desenvolvimento Local](#desenvolvimento-local)
 - [Build e Deploy](#build-e-deploy)
-- [API Endpoints](#api-endpoints)
 - [Documentação](#documentação)
 
 ## 🎯 Visão Geral
@@ -30,9 +30,33 @@ FuseHotel é uma plataforma completa para gerenciamento de hotel, incluindo:
 - ✅ Área do cliente com histórico de reservas
 - ✅ Painel administrativo completo
 - ✅ Sistema de autenticação JWT com refresh token
+- ✅ **Proteção de rotas por roles (ADMIN, MANAGER, CUSTOMER)**
 - ✅ Newsletter e contato
 - ✅ Upload de imagens
 - ✅ SEO otimizado
+
+## 🚀 Quick Start
+
+**Quer começar rapidamente?** Veja o [QUICK_START.md](./QUICK_START.md)!
+
+### Início Rápido com Docker (5 minutos)
+
+```bash
+# 1. Iniciar ambiente
+docker-compose -f docker-compose.dev.yml up --build
+
+# 2. Em outro terminal, executar migrations e seeds
+docker-compose -f docker-compose.dev.yml exec api npx prisma migrate dev
+docker-compose -f docker-compose.dev.yml exec api npm run prisma:seed
+
+# 3. Acessar a aplicação
+# 🎉 Abra: http://localhost:3090
+```
+
+**Login de teste:**
+- **Admin**: admin@fusehotel.com / Admin@123
+- **Manager**: gerente@fusehotel.com / Manager@123
+- **Cliente**: joao.silva@email.com / Customer@123
 
 ## 🏗️ Arquitetura
 
@@ -118,15 +142,81 @@ fusehotel/
 - **Nginx 1.25** - Reverse proxy
 - **npm Workspaces** - Gerenciamento monorepo
 
-## 📦 Instalação
+## 🐳 Desenvolvimento com Docker
+
+**🎯 Recomendado para desenvolvimento local que simula produção!**
+
+### Por que usar Docker?
+
+✅ **Porta única (3090)**: Elimina problemas de CORS
+✅ **Ambiente idêntico**: Dev = Produção
+✅ **Nginx incluído**: Reverse proxy configurado
+✅ **Isolamento**: Containers não interferem no sistema
+✅ **Setup rápido**: Tudo configurado e pronto
+
+### Pré-requisitos
+
+- Docker Desktop instalado e rodando
+- Docker Compose v2+
+
+### Iniciar Ambiente Completo
+
+```bash
+# 1. Iniciar todos os containers (primeira vez pode demorar ~5min)
+docker-compose -f docker-compose.dev.yml up --build
+
+# 2. Em outro terminal, executar migrations
+docker-compose -f docker-compose.dev.yml exec api npx prisma migrate dev
+
+# 3. Executar seeds (usuários de teste)
+docker-compose -f docker-compose.dev.yml exec api npm run prisma:seed
+
+# 4. Acessar aplicação
+# 🎉 http://localhost:3090
+```
+
+### Containers Incluídos
+
+| Container | Descrição | Porta Interna |
+|-----------|-----------|---------------|
+| `nginx` | Reverse Proxy | 80 (→ 3090) |
+| `web` | Frontend React | 80 |
+| `api` | Backend Node.js | 3001 |
+| `postgres` | PostgreSQL 16 | 5432 |
+
+### Comandos Úteis
+
+```bash
+# Ver logs
+docker-compose -f docker-compose.dev.yml logs -f
+
+# Parar ambiente
+docker-compose -f docker-compose.dev.yml down
+
+# Rebuild após mudanças
+docker-compose -f docker-compose.dev.yml up --build
+
+# Acessar shell do container
+docker-compose -f docker-compose.dev.yml exec api sh
+docker-compose -f docker-compose.dev.yml exec web sh
+
+# Executar Prisma Studio
+docker-compose -f docker-compose.dev.yml exec api npx prisma studio
+```
+
+**📖 Documentação completa:** [DOCKER_SETUP.md](./DOCKER_SETUP.md)
+
+---
+
+## 💻 Desenvolvimento Local
 
 ### Pré-requisitos
 
 - Node.js 20 ou superior
 - npm 10 ou superior
-- Docker e Docker Compose (opcional, para rodar com containers)
+- PostgreSQL 16 rodando em localhost:5432
 
-### Instalação Local (Desenvolvimento)
+### Instalação Local (Sem Docker)
 
 ```bash
 # 1. Clone o repositório
@@ -160,53 +250,49 @@ npm run prisma:seed
 cd ../..
 ```
 
-### Instalação com Docker (Produção)
+### Configurar .env para desenvolvimento local
 
 ```bash
-# 1. Clone o repositório
-git clone https://github.com/fernandinhomartins40/fusehotel.git
-cd fusehotel
+# apps/api/.env
+FRONTEND_URL=http://localhost:5173
+DATABASE_URL=postgresql://fusehotel_user:fusehotel_password@localhost:5432/fusehotel_db
 
-# 2. Configure as variáveis de ambiente
-cp apps/api/.env.example apps/api/.env
-# Edite apps/api/.env com suas configurações de produção
-
-# 3. Build e inicie os containers
-cd infra/docker
-docker-compose up -d
-
-# 4. Execute as migrations
-docker-compose exec api npx prisma migrate deploy
-
-# 5. Execute os seeds
-docker-compose exec api npm run prisma:seed
-
-# Acesse:
-# - Frontend: http://localhost
-# - Backend API: http://localhost/api
-# - Health Check: http://localhost/api/health
+# apps/web/.env
+VITE_API_URL=http://localhost:3001/api
 ```
 
-## 🛠️ Desenvolvimento
-
-### Rodar todos os projetos
+### Rodar a aplicação
 
 ```bash
+# Terminal 1 - Backend
+cd apps/api
+npm run dev
+
+# Terminal 2 - Frontend
+cd apps/web
 npm run dev
 ```
 
-### Rodar apenas o frontend
+**Acesse:**
+- Frontend: http://localhost:5173
+- Backend: http://localhost:3001/api
+
+## 🛠️ Scripts Disponíveis
+
+### Desenvolvimento
 
 ```bash
-npm run dev:web
-# Acesse: http://localhost:3000
+npm run dev              # Inicia frontend + backend
+npm run dev:web          # Apenas frontend
+npm run dev:api          # Apenas backend
 ```
 
-### Rodar apenas o backend
+### Build
 
 ```bash
-npm run dev:api
-# Acesse: http://localhost:3001/api
+npm run build            # Build completo
+npm run build:web        # Build frontend
+npm run build:api        # Build backend
 ```
 
 ### Scripts Disponíveis

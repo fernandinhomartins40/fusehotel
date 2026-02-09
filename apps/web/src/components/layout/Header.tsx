@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import { User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { MobileMenu } from './MobileMenu';
+import { useLandingSettings } from '@/hooks/useLanding';
 
 export const Header: React.FC = () => {
+  const { data: headerConfig } = useLandingSettings('header');
+
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
@@ -13,57 +16,112 @@ export const Header: React.FC = () => {
     }
   };
 
+  // Default values
+  const logo = headerConfig?.config?.logo || '/lovable-uploads/91e13e81-bbd9-4aab-b810-d81bb336ecb8.png';
+  const backgroundColor = headerConfig?.config?.backgroundColor || '#FFFFFF';
+  const textColor = headerConfig?.config?.textColor || '#000000';
+  const hoverColor = headerConfig?.config?.hoverColor || '#0466C8';
+  const buttonText = headerConfig?.config?.buttonText || 'Área do cliente';
+  const buttonBackground = headerConfig?.config?.buttonBackground || '#0466C8';
+  const buttonHover = headerConfig?.config?.buttonHover || '#0354A8';
+  const buttonTextColor = headerConfig?.config?.buttonTextColor || '#FFFFFF';
+
   return (
-    <header className="flex justify-between items-center bg-white px-4 md:px-12 lg:px-24 py-8 border-b border-gray-200">
+    <header
+      className="flex justify-between items-center px-4 md:px-12 lg:px-24 py-8 border-b border-gray-200"
+      style={{ backgroundColor }}
+    >
       <div className="w-[210px]">
         <Link to="/">
-          <img 
-            src="/lovable-uploads/91e13e81-bbd9-4aab-b810-d81bb336ecb8.png" 
-            alt="Águas Claras" 
+          <img
+            src={logo}
+            alt="Logo"
             className="h-12"
           />
         </Link>
       </div>
-      
+
       <nav className="hidden md:flex items-center gap-8">
-        <button 
-          onClick={() => scrollToSection('accommodations')} 
-          className="text-gray-600 text-base hover:text-[#0466C8] cursor-pointer"
+        <button
+          onClick={() => scrollToSection('accommodations')}
+          className="text-base cursor-pointer transition-colors"
+          style={{
+            color: textColor,
+            ['--hover-color' as any]: hoverColor
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.color = hoverColor}
+          onMouseLeave={(e) => e.currentTarget.style.color = textColor}
         >
           Acomodações
         </button>
-        <Link to="/servicos" className="text-gray-600 text-base hover:text-[#0466C8]">
+        <Link
+          to="/servicos"
+          className="text-base transition-colors"
+          style={{ color: textColor }}
+          onMouseEnter={(e) => e.currentTarget.style.color = hoverColor}
+          onMouseLeave={(e) => e.currentTarget.style.color = textColor}
+        >
           Serviços
         </Link>
-        <Link to="/sobre-nos" className="text-gray-600 text-base hover:text-[#0466C8]">
+        <Link
+          to="/sobre-nos"
+          className="text-base transition-colors"
+          style={{ color: textColor }}
+          onMouseEnter={(e) => e.currentTarget.style.color = hoverColor}
+          onMouseLeave={(e) => e.currentTarget.style.color = textColor}
+        >
           Sobre Nós
         </Link>
-        <Link to="/faq" className="text-gray-600 text-base hover:text-[#0466C8]">
+        <Link
+          to="/faq"
+          className="text-base transition-colors"
+          style={{ color: textColor }}
+          onMouseEnter={(e) => e.currentTarget.style.color = hoverColor}
+          onMouseLeave={(e) => e.currentTarget.style.color = textColor}
+        >
           FAQ
         </Link>
-        <Link to="/contato" className="text-gray-600 text-base hover:text-[#0466C8]">
+        <Link
+          to="/contato"
+          className="text-base transition-colors"
+          style={{ color: textColor }}
+          onMouseEnter={(e) => e.currentTarget.style.color = hoverColor}
+          onMouseLeave={(e) => e.currentTarget.style.color = textColor}
+        >
           Contato
         </Link>
       </nav>
 
       <div className="flex items-center gap-4">
         <Link to="/area-do-cliente">
-          <Button 
-            className="hidden md:flex bg-[#0466C8] hover:bg-[#0355A6] text-white rounded-full px-6 py-2 items-center gap-2"
+          <Button
+            className="hidden md:flex rounded-full px-6 py-2 items-center gap-2 transition-colors"
+            style={{
+              backgroundColor: buttonBackground,
+              color: buttonTextColor
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = buttonHover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = buttonBackground}
           >
             <User size={18} />
-            <span className="uppercase font-medium">Área do cliente</span>
+            <span className="uppercase font-medium">{buttonText}</span>
           </Button>
         </Link>
-        
+
         <Link to="/area-do-cliente">
-          <Button 
-            className="md:hidden bg-[#0466C8] hover:bg-[#0355A6] text-white rounded-full p-2"
+          <Button
+            className="md:hidden rounded-full p-2 transition-colors"
+            style={{
+              backgroundColor: buttonBackground,
+              color: buttonTextColor
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = buttonHover}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = buttonBackground}
           >
             <User size={18} />
           </Button>
         </Link>
-        
+
         <MobileMenu />
       </div>
     </header>

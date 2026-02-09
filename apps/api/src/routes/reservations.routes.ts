@@ -13,5 +13,7 @@ router.get('/:id', authenticate, ReservationController.getById);
 router.get('/code/:code', ReservationController.getByCode);
 router.post('/', validateBody(createReservationSchema), ReservationController.create);
 router.post('/:id/cancel', authenticate, validateBody(cancelReservationSchema), ReservationController.cancel);
+router.patch('/:id/status', authenticate, requireRole(['ADMIN', 'MANAGER']), ReservationController.updateStatus);
+router.put('/:id', authenticate, requireRole(['ADMIN', 'MANAGER']), ReservationController.update);
 
 export default router;

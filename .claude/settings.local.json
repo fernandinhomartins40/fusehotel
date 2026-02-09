@@ -27,7 +27,14 @@
       "Bash(dir /s /b \"c:\\\\Projetos Cursor\\\\fusehotel\\\\apps\\\\api\")",
       "Bash(findstr:*)",
       "Bash(npm run typecheck:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(tee:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker cp:*)",
+      "Bash(docker restart:*)",
+      "Bash(python:*)",
+      "Bash(cd:*)"
     ]
   }
 }

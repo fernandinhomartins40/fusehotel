@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Calendar, Home, Menu, Settings, Tag } from 'lucide-react';
+import { LayoutDashboard, Calendar, Home, Menu, Settings, Tag, Users, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sidebar,
@@ -83,7 +83,25 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                  
+
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={isActive('/admin/customers')} className="data-[active=true]:bg-cyan-50 data-[active=true]:text-cyan-700 data-[active=true]:border-r-2 data-[active=true]:border-cyan-600">
+                      <Link to="/admin/customers">
+                        <Users />
+                        <span>Clientes</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={isActive('/admin/landing-customizer')} className="data-[active=true]:bg-pink-50 data-[active=true]:text-pink-700 data-[active=true]:border-r-2 data-[active=true]:border-pink-600">
+                      <Link to="/admin/landing-customizer">
+                        <Palette />
+                        <span>Landing Customizer</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={isActive('/admin/settings')} className="data-[active=true]:bg-gray-50 data-[active=true]:text-gray-700 data-[active=true]:border-r-2 data-[active=true]:border-gray-600">
                       <Link to="/admin/settings">

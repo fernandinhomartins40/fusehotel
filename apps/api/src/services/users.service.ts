@@ -10,9 +10,11 @@ export class UserService {
         email: true,
         name: true,
         phone: true,
+        whatsapp: true,
         cpf: true,
         role: true,
         isActive: true,
+        isProvisional: true,
         emailVerified: true,
         profileImage: true,
         lastLoginAt: true,
@@ -49,19 +51,36 @@ export class UserService {
   }
 
   static async update(id: string, data: any) {
+    const updateData: any = {};
+
+    // Campos que sempre podem ser atualizados
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.profileImage !== undefined) updateData.profileImage = data.profileImage;
+
+    // Campos especiais (completar cadastro de provisórios)
+    if (data.cpf !== undefined) updateData.cpf = data.cpf;
+    if (data.whatsapp !== undefined) updateData.whatsapp = data.whatsapp.replace(/\D/g, '');
+    if (data.email !== undefined) {
+      // Se estava com email provisório e está atualizando, marcar como não provisório
+      updateData.email = data.email;
+      if (data.email.includes('@') && !data.email.includes('@provisional.fusehotel.com')) {
+        updateData.isProvisional = false;
+      }
+    }
+
     const user = await prisma.user.update({
       where: { id },
-      data: {
-        name: data.name,
-        phone: data.phone,
-        profileImage: data.profileImage,
-      },
+      data: updateData,
       select: {
         id: true,
         email: true,
         name: true,
         phone: true,
+        whatsapp: true,
+        cpf: true,
         role: true,
+        isProvisional: true,
         profileImage: true,
       }
     });

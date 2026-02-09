@@ -22,9 +22,11 @@ model User {
   name           String
   phone          String?
   cpf            String?  @unique
+  whatsapp       String?  @unique
   role           UserRole @default(CUSTOMER)
   isActive       Boolean  @default(true)
   emailVerified  Boolean  @default(false)
+  isProvisional  Boolean  @default(false)
   profileImage   String?
   lastLoginAt    DateTime?
   createdAt      DateTime @default(now())
@@ -38,6 +40,7 @@ model User {
 
   @@index([email])
   @@index([cpf])
+  @@index([whatsapp])
   @@index([role])
 
 }
@@ -202,8 +205,9 @@ model Reservation {
   numberOfGuests    Int
   numberOfExtraBeds Int               @default(0)
   guestName         String
-  guestEmail        String
-  guestPhone        String
+  guestEmail        String?
+  guestPhone        String?
+  guestWhatsApp     String
   guestCpf          String?
   pricePerNight     Decimal           @db.Decimal(10, 2)
   subtotal          Decimal           @db.Decimal(10, 2)
@@ -342,17 +346,28 @@ enum SettingsCategory {
 }
 
 model Settings {
-  id          String           @id @default(uuid())
-  key         String           @unique
-  value       Json
-  category    SettingsCategory
-  description String?
-  isPublic    Boolean          @default(false)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id             String           @id @default(uuid())
+  key            String           @unique
+  value          Json
+  category       SettingsCategory
+  description    String?
+  isPublic       Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   @@index([key])
   @@index([category])
+}
+
+model HotelSettings {
+  id              String   @id @default(uuid())
+  hotelWhatsApp   String
+  hotelName       String   @default("FuseHotel")
+  hotelEmail      String?
+  hotelPhone      String?
+  hotelAddress    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model NewsletterSubscription {
@@ -407,4 +422,118 @@ model AuditLog {
   @@index([userId])
   @@index([entity])
   @@index([createdAt])
+}
+
+enum FileCategory {
+  LANDING_HEADER
+  LANDING_HERO
+  LANDING_HIGHLIGHTS
+  LANDING_GALLERY
+  LANDING_PARTNERS
+  LANDING_FOOTER
+  ACCOMMODATION
+  PROMOTION
+  GENERAL
+}
+
+model UploadedFile {
+  id           String       @id @default(uuid())
+  filename     String
+  storedName   String       @unique
+  path         String
+  url          String
+  mimetype     String
+  size         Int
+  category     FileCategory
+  alt          String?
+  description  String?
+  uploadedBy   String?
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([category])
+  @@index([storedName])
+}
+
+model LandingPageSettings {
+  id        String   @id @default(uuid())
+  section   String   @unique
+  config    Json
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([section])
+}
+
+model HeroSlide {
+  id               String   @id @default(uuid())
+  title            String
+  subtitle         String?
+  description      String?  @db.Text
+  backgroundType   String
+  backgroundValue  String
+  buttonText       String?
+  buttonUrl        String?
+  buttonIcon       String?
+  buttonColor      String?
+  buttonHoverColor String?
+  textColor        String   @default("#FFFFFF")
+  overlayColor     String   @default("#042241")
+  overlayOpacity   Float    @default(0.6)
+  order            Int
+  isActive         Boolean  @default(true)
+  showTitle        Boolean  @default(true)
+  showSubtitle     Boolean  @default(true)
+  showDescription  Boolean  @default(true)
+  showButton       Boolean  @default(true)
+  showRating       Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([order])
+  @@index([isActive])
+}
+
+model HighlightItem {
+  id          String   @id @default(uuid())
+  title       String
+  subtitle    String
+  image       String
+  order       Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([order])
+  @@index([isActive])
+}
+
+model GalleryImage {
+  id          String   @id @default(uuid())
+  url         String
+  alt         String
+  description String?
+  order       Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([order])
+  @@index([isActive])
+}
+
+model Partner {
+  id        String   @id @default(uuid())
+  name      String
+  logo      String
+  url       String?
+  order     Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+  @@index([isActive])
 }

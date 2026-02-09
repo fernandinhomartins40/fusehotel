@@ -9,9 +9,20 @@ import { emailSchema, passwordSchema, phoneSchema, cpfSchema } from './common.va
 
 /**
  * Schema de login
+ * Aceita email OU WhatsApp (apenas números)
  */
 export const loginSchema = z.object({
-  email: emailSchema,
+  email: z.string()
+    .min(1, 'Email ou WhatsApp é obrigatório')
+    .refine(
+      (value) => {
+        // Aceita email válido OU números (WhatsApp)
+        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        const isWhatsApp = /^\d+$/.test(value.replace(/\D/g, ''));
+        return isEmail || (isWhatsApp && value.replace(/\D/g, '').length >= 10);
+      },
+      { message: 'Email ou WhatsApp inválido' }
+    ),
   password: z.string().min(1, 'Senha é obrigatória'),
   rememberMe: z.boolean().optional(),
 });

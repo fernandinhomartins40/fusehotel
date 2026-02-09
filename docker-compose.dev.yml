@@ -1,22 +1,92 @@
 services:
+  # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
     container_name: fusehotel-postgres-dev
     environment:
+      POSTGRES_USER: fusehotel_user
       POSTGRES_PASSWORD: fusehotel_password
       POSTGRES_DB: fusehotel_db
-    command: >
-      postgres
-      -c shared_preload_libraries=pg_stat_statements
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    networks:
+      - fusehotel-dev-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U fusehotel_user -d fusehotel_db"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # Backend API
+  api:
+    build:
+      context: .
+      dockerfile: ./infra/docker/Dockerfile.api
+    container_name: fusehotel-api-dev
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      API_PREFIX: /api
+      DATABASE_URL: postgresql://fusehotel_user:fusehotel_password@postgres:5432/fusehotel_db
+      JWT_SECRET: dev-secret-key-change-in-production-min-32-characters-long
+      JWT_REFRESH_SECRET: dev-refresh-secret-key-change-in-production-min-32-characters
+      JWT_EXPIRES_IN: 1h
+      JWT_REFRESH_EXPIRES_IN: 7d
+      FRONTEND_URL: http://localhost:3090
+    volumes:
+      - ./apps/api/uploads:/app/uploads
+      - ./apps/api/logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fusehotel-dev-network
+    # Porta exposta apenas internamente para debug
+    # ports:
+    #   - "3001:3001"
+
+  # Frontend Web
+  web:
+    build:
+      context: .
+      dockerfile: ./infra/docker/Dockerfile.web
+      args:
+        VITE_API_URL: http://localhost:3090/api
+    container_name: fusehotel-web-dev
+    environment:
+      VITE_API_URL: http://localhost:3090/api
+    depends_on:
+      - api
+    networks:
+      - fusehotel-dev-network
+    # Porta exposta apenas internamente
+    # ports:
+    #   - "3000:80"
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: fusehotel-nginx-dev
+    volumes:
+      - ./infra/nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "3090:80"
+    depends_on:
+      - api
+      - web
+    networks:
+      - fusehotel-dev-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  fusehotel-dev-network:
+    driver: bridge
 
 volumes:
   postgres_dev_data:

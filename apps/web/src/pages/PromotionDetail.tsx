@@ -1,12 +1,12 @@
-
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { ArrowLeft, Star, MapPin, Clock, Calendar, Tag } from "lucide-react";
+import { ArrowLeft, Star, MapPin, Calendar, Tag, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -15,25 +15,50 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { promotionsData } from '@/data/promotionsData';
 import { format } from 'date-fns';
+import { usePromotionBySlug } from '@/hooks/usePromotions';
 
 const PromotionDetail: React.FC = () => {
   const { promotionId } = useParams<{ promotionId: string }>();
-  
-  console.log('PromotionDetail component rendered with promotionId:', promotionId);
-  console.log('Available promotion keys:', Object.keys(promotionsData));
-  
-  // Verificar se promotionId existe e se há dados para essa promoção
-  if (!promotionId || !promotionsData[promotionId as keyof typeof promotionsData]) {
-    console.log('Promotion not found, rendering 404 page');
+
+  const { data: promotion, isLoading, error } = usePromotionBySlug(promotionId || '');
+
+  function formatCurrency(value: number): string {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center">
+          <Card>
+            <CardContent className="flex items-center justify-center p-12">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <span className="ml-3 text-lg">Carregando promoção...</span>
+            </CardContent>
+          </Card>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Error or not found
+  if (error || !promotion) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
           <div className="text-center p-8">
             <h1 className="text-4xl font-bold text-gray-800 mb-4">Promoção não encontrada</h1>
-            <p className="text-lg text-gray-600 mb-6">A promoção que você está procurando não está disponível.</p>
+            <p className="text-lg text-gray-600 mb-6">
+              {(error as any)?.response?.data?.message || 'A promoção que você está procurando não está disponível.'}
+            </p>
             <Button className="bg-[#0466C8] hover:bg-[#0355A6]" asChild>
               <Link to="/promocoes">Ver todas promoções</Link>
             </Button>
@@ -44,21 +69,10 @@ const PromotionDetail: React.FC = () => {
     );
   }
 
-  const promotion = promotionsData[promotionId as keyof typeof promotionsData];
-
-  function formatCurrency(value: number): string {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  }
-
-  console.log('Rendering promotion detail page for:', promotion.title);
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      
+
       <main className="flex-grow">
         {/* Breadcrumbs */}
         <div className="bg-gray-50 py-4">
@@ -86,14 +100,14 @@ const PromotionDetail: React.FC = () => {
         {/* Hero Image */}
         <div className="relative h-96 md:h-[500px] overflow-hidden">
           <img
-            src={promotion.image}
+            src={promotion.image || '/lovable-uploads/c33e15e6-8851-4284-98b7-0979c47250df.png'}
             alt={promotion.title}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-black bg-opacity-30" />
           <div className="absolute bottom-8 left-8 text-white">
             <Badge className="mb-4 bg-[#0466C8] hover:bg-[#0355A6] text-white">
-              {promotion.type === 'package' ? 'Pacote' : 'Promoção'}
+              {promotion.type === 'PACKAGE' ? 'Pacote' : 'Promoção'}
             </Badge>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">{promotion.title}</h1>
           </div>
@@ -114,7 +128,7 @@ const PromotionDetail: React.FC = () => {
                     <span className="text-sm text-gray-600 ml-1">4.9 (89 avaliações)</span>
                   </div>
                 </div>
-                
+
                 <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-6">
                   <div className="flex items-center gap-2">
                     <Calendar size={18} className="text-[#0466C8]" />
@@ -127,7 +141,7 @@ const PromotionDetail: React.FC = () => {
                     <span>Av Paulista, 900 - São Paulo</span>
                   </div>
                 </div>
-                
+
                 <p className="text-lg text-gray-700 leading-relaxed">{promotion.shortDescription}</p>
               </div>
 
@@ -144,17 +158,30 @@ const PromotionDetail: React.FC = () => {
               <Separator />
 
               {/* Features */}
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">O que está incluído</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {promotion.features.map((feature, idx) => (
-                    <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <Tag size={18} className="text-[#0466C8] flex-shrink-0" />
-                      <span className="text-gray-700">{feature}</span>
+              {promotion.features && promotion.features.length > 0 && (
+                <>
+                  <div>
+                    <h2 className="text-2xl font-semibold text-gray-900 mb-4">O que está incluído</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {promotion.features.map((feature) => (
+                        <div key={feature.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                          <Tag size={18} className="text-[#0466C8] flex-shrink-0" />
+                          <span className="text-gray-700">{feature.feature}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                  <Separator />
+                </>
+              )}
+
+              {/* Terms and Conditions */}
+              {promotion.termsAndConditions && (
+                <div>
+                  <h2 className="text-2xl font-semibold text-gray-900 mb-4">Termos e Condições</h2>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-line">{promotion.termsAndConditions}</p>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Booking Card - Right Column */}
@@ -162,26 +189,36 @@ const PromotionDetail: React.FC = () => {
               <div className="sticky top-8 bg-white rounded-lg border border-gray-200 p-6 shadow-lg">
                 <div className="text-center mb-6">
                   <div className="flex items-center justify-center gap-2 mb-2">
-                    <span className="text-lg text-gray-500 line-through">
-                      {formatCurrency(promotion.originalPrice)}
-                    </span>
-                    <Badge variant="destructive" className="text-xs">
-                      DESCONTO
-                    </Badge>
+                    {promotion.originalPrice && (
+                      <>
+                        <span className="text-lg text-gray-500 line-through">
+                          {formatCurrency(Number(promotion.originalPrice))}
+                        </span>
+                        <Badge variant="destructive" className="text-xs">
+                          DESCONTO
+                        </Badge>
+                      </>
+                    )}
                   </div>
-                  <div className="text-3xl font-bold text-[#0466C8]">
-                    {formatCurrency(promotion.discountedPrice)}
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Economia de {formatCurrency(promotion.originalPrice - promotion.discountedPrice)}
-                  </p>
+                  {promotion.discountedPrice && (
+                    <>
+                      <div className="text-3xl font-bold text-[#0466C8]">
+                        {formatCurrency(Number(promotion.discountedPrice))}
+                      </div>
+                      {promotion.originalPrice && (
+                        <p className="text-sm text-gray-600">
+                          Economia de {formatCurrency(Number(promotion.originalPrice) - Number(promotion.discountedPrice))}
+                        </p>
+                      )}
+                    </>
+                  )}
                 </div>
 
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between items-center py-2 border-b">
                     <span className="text-gray-600">Tipo:</span>
                     <span className="font-medium">
-                      {promotion.type === 'package' ? 'Pacote' : 'Promoção'}
+                      {promotion.type === 'PACKAGE' ? 'Pacote' : 'Promoção'}
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b">
@@ -190,6 +227,14 @@ const PromotionDetail: React.FC = () => {
                       {format(new Date(promotion.endDate), 'dd/MM/yyyy')}
                     </span>
                   </div>
+                  {promotion.maxRedemptions && (
+                    <div className="flex justify-between items-center py-2 border-b">
+                      <span className="text-gray-600">Disponível:</span>
+                      <span className="font-medium">
+                        {promotion.maxRedemptions - promotion.currentRedemptions} vagas
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <Button className="w-full bg-[#0466C8] hover:bg-[#0355A6] text-white">
@@ -216,7 +261,7 @@ const PromotionDetail: React.FC = () => {
           </div>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );

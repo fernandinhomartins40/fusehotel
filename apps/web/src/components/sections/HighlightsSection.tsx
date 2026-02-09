@@ -1,57 +1,87 @@
-
 import React from 'react';
+import { useHighlights, useLandingSettings } from '@/hooks/useLanding';
+import { defaultHighlightsConfig } from '@/types/landing-config';
+
+interface Highlight {
+  id: string;
+  title: string;
+  subtitle: string;
+  imageUrl: string;
+  order: number;
+  isActive: boolean;
+}
 
 export const HighlightsSection: React.FC = () => {
-  const highlights = [
-    {
-      image: "/lovable-uploads/bca108a5-820b-418c-bb37-1fdfb497dc24.png",
-      title: "SPA DE LUXO",
-      subtitle: "Relaxamento e Rejuvenescimento"
-    },
-    {
-      image: "/lovable-uploads/1e861110-a179-4f1f-aa1a-caeb85c10609.png",
-      title: "FESTAS INCRÍVEIS",
-      subtitle: "Diversão para toda família"
-    },
-    {
-      image: "/lovable-uploads/a7433b3a-710f-49d8-b286-8066127891b0.png",
-      title: "GASTRONOMIA",
-      subtitle: "Experiência culinária internacional"
-    },
-    {
-      image: "/lovable-uploads/6cff717e-9bcc-4de2-8466-11400c267a66.png",
-      title: "PÉ NA AREIA",
-      subtitle: "Um mergulho no Paraíso"
-    }
-  ];
+  const { data: settingsData } = useLandingSettings('highlights');
+  const { data: highlights = [] } = useHighlights();
+
+  const config = settingsData?.config || defaultHighlightsConfig;
+
+  // Se não houver highlights, não renderizar a seção
+  if (!highlights || highlights.length === 0) {
+    return null;
+  }
 
   return (
-    <section id="highlights" className="px-4 md:px-12 lg:px-24 py-20">
+    <section
+      id="highlights"
+      className="px-4 md:px-12 lg:px-24 py-20"
+      style={{ backgroundColor: config.backgroundColor || '#FFFFFF' }}
+    >
       <div className="container mx-auto">
         <div className="text-left">
-          <h2 className="text-[#676C76] text-[13px] uppercase tracking-[2px] mb-2 font-normal">
-            EXPERIÊNCIAS INCRÍVEIS ESPERAM POR VOCÊ
-          </h2>
-          <h3 className="text-[#1D1D1F] text-[56px] font-bold mb-4 tracking-tight leading-none uppercase">
-            DESTAQUES
-          </h3>
-          <p className="text-[#676C76] text-base leading-relaxed mb-10 max-w-2xl">
-            Descubra as experiências que tornam nosso resort único. De relaxamento
-            absoluto a aventuras emocionantes.
-          </p>
+          {config.subtitle && (
+            <h2
+              className="text-[13px] uppercase tracking-[2px] mb-2 font-normal"
+              style={{ color: config.subtitleColor || '#676C76' }}
+            >
+              {config.subtitle}
+            </h2>
+          )}
+          {config.title && (
+            <h3
+              className="text-[56px] font-bold mb-4 tracking-tight leading-none uppercase"
+              style={{ color: config.titleColor || '#1D1D1F' }}
+            >
+              {config.title}
+            </h3>
+          )}
+          {config.description && (
+            <p
+              className="text-base leading-relaxed mb-10 max-w-2xl"
+              style={{ color: config.subtitleColor || '#676C76' }}
+            >
+              {config.description}
+            </p>
+          )}
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {highlights.map((highlight, index) => (
-            <div key={index} className="relative overflow-hidden rounded-[5px]">
+          {highlights.map((highlight: Highlight) => (
+            <div key={highlight.id} className="relative overflow-hidden rounded-[5px]">
               <img
-                src={highlight.image}
+                src={highlight.imageUrl}
                 alt={highlight.title}
                 className="w-full h-[333px] object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 text-left">
-                <h4 className="text-white text-4xl font-bold mb-1">{highlight.title}</h4>
-                <p className="text-white text-lg">{highlight.subtitle}</p>
+              <div
+                className="absolute inset-0 flex flex-col justify-end p-6 text-left"
+                style={{
+                  background: config.overlayGradient || 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)'
+                }}
+              >
+                <h4
+                  className="text-4xl font-bold mb-1"
+                  style={{ color: config.cardTitleColor || '#FFFFFF' }}
+                >
+                  {highlight.title}
+                </h4>
+                <p
+                  className="text-lg"
+                  style={{ color: config.cardSubtitleColor || '#FFFFFF' }}
+                >
+                  {highlight.subtitle}
+                </p>
               </div>
             </div>
           ))}

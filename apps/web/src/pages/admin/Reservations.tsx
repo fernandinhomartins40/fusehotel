@@ -1,15 +1,14 @@
-
 import React, { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
 import {
   Select,
@@ -25,177 +24,85 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { 
+import {
   Drawer,
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import { toast } from 'sonner';
-import { Eye, Filter } from 'lucide-react';
+import { Eye, Filter, Loader2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ReservationDetails } from '@/components/admin/ReservationDetails';
-
-// Mock data for reservations
-const initialReservations = [
-  {
-    id: 'RES001',
-    guestName: 'João Silva',
-    guestEmail: 'joao.silva@email.com',
-    guestPhone: '(11) 98765-4321',
-    accommodation: {
-      id: '1',
-      name: 'Chalé de Luxo',
-    },
-    checkInDate: '2025-05-15',
-    checkOutDate: '2025-05-18',
-    adults: 2,
-    children: 1,
-    totalPrice: 1350, // 3 nights * R$450
-    status: 'confirmed',
-    paymentMethod: 'credit_card',
-    specialRequests: 'Vista para o lago, se possível.'
-  },
-  {
-    id: 'RES002',
-    guestName: 'Maria Oliveira',
-    guestEmail: 'maria.oliveira@email.com',
-    guestPhone: '(21) 99876-5432',
-    accommodation: {
-      id: '2',
-      name: 'Suite Master',
-    },
-    checkInDate: '2025-05-17',
-    checkOutDate: '2025-05-19',
-    adults: 2,
-    children: 0,
-    totalPrice: 640, // 2 nights * R$320
-    status: 'pending',
-    paymentMethod: 'bank_transfer',
-    specialRequests: ''
-  },
-  {
-    id: 'RES003',
-    guestName: 'Pedro Santos',
-    guestEmail: 'pedro.santos@email.com',
-    guestPhone: '(31) 97654-3210',
-    accommodation: {
-      id: '3',
-      name: 'Chalé Família',
-    },
-    checkInDate: '2025-06-10',
-    checkOutDate: '2025-06-15',
-    adults: 4,
-    children: 2,
-    totalPrice: 3400, // 5 nights * R$680
-    status: 'confirmed',
-    paymentMethod: 'pix',
-    specialRequests: 'Cama extra para criança.'
-  },
-  {
-    id: 'RES004',
-    guestName: 'Ana Costa',
-    guestEmail: 'ana.costa@email.com',
-    guestPhone: '(11) 91234-5678',
-    accommodation: {
-      id: '1',
-      name: 'Chalé de Luxo',
-    },
-    checkInDate: '2025-05-25',
-    checkOutDate: '2025-05-28',
-    adults: 2,
-    children: 0,
-    totalPrice: 1350, // 3 nights * R$450
-    status: 'canceled',
-    paymentMethod: 'credit_card',
-    specialRequests: ''
-  },
-];
+import { useAdminReservations, useUpdateReservationStatus } from '@/hooks/useAdminReservations';
 
 export function Reservations() {
-  const [reservations, setReservations] = useState(initialReservations);
-  const [filteredReservations, setFilteredReservations] = useState(initialReservations);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedReservation, setSelectedReservation] = useState<any>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  
+
   const isMobile = useIsMobile();
-  
+
+  // Buscar reservas da API
+  const { data: reservations, isLoading, error } = useAdminReservations(
+    statusFilter !== 'all' ? { status: statusFilter } : undefined
+  );
+
+  const updateStatusMutation = useUpdateReservationStatus();
+
   // Handle status filter change
   const handleFilterChange = (value: string) => {
     setStatusFilter(value);
-    
-    if (value === "all") {
-      setFilteredReservations(reservations);
-    } else {
-      setFilteredReservations(reservations.filter(res => res.status === value));
-    }
   };
-  
+
   // View reservation details
   const handleViewReservation = (reservation: any) => {
     setSelectedReservation(reservation);
     setDetailsOpen(true);
   };
-  
+
   // Update reservation status
   const handleUpdateStatus = (id: string, newStatus: string) => {
-    const updatedReservations = reservations.map(res => {
-      if (res.id === id) {
-        return { ...res, status: newStatus };
+    updateStatusMutation.mutate({ id, status: newStatus }, {
+      onSuccess: () => {
+        setDetailsOpen(false);
       }
-      return res;
     });
-    
-    setReservations(updatedReservations);
-    
-    // Also update filtered list
-    if (statusFilter === "all" || statusFilter === newStatus) {
-      setFilteredReservations(filteredReservations.map(res => {
-        if (res.id === id) {
-          return { ...res, status: newStatus };
-        }
-        return res;
-      }));
-    } else {
-      // Remove from filtered view if it no longer matches filter
-      setFilteredReservations(filteredReservations.filter(res => res.id !== id));
-    }
-    
-    setDetailsOpen(false);
-    toast.success(`Status da reserva atualizado para: ${newStatus}`);
   };
-  
+
   // Format date for display
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR');
   };
-  
+
   // Status display helpers
   const getStatusLabel = (status: string) => {
     const statusMap: Record<string, string> = {
-      'pending': 'Pendente',
-      'confirmed': 'Confirmada',
-      'checked_in': 'Check-in feito',
-      'checked_out': 'Check-out feito',
-      'canceled': 'Cancelada',
+      'PENDING': 'Pendente',
+      'CONFIRMED': 'Confirmada',
+      'CHECKED_IN': 'Check-in feito',
+      'CHECKED_OUT': 'Check-out feito',
+      'CANCELLED': 'Cancelada',
+      'COMPLETED': 'Concluída',
+      'NO_SHOW': 'Não compareceu',
     };
     return statusMap[status] || status;
   };
-  
+
   const getStatusClass = (status: string) => {
     const statusClassMap: Record<string, string> = {
-      'pending': 'bg-yellow-100 text-yellow-800',
-      'confirmed': 'bg-green-100 text-green-800',
-      'checked_in': 'bg-blue-100 text-blue-800',
-      'checked_out': 'bg-purple-100 text-purple-800',
-      'canceled': 'bg-red-100 text-red-800',
+      'PENDING': 'bg-yellow-100 text-yellow-800',
+      'CONFIRMED': 'bg-green-100 text-green-800',
+      'CHECKED_IN': 'bg-blue-100 text-blue-800',
+      'CHECKED_OUT': 'bg-purple-100 text-purple-800',
+      'CANCELLED': 'bg-red-100 text-red-800',
+      'COMPLETED': 'bg-gray-100 text-gray-800',
+      'NO_SHOW': 'bg-orange-100 text-orange-800',
     };
     return `px-2 py-1 rounded text-xs font-medium ${statusClassMap[status] || ''}`;
   };
-  
+
   // Format currency
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -203,24 +110,24 @@ export function Reservations() {
       currency: 'BRL'
     }).format(value);
   };
-  
+
   const ReservationDetailsWrapper = () => {
     if (!selectedReservation) return null;
-    
+
     const content = (
       <ReservationDetails
         reservation={selectedReservation}
         onUpdateStatus={handleUpdateStatus}
       />
     );
-    
+
     if (isMobile) {
       return (
         <Drawer open={detailsOpen} onOpenChange={setDetailsOpen}>
           <DrawerContent>
             <DrawerHeader>
               <DrawerTitle>Detalhes da Reserva</DrawerTitle>
-              <DrawerDescription>Reserva #{selectedReservation.id}</DrawerDescription>
+              <DrawerDescription>Reserva #{selectedReservation.reservationCode}</DrawerDescription>
             </DrawerHeader>
             <div className="p-4">
               {content}
@@ -229,13 +136,13 @@ export function Reservations() {
         </Drawer>
       );
     }
-    
+
     return (
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Detalhes da Reserva</DialogTitle>
-            <DialogDescription>Reserva #{selectedReservation.id}</DialogDescription>
+            <DialogDescription>Reserva #{selectedReservation.reservationCode}</DialogDescription>
           </DialogHeader>
           {content}
         </DialogContent>
@@ -243,11 +150,34 @@ export function Reservations() {
     );
   };
 
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center p-12 text-center">
+          <div className="text-red-600 mb-4">
+            <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold mb-2">Erro ao carregar reservas</h2>
+          <p className="text-gray-600">
+            {(error as any)?.response?.data?.message || 'Ocorreu um erro ao carregar as reservas'}
+          </p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       <div className="flex flex-col gap-6 p-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Gerenciar Reservas</h1>
+          <div>
+            <h1 className="text-3xl font-bold">Gerenciar Reservas</h1>
+            <p className="text-gray-600 mt-1">
+              {isLoading ? 'Carregando...' : `${reservations?.length || 0} reservas encontradas`}
+            </p>
+          </div>
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4" />
             <Select
@@ -259,41 +189,50 @@ export function Reservations() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="pending">Pendente</SelectItem>
-                <SelectItem value="confirmed">Confirmada</SelectItem>
-                <SelectItem value="checked_in">Check-in feito</SelectItem>
-                <SelectItem value="checked_out">Check-out feito</SelectItem>
-                <SelectItem value="canceled">Cancelada</SelectItem>
+                <SelectItem value="PENDING">Pendente</SelectItem>
+                <SelectItem value="CONFIRMED">Confirmada</SelectItem>
+                <SelectItem value="CHECKED_IN">Check-in feito</SelectItem>
+                <SelectItem value="CHECKED_OUT">Check-out feito</SelectItem>
+                <SelectItem value="CANCELLED">Cancelada</SelectItem>
+                <SelectItem value="COMPLETED">Concluída</SelectItem>
+                <SelectItem value="NO_SHOW">Não compareceu</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Hóspede</TableHead>
-                  <TableHead>Acomodação</TableHead>
-                  <TableHead>Check-in</TableHead>
-                  <TableHead>Check-out</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredReservations.length > 0 ? (
-                  filteredReservations.map((reservation) => (
+        {isLoading ? (
+          <Card>
+            <CardContent className="flex items-center justify-center p-12">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <span className="ml-3 text-lg">Carregando reservas...</span>
+            </CardContent>
+          </Card>
+        ) : reservations && reservations.length > 0 ? (
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Código</TableHead>
+                    <TableHead>Hóspede</TableHead>
+                    <TableHead>Acomodação</TableHead>
+                    <TableHead>Check-in</TableHead>
+                    <TableHead>Check-out</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {reservations.map((reservation: any) => (
                     <TableRow key={reservation.id}>
-                      <TableCell>{reservation.id}</TableCell>
+                      <TableCell className="font-mono text-sm">{reservation.reservationCode}</TableCell>
                       <TableCell className="font-medium">{reservation.guestName}</TableCell>
-                      <TableCell>{reservation.accommodation.name}</TableCell>
+                      <TableCell>{reservation.accommodation?.name || 'N/A'}</TableCell>
                       <TableCell>{formatDate(reservation.checkInDate)}</TableCell>
                       <TableCell>{formatDate(reservation.checkOutDate)}</TableCell>
-                      <TableCell>{formatCurrency(reservation.totalPrice)}</TableCell>
+                      <TableCell>{formatCurrency(Number(reservation.totalAmount))}</TableCell>
                       <TableCell>
                         <span className={getStatusClass(reservation.status)}>
                           {getStatusLabel(reservation.status)}
@@ -309,19 +248,30 @@ export function Reservations() {
                         </Button>
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      Nenhuma reserva encontrada para o filtro selecionado.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-        
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center p-12 text-center">
+              <div className="text-gray-400 mb-4">
+                <svg className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Nenhuma reserva encontrada</h3>
+              <p className="text-gray-600">
+                {statusFilter !== 'all'
+                  ? 'Nenhuma reserva encontrada para o filtro selecionado.'
+                  : 'Ainda não há reservas cadastradas no sistema.'
+                }
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         <ReservationDetailsWrapper />
       </div>
     </AdminLayout>

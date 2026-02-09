@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -14,6 +14,8 @@ import { SettingsImageUpload } from '@/components/admin/SettingsImageUpload';
 import { ColorPicker } from '@/components/admin/ColorPicker';
 import { RichTextEditor } from '@/components/admin/RichTextEditor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useSettings, useUpdateSettings } from '@/hooks/useSettings';
+import { Loader2, MessageCircle } from 'lucide-react';
 
 type SiteInfoFormValues = {
   companyName: string;
@@ -60,11 +62,44 @@ type PageContentValues = {
   pageContent: string;
 };
 
+type HotelConfigFormValues = {
+  hotelWhatsApp: string;
+  hotelName: string;
+  hotelEmail: string;
+  hotelPhone: string;
+  hotelAddress: string;
+};
+
 const Settings = () => {
-  const [activeTab, setActiveTab] = useState("site-info");
+  const [activeTab, setActiveTab] = useState("hotel-config");
   const [selectedPage, setSelectedPage] = useState("home");
   const [pageContent, setPageContent] = useState("<p>Conteúdo da página inicial</p>");
+
+  const { data: hotelSettings, isLoading: isLoadingSettings } = useSettings();
+  const updateHotelSettings = useUpdateSettings();
   
+  const hotelConfigForm = useForm<HotelConfigFormValues>({
+    defaultValues: {
+      hotelWhatsApp: '',
+      hotelName: 'FuseHotel',
+      hotelEmail: '',
+      hotelPhone: '',
+      hotelAddress: '',
+    },
+  });
+
+  useEffect(() => {
+    if (hotelSettings) {
+      hotelConfigForm.reset({
+        hotelWhatsApp: hotelSettings.hotelWhatsApp || '',
+        hotelName: hotelSettings.hotelName || 'FuseHotel',
+        hotelEmail: hotelSettings.hotelEmail || '',
+        hotelPhone: hotelSettings.hotelPhone || '',
+        hotelAddress: hotelSettings.hotelAddress || '',
+      });
+    }
+  }, [hotelSettings]);
+
   const siteInfoForm = useForm<SiteInfoFormValues>({
     defaultValues: {
       companyName: "Águas Claras",
@@ -180,6 +215,17 @@ const Settings = () => {
     toast.success(`Conteúdo da página ${data.selectedPage} salvo com sucesso!`);
   };
 
+  const onHotelConfigSubmit = (data: HotelConfigFormValues) => {
+    updateHotelSettings.mutate(data, {
+      onSuccess: () => {
+        toast.success("Configurações do hotel salvas com sucesso!");
+      },
+      onError: (error: any) => {
+        toast.error(error?.response?.data?.message || "Erro ao salvar configurações");
+      },
+    });
+  };
+
   return (
     <AdminLayout>
       <div className="container py-6 space-y-6">
@@ -191,13 +237,115 @@ const Settings = () => {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid grid-cols-2 md:grid-cols-5">
+          <TabsList className="grid grid-cols-2 md:grid-cols-6">
+            <TabsTrigger value="hotel-config">Configurações</TabsTrigger>
             <TabsTrigger value="site-info">Informações do Site</TabsTrigger>
             <TabsTrigger value="visual-identity">Identidade Visual</TabsTrigger>
             <TabsTrigger value="content">Conteúdo</TabsTrigger>
             <TabsTrigger value="pages">Páginas</TabsTrigger>
             <TabsTrigger value="seo">SEO</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="hotel-config">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5" />
+                  Configurações do Hotel
+                </CardTitle>
+                <CardDescription>
+                  Configure o WhatsApp e informações essenciais do hotel para o sistema de reservas
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingSettings ? (
+                  <div className="flex items-center justify-center p-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  </div>
+                ) : (
+                  <form
+                    className="space-y-4"
+                    onSubmit={hotelConfigForm.handleSubmit(onHotelConfigSubmit)}
+                  >
+                    <div className="space-y-2">
+                      <Label htmlFor="hotelWhatsApp" className="flex items-center gap-2">
+                        <MessageCircle className="h-4 w-4" />
+                        WhatsApp do Hotel *
+                      </Label>
+                      <Input
+                        id="hotelWhatsApp"
+                        {...hotelConfigForm.register("hotelWhatsApp")}
+                        placeholder="5511999999999"
+                      />
+                      <p className="text-xs text-gray-500">
+                        Número no formato internacional: código do país + DDD + número (ex: 5511999999999)
+                      </p>
+                      <p className="text-xs text-blue-600">
+                        Este número receberá as mensagens de reserva via WhatsApp dos clientes
+                      </p>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-2">
+                      <Label htmlFor="hotelName">Nome do Hotel</Label>
+                      <Input
+                        id="hotelName"
+                        {...hotelConfigForm.register("hotelName")}
+                        placeholder="FuseHotel"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="hotelEmail">Email do Hotel</Label>
+                        <Input
+                          id="hotelEmail"
+                          type="email"
+                          {...hotelConfigForm.register("hotelEmail")}
+                          placeholder="contato@fusehotel.com"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="hotelPhone">Telefone do Hotel</Label>
+                        <Input
+                          id="hotelPhone"
+                          {...hotelConfigForm.register("hotelPhone")}
+                          placeholder="(11) 3333-4444"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="hotelAddress">Endereço</Label>
+                      <Textarea
+                        id="hotelAddress"
+                        {...hotelConfigForm.register("hotelAddress")}
+                        placeholder="Rua Exemplo, 123 - Bairro - Cidade - Estado"
+                        rows={3}
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full md:w-auto"
+                      disabled={updateHotelSettings.isPending}
+                    >
+                      {updateHotelSettings.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        'Salvar Configurações'
+                      )}
+                    </Button>
+                  </form>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
           
           <TabsContent value="site-info">
             <Card>

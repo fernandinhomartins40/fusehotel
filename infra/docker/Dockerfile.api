@@ -1,29 +1,66 @@
 FROM node:20-alpine AS builder
 
+# Instalar OpenSSL para Prisma
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
+# Copiar package.json da raiz
 COPY package*.json ./
-COPY tsconfig.json ./
 
-RUN npm install
+# Copiar shared package completo (dependência local)
+COPY packages/shared ./packages/shared
 
-COPY src ./src
-COPY src/prisma/schema.prisma ./src/prisma/
+# Copiar API package.json e tsconfig
+COPY apps/api/package*.json ./apps/api/
+COPY apps/api/tsconfig.json ./apps/api/
 
-RUN npx prisma generate
+# Instalar dependências do monorepo
+RUN npm install --workspace=@fusehotel/shared --workspace=@fusehotel/api
 
+# Build do shared package primeiro
+WORKDIR /app/packages/shared
+RUN npm run build
+
+# Voltar para diretório da API
+WORKDIR /app/apps/api
+
+# Copiar código fonte da API
+COPY apps/api/src ./src
+
+# Gerar Prisma Client com schema específico
+RUN npx prisma generate --schema=./src/prisma/schema.prisma
+
+# Build da API
 RUN npm run build
 
 FROM node:20-alpine
 
+# Instalar OpenSSL para Prisma
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
+# Copiar build da API
+COPY --from=builder /app/apps/api/dist ./dist
 
+# Copiar código fonte (necessário para Prisma migrations)
+COPY --from=builder /app/apps/api/src ./src
+
+# Copiar package.json
+COPY --from=builder /app/apps/api/package.json ./
+
+# Copiar node_modules completo da raiz (inclui shared e todas as dependências)
+COPY --from=builder /app/node_modules ./node_modules
+
+# Copiar também o pacote shared buildado
+COPY --from=builder /app/packages/shared/dist ./node_modules/@fusehotel/shared/dist
+COPY --from=builder /app/packages/shared/package.json ./node_modules/@fusehotel/shared/
+
+# Criar diretórios
 RUN mkdir -p uploads logs
 
+# Criar usuário não-root
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 RUN chown -R nodejs:nodejs /app
 USER nodejs

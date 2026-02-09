@@ -5,7 +5,19 @@ import { sendSuccess } from '../utils/response';
 export class AccommodationController {
   static async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const accommodations = await AccommodationService.list(req.query);
+      // Convert string query params to proper types
+      const filters: any = { ...req.query };
+      if (filters.isAvailable !== undefined) {
+        filters.isAvailable = filters.isAvailable === 'true' || filters.isAvailable === true;
+      }
+      if (filters.isFeatured !== undefined) {
+        filters.isFeatured = filters.isFeatured === 'true' || filters.isFeatured === true;
+      }
+      if (filters.minPrice) filters.minPrice = Number(filters.minPrice);
+      if (filters.maxPrice) filters.maxPrice = Number(filters.maxPrice);
+      if (filters.minCapacity) filters.minCapacity = Number(filters.minCapacity);
+
+      const accommodations = await AccommodationService.list(filters);
       return sendSuccess(res, accommodations);
     } catch (error) {
       next(error);

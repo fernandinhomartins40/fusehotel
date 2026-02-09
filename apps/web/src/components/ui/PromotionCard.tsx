@@ -1,12 +1,11 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Promotion } from '@/models/promotion';
+import { Promotion } from '@/types/promotion';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Tag } from 'lucide-react';
 import { format } from 'date-fns';
-import { generateSlug } from '@/utils/slugUtils';
 
 interface PromotionCardProps {
   promotion: Promotion;
@@ -20,19 +19,18 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion }) => {
     }).format(value);
   }
 
-  const slug = generateSlug(promotion.title);
-  const linkPath = `/promocoes/${slug}`;
+  const linkPath = `/promocoes/${promotion.slug}`;
 
   return (
     <Card className="h-full flex flex-col overflow-hidden group transition-all duration-300 hover:shadow-lg">
       <div className="relative h-48 overflow-hidden">
         <img
-          src={promotion.image}
+          src={promotion.image || '/lovable-uploads/c33e15e6-8851-4284-98b7-0979c47250df.png'}
           alt={promotion.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <div className="absolute top-2 right-2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium">
-          {promotion.type === 'package' ? 'Pacote' : 'Promoção'}
+          {promotion.type === 'PACKAGE' ? 'Pacote' : 'Promoção'}
         </div>
       </div>
       
@@ -52,28 +50,37 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion }) => {
         </p>
         
         <div className="mt-4 flex flex-wrap gap-2">
-          {promotion.features.map((feature, index) => (
+          {promotion.features?.slice(0, 3).map((feature, index) => (
             <span
-              key={index}
+              key={feature.id}
               className="bg-muted text-xs px-2 py-1 rounded-full flex items-center"
             >
               <Tag className="h-3 w-3 mr-1" />
-              {feature}
+              {feature.feature}
             </span>
           ))}
+          {promotion.features && promotion.features.length > 3 && (
+            <span className="bg-muted text-xs px-2 py-1 rounded-full">
+              +{promotion.features.length - 3} mais
+            </span>
+          )}
         </div>
       </CardContent>
       
       <CardFooter className="flex justify-between items-end pt-2">
         <div className="flex flex-col">
-          <span className="text-xs text-muted-foreground line-through">
-            {formatCurrency(promotion.originalPrice)}
-          </span>
-          <span className="text-lg font-semibold text-primary">
-            {formatCurrency(promotion.discountedPrice)}
-          </span>
+          {promotion.originalPrice && (
+            <span className="text-xs text-muted-foreground line-through">
+              {formatCurrency(Number(promotion.originalPrice))}
+            </span>
+          )}
+          {promotion.discountedPrice && (
+            <span className="text-lg font-semibold text-primary">
+              {formatCurrency(Number(promotion.discountedPrice))}
+            </span>
+          )}
         </div>
-        
+
         <Link to={linkPath}>
           <Button size="sm">
             Ver detalhes

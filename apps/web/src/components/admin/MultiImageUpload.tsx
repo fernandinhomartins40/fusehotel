@@ -1,30 +1,55 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ImageCropUpload } from './ImageCropUpload';
 import { Plus, X, MoveUp, MoveDown } from 'lucide-react';
+import { AccommodationImage } from '@/types/accommodation';
 
 interface MultiImageUploadProps {
-  value: string[];
-  onChange: (images: string[]) => void;
+  value: AccommodationImage[];
+  onChange: (images: AccommodationImage[]) => void;
   maxImages?: number;
 }
 
 export function MultiImageUpload({ value, onChange, maxImages = 10 }: MultiImageUploadProps) {
-  const handleImageAdd = (newImage: string) => {
+  const handleImageAdd = (newImageUrl: string) => {
     if (value.length < maxImages) {
+      const newImage: AccommodationImage = {
+        url: newImageUrl,
+        alt: `Imagem ${value.length + 1}`,
+        order: value.length,
+        isPrimary: value.length === 0, // First image is primary
+      };
       onChange([...value, newImage]);
     }
   };
 
-  const handleImageUpdate = (index: number, updatedImage: string) => {
+  const handleImageUpdate = (index: number, updatedImageUrl: string) => {
     const newImages = [...value];
-    newImages[index] = updatedImage;
+    newImages[index] = {
+      ...newImages[index],
+      url: updatedImageUrl,
+    };
+    onChange(newImages);
+  };
+
+  const handleAltUpdate = (index: number, alt: string) => {
+    const newImages = [...value];
+    newImages[index] = {
+      ...newImages[index],
+      alt,
+    };
     onChange(newImages);
   };
 
   const handleImageRemove = (index: number) => {
-    onChange(value.filter((_, i) => i !== index));
+    const newImages = value.filter((_, i) => i !== index).map((img, i) => ({
+      ...img,
+      order: i,
+      isPrimary: i === 0, // Reassign primary to first image
+    }));
+    onChange(newImages);
   };
 
   const handleImageMove = (index: number, direction: 'up' | 'down') => {
@@ -38,7 +63,15 @@ export function MultiImageUpload({ value, onChange, maxImages = 10 }: MultiImage
     const newImages = [...value];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     [newImages[index], newImages[targetIndex]] = [newImages[targetIndex], newImages[index]];
-    onChange(newImages);
+
+    // Reorder and reassign primary
+    const reorderedImages = newImages.map((img, i) => ({
+      ...img,
+      order: i,
+      isPrimary: i === 0,
+    }));
+
+    onChange(reorderedImages);
   };
 
   return (
@@ -56,7 +89,7 @@ export function MultiImageUpload({ value, onChange, maxImages = 10 }: MultiImage
           <div key={index} className="border rounded-lg p-4 space-y-3">
             <div className="flex justify-between items-center">
               <Label className="text-sm">
-                Imagem {index + 1} {index === 0 && '(Principal)'}
+                Imagem {index + 1} {image.isPrimary && '(Principal)'}
               </Label>
               <div className="flex gap-1">
                 <Button
@@ -88,13 +121,27 @@ export function MultiImageUpload({ value, onChange, maxImages = 10 }: MultiImage
                 </Button>
               </div>
             </div>
+
             <ImageCropUpload
-              value={image}
+              value={image.url}
               onChange={(newImage) => handleImageUpdate(index, newImage)}
               aspectRatio={16/9}
               cropWidth={800}
               cropHeight={450}
             />
+
+            <div className="pt-2">
+              <Label htmlFor={`alt-${index}`} className="text-xs text-gray-600">
+                Texto alternativo (Alt)
+              </Label>
+              <Input
+                id={`alt-${index}`}
+                placeholder="Descrição da imagem para SEO e acessibilidade"
+                value={image.alt}
+                onChange={(e) => handleAltUpdate(index, e.target.value)}
+                className="mt-1"
+              />
+            </div>
           </div>
         ))}
       </div>

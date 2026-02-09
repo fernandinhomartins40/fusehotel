@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { mockPromotions, Promotion } from '@/models/promotion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,9 +19,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import {
@@ -33,22 +30,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Check, Edit, Plus, Tag, Trash } from 'lucide-react';
+import { Check, Edit, Plus, Trash, Loader2 } from 'lucide-react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { Switch } from '@/components/ui/switch';
 import { format } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
 import { ImageCropUpload } from '@/components/admin/ImageCropUpload';
+import {
+  usePromotions,
+  useCreatePromotion,
+  useUpdatePromotion,
+  useDeletePromotion
+} from '@/hooks/usePromotions';
+import type { Promotion, CreatePromotionData } from '@/types/promotion';
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('pt-BR', {
@@ -58,63 +51,18 @@ function formatCurrency(value: number): string {
 }
 
 const PackagesPromotions = () => {
-  const [promotions, setPromotions] = useState<Promotion[]>(mockPromotions);
   const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { toast } = useToast();
-  
-  const form = useForm<Promotion>({
+  const [activeTab, setActiveTab] = useState<'active' | 'all'>('active');
+
+  // Buscar promoções da API
+  const { data: allPromotions, isLoading, error } = usePromotions({});
+  const createMutation = useCreatePromotion();
+  const updateMutation = useUpdatePromotion();
+  const deleteMutation = useDeletePromotion();
+
+  const form = useForm<CreatePromotionData>({
     defaultValues: {
-      id: '',
-      title: '',
-      shortDescription: '',
-      longDescription: '',
-      image: '',
-      startDate: '',
-      endDate: '',
-      originalPrice: 0,
-      discountedPrice: 0,
-      type: 'promotion',
-      active: true,
-      featured: false,
-      features: []
-    }
-  });
-
-  const onSubmit: SubmitHandler<Promotion> = (data) => {
-    if (editingPromotion) {
-      // Update existing promotion
-      setPromotions(promotions.map(p => p.id === editingPromotion.id ? { ...data } : p));
-      toast({
-        title: "Promoção atualizada",
-        description: `${data.title} foi atualizado com sucesso.`,
-      });
-    } else {
-      // Add new promotion
-      const newPromotion = {
-        ...data,
-        id: uuidv4()
-      };
-      setPromotions([...promotions, newPromotion]);
-      toast({
-        title: "Promoção criada",
-        description: `${data.title} foi criado com sucesso.`,
-      });
-    }
-    setDialogOpen(false);
-    setEditingPromotion(null);
-  };
-
-  const handleEditPromotion = (promotion: Promotion) => {
-    setEditingPromotion(promotion);
-    form.reset(promotion);
-    setDialogOpen(true);
-  };
-
-  const handleNewPromotion = () => {
-    setEditingPromotion(null);
-    form.reset({
-      id: '',
       title: '',
       shortDescription: '',
       longDescription: '',
@@ -123,194 +71,245 @@ const PackagesPromotions = () => {
       endDate: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString().split('T')[0],
       originalPrice: 0,
       discountedPrice: 0,
-      type: 'promotion',
-      active: true,
-      featured: false,
+      type: 'PROMOTION',
+      isActive: true,
+      isFeatured: false,
+      features: []
+    }
+  });
+
+  const onSubmit: SubmitHandler<CreatePromotionData> = (data) => {
+    if (editingPromotion) {
+      updateMutation.mutate({
+        id: editingPromotion.id,
+        data
+      }, {
+        onSuccess: () => {
+          setDialogOpen(false);
+          setEditingPromotion(null);
+        }
+      });
+    } else {
+      createMutation.mutate(data, {
+        onSuccess: () => {
+          setDialogOpen(false);
+        }
+      });
+    }
+  };
+
+  const handleEditPromotion = (promotion: Promotion) => {
+    setEditingPromotion(promotion);
+    form.reset({
+      title: promotion.title,
+      shortDescription: promotion.shortDescription,
+      longDescription: promotion.longDescription,
+      image: promotion.image || '',
+      startDate: promotion.startDate.split('T')[0],
+      endDate: promotion.endDate.split('T')[0],
+      originalPrice: Number(promotion.originalPrice) || 0,
+      discountedPrice: Number(promotion.discountedPrice) || 0,
+      type: promotion.type,
+      isActive: promotion.isActive,
+      isFeatured: promotion.isFeatured,
+      features: promotion.features?.map(f => f.feature) || []
+    });
+    setDialogOpen(true);
+  };
+
+  const handleNewPromotion = () => {
+    setEditingPromotion(null);
+    form.reset({
+      title: '',
+      shortDescription: '',
+      longDescription: '',
+      image: '',
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString().split('T')[0],
+      originalPrice: 0,
+      discountedPrice: 0,
+      type: 'PROMOTION',
+      isActive: true,
+      isFeatured: false,
       features: []
     });
     setDialogOpen(true);
   };
 
   const handleDeletePromotion = (id: string) => {
-    setPromotions(promotions.filter(p => p.id !== id));
-    toast({
-      title: "Promoção removida",
-      description: "A promoção foi removida com sucesso.",
+    if (confirm('Tem certeza que deseja remover esta promoção?')) {
+      deleteMutation.mutate(id);
+    }
+  };
+
+  const handleToggleActive = (promotion: Promotion) => {
+    updateMutation.mutate({
+      id: promotion.id,
+      data: { isActive: !promotion.isActive }
     });
   };
 
-  const handleToggleActive = (id: string) => {
-    setPromotions(
-      promotions.map(p => 
-        p.id === id ? { ...p, active: !p.active } : p
-      )
-    );
+  const handleToggleFeatured = (promotion: Promotion) => {
+    updateMutation.mutate({
+      id: promotion.id,
+      data: { isFeatured: !promotion.isFeatured }
+    });
   };
 
-  const handleToggleFeatured = (id: string) => {
-    setPromotions(
-      promotions.map(p => 
-        p.id === id ? { ...p, featured: !p.featured } : p
-      )
+  // Filtrar promoções por aba
+  const promotions = activeTab === 'active'
+    ? allPromotions?.filter(p => p.isActive)
+    : allPromotions;
+
+  // Estado de erro
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="p-6">
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center p-12 text-center">
+              <div className="text-red-600 mb-4">
+                <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold mb-2">Erro ao carregar promoções</h2>
+              <p className="text-gray-600">
+                {(error as any)?.response?.data?.message || 'Ocorreu um erro ao carregar as promoções'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </AdminLayout>
     );
-  };
+  }
 
   return (
     <AdminLayout>
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Pacotes e Promoções</h1>
+          <div>
+            <h1 className="text-3xl font-bold">Pacotes e Promoções</h1>
+            <p className="text-gray-600 mt-1">
+              {isLoading ? 'Carregando...' : `${promotions?.length || 0} ${activeTab === 'active' ? 'ativas' : 'no total'}`}
+            </p>
+          </div>
           <Button onClick={handleNewPromotion}>
             <Plus className="mr-2 h-4 w-4" /> Criar Novo
           </Button>
         </div>
 
-        <Tabs defaultValue="active">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'active' | 'all')}>
           <TabsList className="mb-4">
             <TabsTrigger value="active">Ativos</TabsTrigger>
             <TabsTrigger value="all">Todos</TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="active">
-            <Card>
-              <CardHeader>
-                <CardTitle>Promoções e Pacotes Ativos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Título</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Validade</TableHead>
-                      <TableHead>Preço</TableHead>
-                      <TableHead>Destaque</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {promotions.filter(p => p.active).map((promotion) => (
-                      <TableRow key={promotion.id}>
-                        <TableCell className="font-medium">{promotion.title}</TableCell>
-                        <TableCell>
-                          {promotion.type === 'package' ? 'Pacote' : 'Promoção'}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(promotion.startDate), 'dd/MM/yyyy')} - {format(new Date(promotion.endDate), 'dd/MM/yyyy')}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="text-muted-foreground line-through text-xs">{formatCurrency(promotion.originalPrice)}</span>
-                            <span className="font-medium">{formatCurrency(promotion.discountedPrice)}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Switch 
-                            checked={promotion.featured}
-                            onCheckedChange={() => handleToggleFeatured(promotion.id)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <span className={`w-2 h-2 rounded-full mr-2 ${promotion.active ? 'bg-green-500' : 'bg-gray-300'}`}></span>
-                            {promotion.active ? 'Ativo' : 'Inativo'}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button size="icon" variant="outline" onClick={() => handleEditPromotion(promotion)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button size="icon" variant="destructive" onClick={() => handleDeletePromotion(promotion.id)}>
-                              <Trash className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {promotions.filter(p => p.active).length === 0 && (
+
+          <TabsContent value={activeTab}>
+            {isLoading ? (
+              <Card>
+                <CardContent className="flex items-center justify-center p-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  <span className="ml-3 text-lg">Carregando promoções...</span>
+                </CardContent>
+              </Card>
+            ) : promotions && promotions.length > 0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    {activeTab === 'active' ? 'Promoções e Pacotes Ativos' : 'Todas as Promoções e Pacotes'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
-                          Não há promoções ou pacotes ativos.
-                        </TableCell>
+                        <TableHead>Título</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Validade</TableHead>
+                        <TableHead>Preço</TableHead>
+                        <TableHead>Destaque</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Ações</TableHead>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="all">
-            <Card>
-              <CardHeader>
-                <CardTitle>Todas as Promoções e Pacotes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Título</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead>Validade</TableHead>
-                      <TableHead>Preço</TableHead>
-                      <TableHead>Destaque</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {promotions.map((promotion) => (
-                      <TableRow key={promotion.id}>
-                        <TableCell className="font-medium">{promotion.title}</TableCell>
-                        <TableCell>
-                          {promotion.type === 'package' ? 'Pacote' : 'Promoção'}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(promotion.startDate), 'dd/MM/yyyy')} - {format(new Date(promotion.endDate), 'dd/MM/yyyy')}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="text-muted-foreground line-through text-xs">{formatCurrency(promotion.originalPrice)}</span>
-                            <span className="font-medium">{formatCurrency(promotion.discountedPrice)}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Switch 
-                            checked={promotion.featured}
-                            onCheckedChange={() => handleToggleFeatured(promotion.id)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Switch 
-                            checked={promotion.active}
-                            onCheckedChange={() => handleToggleActive(promotion.id)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button size="icon" variant="outline" onClick={() => handleEditPromotion(promotion)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button size="icon" variant="destructive" onClick={() => handleDeletePromotion(promotion.id)}>
-                              <Trash className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {promotions.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
-                          Não há promoções ou pacotes cadastrados.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {promotions.map((promotion) => (
+                        <TableRow key={promotion.id}>
+                          <TableCell className="font-medium">{promotion.title}</TableCell>
+                          <TableCell>
+                            {promotion.type === 'PACKAGE' ? 'Pacote' : 'Promoção'}
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(promotion.startDate), 'dd/MM/yyyy')} - {format(new Date(promotion.endDate), 'dd/MM/yyyy')}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              {promotion.originalPrice && (
+                                <span className="text-muted-foreground line-through text-xs">
+                                  {formatCurrency(Number(promotion.originalPrice))}
+                                </span>
+                              )}
+                              {promotion.discountedPrice && (
+                                <span className="font-medium">
+                                  {formatCurrency(Number(promotion.discountedPrice))}
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Switch
+                              checked={promotion.isFeatured}
+                              onCheckedChange={() => handleToggleFeatured(promotion)}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Switch
+                              checked={promotion.isActive}
+                              onCheckedChange={() => handleToggleActive(promotion)}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button size="icon" variant="outline" onClick={() => handleEditPromotion(promotion)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="destructive"
+                                onClick={() => handleDeletePromotion(promotion.id)}
+                                disabled={deleteMutation.isPending}
+                              >
+                                <Trash className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center p-12 text-center">
+                  <div className="text-gray-400 mb-4">
+                    <svg className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">Nenhuma promoção encontrada</h3>
+                  <p className="text-gray-600 mb-4">
+                    {activeTab === 'active'
+                      ? 'Não há promoções ou pacotes ativos no momento.'
+                      : 'Ainda não há promoções cadastradas no sistema.'}
+                  </p>
+                  <Button onClick={handleNewPromotion}>
+                    <Plus className="mr-2 h-4 w-4" /> Criar Nova Promoção
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
       </div>
@@ -320,12 +319,12 @@ const PackagesPromotions = () => {
           <DialogHeader>
             <DialogTitle>{editingPromotion ? 'Editar Promoção' : 'Criar Promoção'}</DialogTitle>
             <DialogDescription>
-              {editingPromotion 
+              {editingPromotion
                 ? 'Atualize os detalhes da promoção ou pacote abaixo.'
                 : 'Preencha os detalhes para criar uma nova promoção ou pacote.'}
             </DialogDescription>
           </DialogHeader>
-          
+
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -336,11 +335,11 @@ const PackagesPromotions = () => {
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="type">Tipo</Label>
                 <Select
-                  onValueChange={(value) => form.setValue('type', value as 'package' | 'promotion')}
+                  onValueChange={(value) => form.setValue('type', value as 'PACKAGE' | 'PROMOTION')}
                   defaultValue={form.getValues('type')}
                 >
                   <SelectTrigger>
@@ -348,14 +347,14 @@ const PackagesPromotions = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="package">Pacote</SelectItem>
-                      <SelectItem value="promotion">Promoção</SelectItem>
+                      <SelectItem value="PACKAGE">Pacote</SelectItem>
+                      <SelectItem value="PROMOTION">Promoção</SelectItem>
                     </SelectGroup>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="shortDescription">Descrição Curta</Label>
               <Input
@@ -364,7 +363,7 @@ const PackagesPromotions = () => {
                 required
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="longDescription">Descrição Completa</Label>
               <Textarea
@@ -373,7 +372,7 @@ const PackagesPromotions = () => {
                 rows={5}
               />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="startDate">Data de Início</Label>
@@ -384,7 +383,7 @@ const PackagesPromotions = () => {
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="endDate">Data de Término</Label>
                 <Input
@@ -395,7 +394,7 @@ const PackagesPromotions = () => {
                 />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="originalPrice">Preço Original</Label>
@@ -412,7 +411,7 @@ const PackagesPromotions = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="discountedPrice">Preço Promocional</Label>
                 <div className="relative">
@@ -429,19 +428,19 @@ const PackagesPromotions = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="image">Imagem da Promoção</Label>
               <ImageCropUpload
                 value={form.watch('image')}
                 onChange={(url) => form.setValue('image', url)}
-                aspectRatio={3/2}
+                aspectRatio={3 / 2}
                 cropWidth={600}
                 cropHeight={400}
                 cropDescription="Imagem será exibida nos cards de promoção em 600x400px"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label>Recursos Inclusos</Label>
               <div className="flex flex-wrap gap-2 mb-4">
@@ -454,7 +453,7 @@ const PackagesPromotions = () => {
                       size="icon"
                       className="h-6 w-6 ml-1"
                       onClick={() => {
-                        const features = form.getValues('features').filter((_, i) => i !== index);
+                        const features = form.getValues('features')?.filter((_, i) => i !== index);
                         form.setValue('features', features);
                       }}
                     >
@@ -462,7 +461,7 @@ const PackagesPromotions = () => {
                     </Button>
                   </div>
                 ))}
-                {(!form.getValues('features') || form.getValues('features').length === 0) && (
+                {(!form.getValues('features') || form.getValues('features')?.length === 0) && (
                   <p className="text-sm text-muted-foreground">Nenhum recurso adicionado.</p>
                 )}
               </div>
@@ -487,31 +486,43 @@ const PackagesPromotions = () => {
                 </Button>
               </div>
             </div>
-            
+
             <div className="flex space-x-4">
               <div className="flex items-center space-x-2">
                 <Switch
                   id="active"
-                  checked={form.getValues('active')}
-                  onCheckedChange={(checked) => form.setValue('active', checked)}
+                  checked={form.getValues('isActive')}
+                  onCheckedChange={(checked) => form.setValue('isActive', checked)}
                 />
                 <Label htmlFor="active">Ativo</Label>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <Switch
                   id="featured"
-                  checked={form.getValues('featured')}
-                  onCheckedChange={(checked) => form.setValue('featured', checked)}
+                  checked={form.getValues('isFeatured')}
+                  onCheckedChange={(checked) => form.setValue('isFeatured', checked)}
                 />
                 <Label htmlFor="featured">Destaque</Label>
               </div>
             </div>
-            
+
             <DialogFooter>
-              <Button type="submit">
-                <Check className="mr-2 h-4 w-4" />
-                {editingPromotion ? 'Salvar Alterações' : 'Criar Promoção'}
+              <Button
+                type="submit"
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                {(createMutation.isPending || updateMutation.isPending) ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    {editingPromotion ? 'Salvar Alterações' : 'Criar Promoção'}
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>

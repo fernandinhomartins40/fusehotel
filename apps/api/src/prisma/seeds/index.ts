@@ -2,6 +2,10 @@ import { prisma } from '../../config/database';
 import { hashPassword } from '../../utils/crypto';
 import { logger } from '../../utils/logger';
 import { AmenityCategory, SettingsCategory } from '@prisma/client';
+import { seedPromotions } from './promotions.seed';
+import { seedAccommodations } from './accommodations.seed';
+import { seedHotelSettings } from './hotel-settings.seed';
+import { seedLandingPage } from './landing.seed';
 
 async function seedUsers() {
   logger.info('🌱 Seeding users...');
@@ -201,11 +205,15 @@ async function seedSettings() {
 async function main() {
   try {
     logger.info('🚀 Starting seed...');
-    
+
     await seedUsers();
     await seedAmenities();
     await seedSettings();
-    
+    await seedHotelSettings();
+    await seedPromotions();
+    await seedAccommodations();
+    await seedLandingPage();
+
     logger.info('🎉 Seed completed successfully!');
   } catch (error) {
     logger.error('❌ Seed failed:', error);

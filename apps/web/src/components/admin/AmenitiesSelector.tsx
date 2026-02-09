@@ -1,118 +1,93 @@
-
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Plus, X } from 'lucide-react';
+import { useAmenities } from '@/hooks/useAmenities';
+import { Loader2 } from 'lucide-react';
 
 interface AmenitiesSelectorProps {
   value: string[];
-  onChange: (amenities: string[]) => void;
+  onChange: (amenityIds: string[]) => void;
 }
 
-const COMMON_AMENITIES = [
-  'Wi-Fi gratuito',
-  'Ar condicionado',
-  'TV',
-  'Frigobar',
-  'Cofre',
-  'Varanda',
-  'Vista para o mar',
-  'Vista para a montanha',
-  'Banheira',
-  'Chuveiro',
-  'Secador de cabelo',
-  'Roupões',
-  'Chinelos',
-  'Produtos de banho',
-  'Serviço de quarto',
-  'Café da manhã incluído',
-  'Estacionamento gratuito',
-  'Academia',
-  'Piscina',
-  'Spa',
-  'Restaurante',
-  'Bar'
-];
-
 export function AmenitiesSelector({ value, onChange }: AmenitiesSelectorProps) {
-  const [customAmenity, setCustomAmenity] = React.useState('');
+  const { data: amenities, isLoading } = useAmenities();
 
-  const handleToggle = (amenity: string) => {
-    const newAmenities = value.includes(amenity)
-      ? value.filter(a => a !== amenity)
-      : [...value, amenity];
+  const handleToggle = (amenityId: string) => {
+    const newAmenities = value.includes(amenityId)
+      ? value.filter(id => id !== amenityId)
+      : [...value, amenityId];
     onChange(newAmenities);
   };
 
-  const handleAddCustom = () => {
-    if (customAmenity.trim() && !value.includes(customAmenity.trim())) {
-      onChange([...value, customAmenity.trim()]);
-      setCustomAmenity('');
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+        <span className="ml-2">Carregando comodidades...</span>
+      </div>
+    );
+  }
 
-  const handleRemove = (amenity: string) => {
-    onChange(value.filter(a => a !== amenity));
+  if (!amenities || amenities.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        Nenhuma comodidade disponível. Entre em contato com o administrador.
+      </div>
+    );
+  }
+
+  // Group amenities by category
+  const groupedAmenities = amenities.reduce((acc, amenity) => {
+    if (!acc[amenity.category]) {
+      acc[amenity.category] = [];
+    }
+    acc[amenity.category].push(amenity);
+    return acc;
+  }, {} as Record<string, typeof amenities>);
+
+  const categoryLabels: Record<string, string> = {
+    BEDROOM: 'Quarto',
+    BATHROOM: 'Banheiro',
+    ENTERTAINMENT: 'Entretenimento',
+    KITCHEN: 'Cozinha',
+    OUTDOOR: 'Área Externa',
+    ACCESSIBILITY: 'Acessibilidade',
+    GENERAL: 'Geral',
   };
 
   return (
-    <div className="space-y-4">
-      <Label>Comodidades</Label>
-      
-      {/* Common amenities grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {COMMON_AMENITIES.map((amenity) => (
-          <div key={amenity} className="flex items-center space-x-2">
-            <Checkbox
-              id={amenity}
-              checked={value.includes(amenity)}
-              onCheckedChange={() => handleToggle(amenity)}
-            />
-            <Label htmlFor={amenity} className="text-sm">{amenity}</Label>
-          </div>
-        ))}
-      </div>
-
-      {/* Custom amenity input */}
-      <div className="flex gap-2">
-        <Input
-          placeholder="Adicionar comodidade personalizada"
-          value={customAmenity}
-          onChange={(e) => setCustomAmenity(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleAddCustom()}
-        />
-        <Button type="button" variant="outline" onClick={handleAddCustom}>
-          <Plus className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* Selected amenities (custom ones with remove option) */}
-      {value.length > 0 && (
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Comodidades selecionadas:</Label>
-          <div className="flex flex-wrap gap-2">
-            {value.map((amenity) => (
-              <div
-                key={amenity}
-                className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-sm"
-              >
-                {amenity}
-                {!COMMON_AMENITIES.includes(amenity) && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-4 w-4 p-0 hover:bg-red-100"
-                    onClick={() => handleRemove(amenity)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                )}
+    <div className="space-y-6">
+      {Object.entries(groupedAmenities).map(([category, categoryAmenities]) => (
+        <div key={category} className="space-y-3">
+          <Label className="text-sm font-semibold text-gray-700">
+            {categoryLabels[category] || category}
+          </Label>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {categoryAmenities.map((amenity) => (
+              <div key={amenity.id} className="flex items-center space-x-2">
+                <Checkbox
+                  id={amenity.id}
+                  checked={value.includes(amenity.id)}
+                  onCheckedChange={() => handleToggle(amenity.id)}
+                />
+                <Label
+                  htmlFor={amenity.id}
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  {amenity.icon && <span className="mr-1">{amenity.icon}</span>}
+                  {amenity.name}
+                </Label>
               </div>
             ))}
           </div>
+        </div>
+      ))}
+
+      {value.length > 0 && (
+        <div className="pt-4 border-t">
+          <Label className="text-sm font-medium">
+            {value.length} comodidade{value.length > 1 ? 's' : ''} selecionada{value.length > 1 ? 's' : ''}
+          </Label>
         </div>
       )}
     </div>

@@ -1,33 +1,79 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Promotion, mockPromotions } from '@/models/promotion';
+import { usePromotions } from '@/hooks/usePromotions';
+import { useLandingSettings } from '@/hooks/useLanding';
+import { defaultPromotionsConfig } from '@/types/landing-config';
 import { PromotionCard } from '@/components/ui/PromotionCard';
 import { Button } from '@/components/ui/button';
-import { 
-  Carousel, 
-  CarouselContent, 
-  CarouselItem, 
-  CarouselNext, 
-  CarouselPrevious 
+import { Loader2 } from 'lucide-react';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious
 } from '@/components/ui/carousel';
 
 export const PromotionsSection = () => {
-  const featuredPromotions = mockPromotions.filter(p => p.active && p.featured);
-  
+  const { data: promotions, isLoading, error } = usePromotions({
+    isActive: true,
+    isFeatured: true
+  });
+
+  const { data: settingsData } = useLandingSettings('promotions');
+  const config = settingsData?.config || defaultPromotionsConfig;
+
+  const featuredPromotions = promotions || [];
+
+  // If loading, show loader
+  if (isLoading) {
+    return (
+      <section className="py-16" style={{ backgroundColor: config.backgroundColor || '#F9F9F9' }}>
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <span className="ml-3 text-lg">Carregando promoções...</span>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // If error, show error message
+  if (error) {
+    return (
+      <section className="py-16" style={{ backgroundColor: config.backgroundColor || '#F9F9F9' }}>
+        <div className="container mx-auto px-4">
+          <div className="text-center py-12">
+            <p className="text-red-600 text-lg">
+              Erro ao carregar promoções. Por favor, tente novamente mais tarde.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   // If there are no featured promotions, don't render the section
   if (featuredPromotions.length === 0) {
     return null;
   }
 
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="py-16" style={{ backgroundColor: config.backgroundColor || '#F9F9F9' }}>
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-2">Pacotes e Promoções</h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto mb-6">
-            Confira nossas ofertas especiais para tornar sua estadia ainda mais memorável.
-          </p>
+          {config.title && (
+            <h2 className="text-3xl font-bold mb-2" style={{ color: config.titleColor || '#000000' }}>
+              {config.title}
+            </h2>
+          )}
+          {config.description && (
+            <p className="max-w-2xl mx-auto mb-6" style={{ color: config.titleColor || '#000000' }}>
+              {config.description}
+            </p>
+          )}
           <Button variant="outline" asChild>
             <Link to="/promocoes">Ver todas as promoções</Link>
           </Button>

@@ -5,7 +5,16 @@ import { sendSuccess } from '../utils/response';
 export class PromotionController {
   static async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const promotions = await PromotionService.list(req.query);
+      // Convert string query params to proper types
+      const filters: any = { ...req.query };
+      if (filters.isActive !== undefined) {
+        filters.isActive = filters.isActive === 'true' || filters.isActive === true;
+      }
+      if (filters.isFeatured !== undefined) {
+        filters.isFeatured = filters.isFeatured === 'true' || filters.isFeatured === true;
+      }
+
+      const promotions = await PromotionService.list(filters);
       return sendSuccess(res, promotions);
     } catch (error) {
       next(error);
@@ -34,6 +43,24 @@ export class PromotionController {
     try {
       const promotion = await PromotionService.create(req.body);
       return sendSuccess(res, promotion, 'Promoção criada com sucesso', 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async update(req: Request, res: Response, next: NextFunction) {
+    try {
+      const promotion = await PromotionService.update(req.params.id, req.body);
+      return sendSuccess(res, promotion, 'Promoção atualizada com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      await PromotionService.delete(req.params.id);
+      return sendSuccess(res, null, 'Promoção removida com sucesso');
     } catch (error) {
       next(error);
     }

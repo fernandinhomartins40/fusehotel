@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Form,
   FormControl,
@@ -24,45 +24,50 @@ import { Accommodation } from '@/types/accommodation';
 import { Badge } from '@/components/ui/badge';
 
 interface AccommodationFormProps {
-  accommodation?: Accommodation;
+  accommodation?: Accommodation | null;
   onSubmit: (data: AccommodationFormData) => void;
+  isLoading?: boolean;
 }
 
-export function AccommodationForm({ accommodation, onSubmit }: AccommodationFormProps) {
+const accommodationTypes = [
+  { value: 'ROOM', label: 'Quarto' },
+  { value: 'SUITE', label: 'Suíte' },
+  { value: 'CHALET', label: 'Chalé' },
+  { value: 'VILLA', label: 'Vila' },
+  { value: 'APARTMENT', label: 'Apartamento' },
+] as const;
+
+export function AccommodationForm({ accommodation, onSubmit, isLoading }: AccommodationFormProps) {
   const form = useForm<AccommodationFormData>({
     resolver: zodResolver(accommodationSchema),
     defaultValues: {
       name: accommodation?.name || '',
-      type: accommodation?.type || '',
+      type: accommodation?.type || 'SUITE',
       capacity: accommodation?.capacity || 2,
-      price: accommodation?.price || 0,
+      pricePerNight: accommodation?.pricePerNight || 0,
       description: accommodation?.description || '',
       shortDescription: accommodation?.shortDescription || '',
       images: accommodation?.images || [],
-      amenities: accommodation?.amenities || [],
-      location: {
-        floor: accommodation?.location?.floor || '',
-        view: accommodation?.location?.view || '',
-        area: accommodation?.location?.area || 0,
-      },
-      seo: {
-        metaTitle: accommodation?.seo?.metaTitle || '',
-        metaDescription: accommodation?.seo?.metaDescription || '',
-        keywords: accommodation?.seo?.keywords || [],
-      },
-      isAvailable: accommodation?.isAvailable !== undefined ? accommodation.isAvailable : true,
-      featured: accommodation?.featured || false,
+      amenityIds: accommodation?.amenities?.map(a => a.amenity.id) || [],
+      floor: accommodation?.floor || undefined,
+      view: accommodation?.view || '',
+      area: accommodation?.area || undefined,
       checkInTime: accommodation?.checkInTime || '15:00',
       checkOutTime: accommodation?.checkOutTime || '11:00',
-      cancellationPolicy: accommodation?.cancellationPolicy || '',
       extraBeds: accommodation?.extraBeds || 0,
       maxExtraBeds: accommodation?.maxExtraBeds || 0,
       extraBedPrice: accommodation?.extraBedPrice || 0,
+      cancellationPolicy: accommodation?.cancellationPolicy || '',
+      metaTitle: accommodation?.metaTitle || '',
+      metaDescription: accommodation?.metaDescription || '',
+      keywords: accommodation?.keywords || [],
+      isAvailable: accommodation?.isAvailable !== undefined ? accommodation.isAvailable : true,
+      isFeatured: accommodation?.isFeatured || false,
     }
   });
 
   const watchedImages = form.watch('images');
-  const watchedAmenities = form.watch('amenities');
+  const watchedAmenityIds = form.watch('amenityIds');
 
   const handleFormSubmit = (data: AccommodationFormData) => {
     onSubmit(data);
@@ -110,9 +115,20 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Tipo</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Chalé, Suite, Quarto..." {...field} />
-                        </FormControl>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o tipo" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {accommodationTypes.map((type) => (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -125,8 +141,8 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
                       <FormItem>
                         <FormLabel>Capacidade</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
+                          <Input
+                            type="number"
                             min="1"
                             max="20"
                             {...field}
@@ -141,13 +157,13 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
 
                 <FormField
                   control={form.control}
-                  name="price"
+                  name="pricePerNight"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Preço por noite (R$)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
+                        <Input
+                          type="number"
                           min="0"
                           step="0.01"
                           {...field}
@@ -166,14 +182,14 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
                     <FormItem>
                       <FormLabel>Descrição Resumida</FormLabel>
                       <FormControl>
-                        <Input 
+                        <Input
                           placeholder="Descrição curta para listagem"
-                          maxLength={100}
-                          {...field} 
+                          maxLength={200}
+                          {...field}
                         />
                       </FormControl>
                       <FormDescription>
-                        Máximo 100 caracteres - aparece nos cards de listagem
+                        Máximo 200 caracteres - aparece nos cards de listagem
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -199,7 +215,7 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
 
                   <FormField
                     control={form.control}
-                    name="featured"
+                    name="isFeatured"
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                         <FormControl>
@@ -233,10 +249,10 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
                     <FormItem>
                       <FormLabel>Descrição Completa</FormLabel>
                       <FormControl>
-                        <Textarea 
+                        <Textarea
                           placeholder="Descrição detalhada da acomodação..."
                           className="min-h-32"
-                          {...field} 
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -247,12 +263,18 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
                 <div className="grid grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
-                    name="location.floor"
+                    name="floor"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Andar</FormLabel>
                         <FormControl>
-                          <Input placeholder="Térreo, 1º, 2º..." {...field} />
+                          <Input
+                            type="number"
+                            placeholder="Ex: 1, 2, 3..."
+                            {...field}
+                            value={field.value || ''}
+                            onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -261,7 +283,7 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
 
                   <FormField
                     control={form.control}
-                    name="location.view"
+                    name="view"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Vista</FormLabel>
@@ -275,16 +297,17 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
 
                   <FormField
                     control={form.control}
-                    name="location.area"
+                    name="area"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Área (m²)</FormLabel>
                         <FormControl>
-                          <Input 
+                          <Input
                             type="number"
                             min="0"
                             {...field}
-                            onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                            value={field.value || ''}
+                            onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                           />
                         </FormControl>
                         <FormMessage />
@@ -331,7 +354,7 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
                       <FormItem>
                         <FormLabel>Camas Extra Atuais</FormLabel>
                         <FormControl>
-                          <Input 
+                          <Input
                             type="number"
                             min="0"
                             {...field}
@@ -350,7 +373,7 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
                       <FormItem>
                         <FormLabel>Máx. Camas Extra</FormLabel>
                         <FormControl>
-                          <Input 
+                          <Input
                             type="number"
                             min="0"
                             {...field}
@@ -369,7 +392,7 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
                       <FormItem>
                         <FormLabel>Preço Cama Extra (R$)</FormLabel>
                         <FormControl>
-                          <Input 
+                          <Input
                             type="number"
                             min="0"
                             step="0.01"
@@ -390,9 +413,9 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
                     <FormItem>
                       <FormLabel>Política de Cancelamento</FormLabel>
                       <FormControl>
-                        <Textarea 
+                        <Textarea
                           placeholder="Descreva a política de cancelamento..."
-                          {...field} 
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -414,7 +437,7 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
               <CardContent>
                 <FormField
                   control={form.control}
-                  name="amenities"
+                  name="amenityIds"
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
@@ -471,15 +494,15 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="seo.metaTitle"
+                  name="metaTitle"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Título SEO</FormLabel>
                       <FormControl>
-                        <Input 
+                        <Input
                           placeholder="Título para SEO (máx. 60 caracteres)"
                           maxLength={60}
-                          {...field} 
+                          {...field}
                         />
                       </FormControl>
                       <FormDescription>
@@ -492,15 +515,15 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
 
                 <FormField
                   control={form.control}
-                  name="seo.metaDescription"
+                  name="metaDescription"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Descrição SEO</FormLabel>
                       <FormControl>
-                        <Textarea 
+                        <Textarea
                           placeholder="Descrição para SEO (máx. 160 caracteres)"
                           maxLength={160}
-                          {...field} 
+                          {...field}
                         />
                       </FormControl>
                       <FormDescription>
@@ -513,12 +536,12 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
 
                 <FormField
                   control={form.control}
-                  name="seo.keywords"
+                  name="keywords"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Palavras-chave</FormLabel>
                       <FormControl>
-                        <Input 
+                        <Input
                           placeholder="hospedagem, luxo, vista mar (separadas por vírgula)"
                           {...field}
                           value={field.value?.join(', ') || ''}
@@ -554,31 +577,15 @@ export function AccommodationForm({ accommodation, onSubmit }: AccommodationForm
                 <strong>Imagens:</strong> {watchedImages.length} adicionadas
               </div>
               <div>
-                <strong>Comodidades:</strong> {watchedAmenities.length} selecionadas
+                <strong>Comodidades:</strong> {watchedAmenityIds.length} selecionadas
               </div>
             </div>
-            {watchedAmenities.length > 0 && (
-              <div className="mt-3">
-                <div className="flex flex-wrap gap-1">
-                  {watchedAmenities.slice(0, 5).map((amenity, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {amenity}
-                    </Badge>
-                  ))}
-                  {watchedAmenities.length > 5 && (
-                    <Badge variant="outline" className="text-xs">
-                      +{watchedAmenities.length - 5} mais
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
         <div className="flex justify-end gap-3">
-          <Button type="submit" size="lg">
-            {accommodation ? 'Salvar Alterações' : 'Adicionar Acomodação'}
+          <Button type="submit" size="lg" disabled={isLoading}>
+            {isLoading ? 'Salvando...' : accommodation ? 'Salvar Alterações' : 'Adicionar Acomodação'}
           </Button>
         </div>
       </form>

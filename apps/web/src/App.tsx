@@ -13,12 +13,15 @@ import Accommodations from "./pages/Accommodations";
 import Promotions from "./pages/Promotions";
 import PromotionDetail from "./pages/PromotionDetail";
 import CustomerArea from "./pages/CustomerArea";
+import AdminLogin from "./pages/AdminLogin";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminAccommodations from "./pages/admin/Accommodations";
 import Reservations from "./pages/admin/Reservations";
 import Settings from "./pages/admin/Settings";
 import PackagesPromotions from "./pages/admin/PackagesPromotions";
+import Customers from "./pages/admin/Customers";
+import LandingCustomizer from "./pages/admin/LandingCustomizer";
 import AboutUs from "./pages/AboutUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import FAQ from "./pages/FAQ";
@@ -52,20 +55,16 @@ const App = () => {
               <Route path="/acomodacoes/:roomId" element={<RoomDetail />} />
               <Route path="/promocoes" element={<Promotions />} />
               <Route path="/promocoes/:promotionId" element={<PromotionDetail />} />
-              <Route
-                path="/area-do-cliente"
-                element={
-                  <ProtectedRoute>
-                    <CustomerArea />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="/area-do-cliente" element={<CustomerArea />} />
               <Route path="/sobre-nos" element={<AboutUs />} />
               <Route path="/politicas-de-privacidade" element={<PrivacyPolicy />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/contato" element={<Contact />} />
               <Route path="/servicos" element={<Services />} />
-              
+
+              {/* Admin Login - Public */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+
               {/* Admin routes - Protected */}
               <Route
                 path="/admin"
@@ -100,6 +99,14 @@ const App = () => {
                 }
               />
               <Route
+                path="/admin/customers"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <Customers />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/admin/settings"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN']}>
@@ -107,7 +114,15 @@ const App = () => {
                   </ProtectedRoute>
                 }
               />
-              
+              <Route
+                path="/admin/landing-customizer"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <LandingCustomizer />
+                  </ProtectedRoute>
+                }
+              />
+
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

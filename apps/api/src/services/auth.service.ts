@@ -72,12 +72,18 @@ export class AuthService {
   }
 
   static async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const user = await prisma.user.findUnique({
-      where: { email: credentials.email },
+    // Buscar por email OU WhatsApp (para usuários provisórios)
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: credentials.email },
+          { whatsapp: credentials.email.replace(/\D/g, '') }, // Remove formatação para buscar WhatsApp
+        ]
+      }
     });
 
     if (!user || !user.isActive) {
-      throw new UnauthorizedError('Email ou senha inválidos');
+      throw new UnauthorizedError('Email/WhatsApp ou senha inválidos');
     }
 
     const isPasswordValid = await comparePassword(credentials.password, user.password);

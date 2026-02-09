@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { env } from './config/environment';
 import { errorHandler } from './middlewares/error.middleware';
 import { apiLimiter } from './middlewares/rate-limiter.middleware';
@@ -9,8 +10,12 @@ import routes from './routes';
 
 export const app = express();
 
+// Trust proxy (necessário para Nginx reverse proxy)
+app.set('trust proxy', 1);
+
 app.use(helmet());
 app.use(cors({ origin: env.FRONTEND_URL, credentials: true }));
+app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static('uploads'));

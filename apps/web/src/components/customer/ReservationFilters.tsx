@@ -84,10 +84,13 @@ export const ReservationFilters: React.FC<ReservationFiltersProps> = ({ onFilter
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="confirmed">Confirmada</SelectItem>
-                    <SelectItem value="pending">Pendente</SelectItem>
-                    <SelectItem value="cancelled">Cancelada</SelectItem>
-                    <SelectItem value="completed">Concluída</SelectItem>
+                    <SelectItem value="PENDING">Pendente</SelectItem>
+                    <SelectItem value="CONFIRMED">Confirmada</SelectItem>
+                    <SelectItem value="CHECKED_IN">Check-in feito</SelectItem>
+                    <SelectItem value="CHECKED_OUT">Check-out feito</SelectItem>
+                    <SelectItem value="CANCELLED">Cancelada</SelectItem>
+                    <SelectItem value="COMPLETED">Concluída</SelectItem>
+                    <SelectItem value="NO_SHOW">Não compareceu</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

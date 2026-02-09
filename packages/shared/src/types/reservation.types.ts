@@ -108,8 +108,9 @@ export interface CreateReservationDto {
   numberOfGuests: number;
   numberOfExtraBeds?: number;
   guestName: string;
-  guestEmail: string;
-  guestPhone: string;
+  guestWhatsApp: string;
+  guestEmail?: string;
+  guestPhone?: string;
   guestCpf?: string;
   guestNationality?: string;
   guestDocumentNumber?: string;
