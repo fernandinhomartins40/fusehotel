@@ -34,7 +34,9 @@
       "Bash(docker cp:*)",
       "Bash(docker restart:*)",
       "Bash(python:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Implementar sistema completo de gerenciamento hoteleiro\n\n- Adicionar Landing Page Customizer com editor visual completo\n- Implementar sistema de reservas com checkout WhatsApp\n- Adicionar gerenciamento de acomodações com imagens múltiplas\n- Implementar sistema de promoções e pacotes\n- Adicionar painel de clientes com perfil e histórico\n- Melhorar autenticação com proteção de rotas admin\n- Adicionar sistema de upload de imagens otimizado\n- Implementar validações e controle de acesso\n- Adicionar seeds para dados iniciais\n- Melhorar documentação com guias de setup\n- Atualizar configurações Docker para desenvolvimento\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)"
     ]
   }
 }
