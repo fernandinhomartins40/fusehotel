@@ -2,6 +2,22 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useToast } from '@/hooks/use-toast';
 
+export function useReservations(filters?: any) {
+  return useQuery({
+    queryKey: ['reservations', filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.status) params.append('status', filters.status);
+      if (filters?.accommodationId) params.append('accommodationId', filters.accommodationId);
+      if (filters?.userId) params.append('userId', filters.userId);
+      if (filters?.reservationCode) params.append('reservationCode', filters.reservationCode);
+
+      const { data } = await apiClient.get(`/reservations?${params.toString()}`);
+      return data.data;
+    },
+  });
+}
+
 export function useMyReservations() {
   return useQuery({
     queryKey: ['my-reservations'],

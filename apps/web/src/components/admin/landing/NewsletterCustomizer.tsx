@@ -139,52 +139,60 @@ export const NewsletterCustomizer = () => {
         </CardHeader>
         <CardContent>
           <div className="border rounded-lg overflow-auto max-h-[600px]">
-            {/* Preview em tamanho real */}
+            {/* Preview em tamanho real - seguindo o padrão do NewsletterSection */}
             <section
-              className="py-16 px-4"
+              className="px-4 md:px-12 lg:px-24 py-16"
               style={{
                 backgroundColor: watchedValues.backgroundColor || '#0466C8',
               }}
             >
-              <div className="container mx-auto max-w-2xl text-center">
-                {watchedValues.title && (
-                  <h2
-                    className="text-3xl font-bold mb-4"
+              <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
+                {/* Title */}
+                <div className="mb-6 md:mb-0">
+                  <h3
+                    className="text-[56px] font-extrabold tracking-tight leading-none uppercase"
                     style={{
                       color: watchedValues.titleColor || '#FFFFFF',
                     }}
                   >
-                    {watchedValues.title}
-                  </h2>
-                )}
+                    {watchedValues.title || 'NEWSLETTER'}
+                  </h3>
+                </div>
 
-                {watchedValues.description && (
-                  <p
-                    className="mb-8 text-lg"
+                {/* Form */}
+                <div className="w-full md:max-w-md">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-grow">
+                      <Input
+                        type="email"
+                        placeholder="E-mail"
+                        className="w-full bg-white text-gray-800 h-12 px-4"
+                        disabled
+                      />
+                    </div>
+                    <Button
+                      className="h-12 px-6"
+                      style={{
+                        backgroundColor: watchedValues.buttonColor || '#000000',
+                        color: '#FFFFFF',
+                      }}
+                      disabled
+                    >
+                      {watchedValues.buttonText || 'Enviar'}
+                    </Button>
+                  </div>
+
+                  <div
+                    className="flex items-center gap-2 text-sm mt-3"
                     style={{
                       color: watchedValues.titleColor || '#FFFFFF',
                     }}
                   >
-                    {watchedValues.description}
-                  </p>
-                )}
-
-                <div className="flex gap-2 max-w-md mx-auto">
-                  <Input
-                    type="email"
-                    placeholder="Seu e-mail"
-                    className="flex-1 bg-white"
-                    disabled
-                  />
-                  <Button
-                    style={{
-                      backgroundColor: watchedValues.buttonColor || '#FFFFFF',
-                      color: '#000000',
-                    }}
-                    disabled
-                  >
-                    {watchedValues.buttonText || 'Inscrever-se'}
-                  </Button>
+                    <svg width="14" height="15" viewBox="0 0 14 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M11.8125 6.70508H11.1562V4.73633C11.1562 2.44492 9.29141 0.580078 7 0.580078C4.70859 0.580078 2.84375 2.44492 2.84375 4.73633V6.70508H2.1875C1.46289 6.70508 0.875 7.29297 0.875 8.01758V13.2676C0.875 13.9922 1.46289 14.5801 2.1875 14.5801H11.8125C12.5371 14.5801 13.125 13.9922 13.125 13.2676V8.01758C13.125 7.29297 12.5371 6.70508 11.8125 6.70508Z" fill="currentColor"/>
+                    </svg>
+                    <span>Seu email está protegido. Nunca enviaremos SPAM.</span>
+                  </div>
                 </div>
               </div>
             </section>

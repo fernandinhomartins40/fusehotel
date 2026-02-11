@@ -94,5 +94,56 @@ export async function seedLandingPage() {
   }
 
   console.log('Gallery images created');
+
+  // Newsletter section config
+  await prisma.landingPageSettings.upsert({
+    where: { section: 'newsletter' },
+    update: {},
+    create: {
+      id: 'seed-newsletter',
+      section: 'newsletter',
+      config: {
+        title: 'NEWSLETTER',
+        description: 'Inscreva-se em nossa newsletter e receba ofertas exclusivas e novidades.',
+        backgroundColor: '#0466C8',
+        titleColor: '#FFFFFF',
+        buttonText: 'Enviar',
+        buttonColor: '#000000',
+        buttonHoverColor: '#333333',
+      }
+    }
+  });
+
+  console.log('Newsletter section created');
+
+  // Footer section config
+  await prisma.landingPageSettings.upsert({
+    where: { section: 'footer' },
+    update: {},
+    create: {
+      id: 'seed-footer',
+      section: 'footer',
+      config: {
+        backgroundColor: '#1A1A1A',
+        textColor: '#9CA3AF',
+        headingColor: '#FFFFFF',
+        copyrightColor: '#6B7280',
+        borderColor: '#1F2937',
+        aboutText: 'Bem-vindo ao Hotel Águas Claras, onde conforto e natureza se encontram para proporcionar uma experiência única de hospedagem.',
+        copyright: `© ${new Date().getFullYear()} Hotel Águas Claras - TODOS OS DIREITOS RESERVADOS`,
+        address: 'Av. das Águas Claras, 1000 - Serra da Mantiqueira, MG',
+        phone: '(35) 3456-7890',
+        whatsapp: '(35) 98765-4321',
+        email: 'contato@hotelaguasclaras.com.br',
+        businessHours: 'Recepção 24h\nCheck-in: 14h\nCheck-out: 12h',
+        facebookUrl: 'https://facebook.com/hotelaguasclaras',
+        instagramUrl: 'https://instagram.com/hotelaguasclaras',
+        linkedinUrl: 'https://linkedin.com/company/hotelaguasclaras',
+        logo: '/lovable-uploads/91e13e81-bbd9-4aab-b810-d81bb336ecb8.png'
+      }
+    }
+  });
+
+  console.log('Footer section created');
   console.log('Landing page seeded successfully!');
 }

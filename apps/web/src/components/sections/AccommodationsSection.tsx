@@ -92,6 +92,7 @@ export const AccommodationsSection: React.FC = () => {
                 area={accommodation.area ? `${accommodation.area} m²` : 'Área não informada'}
                 capacity={`Até ${accommodation.capacity} Pessoa${accommodation.capacity > 1 ? 's' : ''}`}
                 price={`${formatCurrency(Number(accommodation.pricePerNight))}/diária`}
+                config={config}
               />
             ))}
           </div>

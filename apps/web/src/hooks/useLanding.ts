@@ -324,3 +324,478 @@ export const useReorderPartners = () => {
     }
   });
 };
+
+// Service Items hooks
+export const useServiceItems = () => {
+  return useQuery({
+    queryKey: ['service-items'],
+    queryFn: async () => {
+      const response = await apiClient.get('/services/service-items');
+      return response.data.data;
+    }
+  });
+};
+
+export const useServiceItemsAdmin = () => {
+  return useQuery({
+    queryKey: ['service-items-admin'],
+    queryFn: async () => {
+      const response = await apiClient.get('/services/admin/service-items');
+      return response.data.data;
+    }
+  });
+};
+
+export const useServiceItemsByCategory = (category: string) => {
+  return useQuery({
+    queryKey: ['service-items', category],
+    queryFn: async () => {
+      const response = await apiClient.get(`/services/service-items/category/${category}`);
+      return response.data.data;
+    }
+  });
+};
+
+export const useServiceItemsByCategoryAdmin = (category: string) => {
+  return useQuery({
+    queryKey: ['service-items-admin', category],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get(`/services/admin/service-items/category/${category}`);
+        return response.data.data;
+      } catch (error: any) {
+        // Se falhar na rota admin (401), tentar a rota pública
+        if (error?.response?.status === 401) {
+          const response = await apiClient.get(`/services/service-items/category/${category}`);
+          return response.data.data;
+        }
+        throw error;
+      }
+    }
+  });
+};
+
+export const useCreateServiceItem = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiClient.post('/services/admin/service-items', data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['service-items'] });
+      queryClient.invalidateQueries({ queryKey: ['service-items-admin'] });
+      toast.success('Item de serviço criado!');
+    }
+  });
+};
+
+export const useUpdateServiceItem = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await apiClient.put(`/services/admin/service-items/${id}`, data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['service-items'] });
+      queryClient.invalidateQueries({ queryKey: ['service-items-admin'] });
+      toast.success('Item atualizado!');
+    }
+  });
+};
+
+export const useDeleteServiceItem = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.delete(`/services/admin/service-items/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['service-items'] });
+      queryClient.invalidateQueries({ queryKey: ['service-items-admin'] });
+      toast.success('Item removido!');
+    }
+  });
+};
+
+export const useReorderServiceItems = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (serviceItemIds: string[]) => {
+      await apiClient.post('/services/admin/service-items/reorder', { serviceItemIds });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['service-items'] });
+      queryClient.invalidateQueries({ queryKey: ['service-items-admin'] });
+      toast.success('Ordem atualizada!');
+    }
+  });
+};
+
+// Team Members hooks
+export const useTeamMembers = () => {
+  return useQuery({
+    queryKey: ['team-members'],
+    queryFn: async () => {
+      const response = await apiClient.get('/about/team-members');
+      return response.data.data;
+    }
+  });
+};
+
+export const useTeamMembersAdmin = () => {
+  return useQuery({
+    queryKey: ['team-members-admin'],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get('/about/admin/team-members');
+        return response.data.data;
+      } catch (error: any) {
+        if (error?.response?.status === 401) {
+          const response = await apiClient.get('/about/team-members');
+          return response.data.data;
+        }
+        throw error;
+      }
+    }
+  });
+};
+
+export const useCreateTeamMember = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiClient.post('/about/admin/team-members', data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['team-members'] });
+      queryClient.invalidateQueries({ queryKey: ['team-members-admin'] });
+      toast.success('Membro da equipe criado!');
+    }
+  });
+};
+
+export const useUpdateTeamMember = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await apiClient.put(`/about/admin/team-members/${id}`, data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['team-members'] });
+      queryClient.invalidateQueries({ queryKey: ['team-members-admin'] });
+      toast.success('Membro atualizado!');
+    }
+  });
+};
+
+export const useDeleteTeamMember = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.delete(`/about/admin/team-members/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['team-members'] });
+      queryClient.invalidateQueries({ queryKey: ['team-members-admin'] });
+      toast.success('Membro removido!');
+    }
+  });
+};
+
+export const useReorderTeamMembers = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (teamMemberIds: string[]) => {
+      await apiClient.post('/about/admin/team-members/reorder', { teamMemberIds });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['team-members'] });
+      queryClient.invalidateQueries({ queryKey: ['team-members-admin'] });
+      toast.success('Ordem atualizada!');
+    }
+  });
+};
+
+// Awards hooks
+export const useAwards = () => {
+  return useQuery({
+    queryKey: ['awards'],
+    queryFn: async () => {
+      const response = await apiClient.get('/about/awards');
+      return response.data.data;
+    }
+  });
+};
+
+export const useAwardsAdmin = () => {
+  return useQuery({
+    queryKey: ['awards-admin'],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get('/about/admin/awards');
+        return response.data.data;
+      } catch (error: any) {
+        if (error?.response?.status === 401) {
+          const response = await apiClient.get('/about/awards');
+          return response.data.data;
+        }
+        throw error;
+      }
+    }
+  });
+};
+
+export const useCreateAward = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiClient.post('/about/admin/awards', data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['awards'] });
+      queryClient.invalidateQueries({ queryKey: ['awards-admin'] });
+      toast.success('Prêmio criado!');
+    }
+  });
+};
+
+export const useUpdateAward = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await apiClient.put(`/about/admin/awards/${id}`, data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['awards'] });
+      queryClient.invalidateQueries({ queryKey: ['awards-admin'] });
+      toast.success('Prêmio atualizado!');
+    }
+  });
+};
+
+export const useDeleteAward = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.delete(`/about/admin/awards/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['awards'] });
+      queryClient.invalidateQueries({ queryKey: ['awards-admin'] });
+      toast.success('Prêmio removido!');
+    }
+  });
+};
+
+export const useReorderAwards = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (awardIds: string[]) => {
+      await apiClient.post('/about/admin/awards/reorder', { awardIds });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['awards'] });
+      queryClient.invalidateQueries({ queryKey: ['awards-admin'] });
+      toast.success('Ordem atualizada!');
+    }
+  });
+};
+
+// FAQ Categories hooks
+export const useFAQCategories = () => {
+  return useQuery({
+    queryKey: ['faq-categories'],
+    queryFn: async () => {
+      const response = await apiClient.get('/faq/categories');
+      return response.data.data;
+    }
+  });
+};
+
+export const useFAQCategoriesAdmin = () => {
+  return useQuery({
+    queryKey: ['faq-categories-admin'],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get('/faq/admin/categories');
+        return response.data.data;
+      } catch (error: any) {
+        if (error?.response?.status === 401) {
+          const response = await apiClient.get('/faq/categories');
+          return response.data.data;
+        }
+        throw error;
+      }
+    }
+  });
+};
+
+export const useCreateFAQCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiClient.post('/faq/admin/categories', data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['faq-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['faq-categories-admin'] });
+      toast.success('Categoria criada!');
+    }
+  });
+};
+
+export const useUpdateFAQCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await apiClient.put(`/faq/admin/categories/${id}`, data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['faq-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['faq-categories-admin'] });
+      toast.success('Categoria atualizada!');
+    }
+  });
+};
+
+export const useDeleteFAQCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.delete(`/faq/admin/categories/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['faq-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['faq-categories-admin'] });
+      toast.success('Categoria removida!');
+    }
+  });
+};
+
+export const useReorderFAQCategories = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (items: { id: string; order: number }[]) => {
+      await apiClient.post('/faq/admin/categories/reorder', { items });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['faq-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['faq-categories-admin'] });
+      toast.success('Ordem atualizada!');
+    }
+  });
+};
+
+// FAQ Items hooks
+export const useFAQItems = () => {
+  return useQuery({
+    queryKey: ['faq-items'],
+    queryFn: async () => {
+      const response = await apiClient.get('/faq/items');
+      return response.data.data;
+    }
+  });
+};
+
+export const useFAQItemsAdmin = () => {
+  return useQuery({
+    queryKey: ['faq-items-admin'],
+    queryFn: async () => {
+      try {
+        const response = await apiClient.get('/faq/admin/items');
+        return response.data.data;
+      } catch (error: any) {
+        if (error?.response?.status === 401) {
+          const response = await apiClient.get('/faq/items');
+          return response.data.data;
+        }
+        throw error;
+      }
+    }
+  });
+};
+
+export const useFAQItemsByCategory = (categoryId: string) => {
+  return useQuery({
+    queryKey: ['faq-items', categoryId],
+    queryFn: async () => {
+      const response = await apiClient.get(`/faq/items/category/${categoryId}`);
+      return response.data.data;
+    },
+    enabled: !!categoryId,
+  });
+};
+
+export const useCreateFAQItem = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiClient.post('/faq/admin/items', data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['faq-items'] });
+      queryClient.invalidateQueries({ queryKey: ['faq-items-admin'] });
+      queryClient.invalidateQueries({ queryKey: ['faq-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['faq-categories-admin'] });
+      toast.success('Pergunta criada!');
+    }
+  });
+};
+
+export const useUpdateFAQItem = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await apiClient.put(`/faq/admin/items/${id}`, data);
+      return response.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['faq-items'] });
+      queryClient.invalidateQueries({ queryKey: ['faq-items-admin'] });
+      queryClient.invalidateQueries({ queryKey: ['faq-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['faq-categories-admin'] });
+      toast.success('Pergunta atualizada!');
+    }
+  });
+};
+
+export const useDeleteFAQItem = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.delete(`/faq/admin/items/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['faq-items'] });
+      queryClient.invalidateQueries({ queryKey: ['faq-items-admin'] });
+      queryClient.invalidateQueries({ queryKey: ['faq-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['faq-categories-admin'] });
+      toast.success('Pergunta removida!');
+    }
+  });
+};
+
+export const useReorderFAQItems = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (items: { id: string; order: number }[]) => {
+      await apiClient.post('/faq/admin/items/reorder', { items });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['faq-items'] });
+      queryClient.invalidateQueries({ queryKey: ['faq-items-admin'] });
+      queryClient.invalidateQueries({ queryKey: ['faq-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['faq-categories-admin'] });
+      toast.success('Ordem atualizada!');
+    }
+  });
+};

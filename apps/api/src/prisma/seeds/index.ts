@@ -6,6 +6,10 @@ import { seedPromotions } from './promotions.seed';
 import { seedAccommodations } from './accommodations.seed';
 import { seedHotelSettings } from './hotel-settings.seed';
 import { seedLandingPage } from './landing.seed';
+import { seedServices } from './services.seed';
+import { seedAboutPage } from './about.seed';
+import { seedFAQ } from './faq.seed';
+import { seedContact } from './contact.seed';
 
 async function seedUsers() {
   logger.info('🌱 Seeding users...');
@@ -213,6 +217,10 @@ async function main() {
     await seedPromotions();
     await seedAccommodations();
     await seedLandingPage();
+    await seedServices();
+    await seedAboutPage();
+    await seedFAQ();
+    await seedContact();
 
     logger.info('🎉 Seed completed successfully!');
   } catch (error) {

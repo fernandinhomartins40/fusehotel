@@ -69,22 +69,25 @@ export const AccommodationsCustomizer = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Título</Label>
-              <Input
-                id="title"
-                {...form.register('title')}
-                placeholder="ACOMODAÇÕES"
-              />
-            </div>
+            {/* Campos de texto em grid 2 colunas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Título</Label>
+                <Input
+                  id="title"
+                  {...form.register('title')}
+                  placeholder="ACOMODAÇÕES"
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="subtitle">Subtítulo</Label>
-              <Input
-                id="subtitle"
-                {...form.register('subtitle')}
-                placeholder="Conforto e Elegância"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="subtitle">Subtítulo</Label>
+                <Input
+                  id="subtitle"
+                  {...form.register('subtitle')}
+                  placeholder="Conforto e Elegância"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -106,35 +109,136 @@ export const AccommodationsCustomizer = () => {
               />
             </div>
 
-            <ColorPickerField
-              label="Cor de Fundo"
-              value={form.watch('backgroundColor') || '#F9F9F9'}
-              onChange={(color) => form.setValue('backgroundColor', color)}
-            />
+            {/* Cores da Seção em grid 2 colunas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ColorPickerField
+                label="Cor de Fundo"
+                value={form.watch('backgroundColor') || '#F9F9F9'}
+                onChange={(color) => form.setValue('backgroundColor', color)}
+              />
 
-            <ColorPickerField
-              label="Cor do Título"
-              value={form.watch('titleColor') || '#000000'}
-              onChange={(color) => form.setValue('titleColor', color)}
-            />
+              <ColorPickerField
+                label="Cor do Título"
+                value={form.watch('titleColor') || '#000000'}
+                onChange={(color) => form.setValue('titleColor', color)}
+              />
 
-            <ColorPickerField
-              label="Cor do Subtítulo"
-              value={form.watch('subtitleColor') || '#666666'}
-              onChange={(color) => form.setValue('subtitleColor', color)}
-            />
+              <ColorPickerField
+                label="Cor do Subtítulo"
+                value={form.watch('subtitleColor') || '#666666'}
+                onChange={(color) => form.setValue('subtitleColor', color)}
+              />
 
-            <ColorPickerField
-              label="Cor do Botão"
-              value={form.watch('buttonColor') || '#0466C8'}
-              onChange={(color) => form.setValue('buttonColor', color)}
-            />
+              <ColorPickerField
+                label="Cor do Botão"
+                value={form.watch('buttonColor') || '#0466C8'}
+                onChange={(color) => form.setValue('buttonColor', color)}
+              />
 
-            <ColorPickerField
-              label="Cor do Botão (Hover)"
-              value={form.watch('buttonHoverColor') || '#0354A8'}
-              onChange={(color) => form.setValue('buttonHoverColor', color)}
-            />
+              <ColorPickerField
+                label="Cor do Botão (Hover)"
+                value={form.watch('buttonHoverColor') || '#0354A8'}
+                onChange={(color) => form.setValue('buttonHoverColor', color)}
+              />
+            </div>
+
+            {/* Estilização dos Cards */}
+            <div className="pt-6 border-t">
+              <h3 className="text-lg font-semibold mb-4">Estilização dos Cards de Acomodações</h3>
+
+              {/* Cores dos Cards em grid 2 colunas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ColorPickerField
+                  label="Cor de Fundo do Badge"
+                  value={form.watch('cardBadgeBackground') || '#0466C8'}
+                  onChange={(color) => form.setValue('cardBadgeBackground', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor do Texto do Badge"
+                  value={form.watch('cardBadgeText') || '#FFFFFF'}
+                  onChange={(color) => form.setValue('cardBadgeText', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor da Borda do Card"
+                  value={form.watch('cardBorderColor') || '#E5E5E5'}
+                  onChange={(color) => form.setValue('cardBorderColor', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor de Fundo do Card"
+                  value={form.watch('cardBackground') || '#FFFFFF'}
+                  onChange={(color) => form.setValue('cardBackground', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor do Título do Card"
+                  value={form.watch('cardTitleColor') || '#1D1D1F'}
+                  onChange={(color) => form.setValue('cardTitleColor', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor da Descrição do Card"
+                  value={form.watch('cardDescriptionColor') || '#6B7280'}
+                  onChange={(color) => form.setValue('cardDescriptionColor', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor dos Ícones"
+                  value={form.watch('cardIconColor') || '#0466C8'}
+                  onChange={(color) => form.setValue('cardIconColor', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor do Label do Preço"
+                  value={form.watch('cardPriceLabelColor') || '#6B7280'}
+                  onChange={(color) => form.setValue('cardPriceLabelColor', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor do Valor do Preço"
+                  value={form.watch('cardPriceValueColor') || '#000000'}
+                  onChange={(color) => form.setValue('cardPriceValueColor', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor da Borda do Botão"
+                  value={form.watch('cardButtonBorderColor') || '#0466C8'}
+                  onChange={(color) => form.setValue('cardButtonBorderColor', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor do Texto do Botão"
+                  value={form.watch('cardButtonTextColor') || '#0466C8'}
+                  onChange={(color) => form.setValue('cardButtonTextColor', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor de Fundo do Botão (Hover)"
+                  value={form.watch('cardButtonHoverBackground') || '#0466C8'}
+                  onChange={(color) => form.setValue('cardButtonHoverBackground', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor do Texto do Botão (Hover)"
+                  value={form.watch('cardButtonHoverText') || '#FFFFFF'}
+                  onChange={(color) => form.setValue('cardButtonHoverText', color)}
+                />
+
+                <div className="space-y-2">
+                  <Label htmlFor="cardBorderRadius">Arredondamento das Bordas</Label>
+                  <Input
+                    id="cardBorderRadius"
+                    {...form.register('cardBorderRadius')}
+                    placeholder="8px"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Exemplos: 0px, 8px, 16px
+                  </p>
+                </div>
+              </div>
+            </div>
 
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={updateSettings.isPending}>

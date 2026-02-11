@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
-import { useHeroSlides } from '@/hooks/useLanding';
+import { useHeroSlides, useLandingSettings } from '@/hooks/useLanding';
+import { defaultHeroConfig } from '@/types/landing-config';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, CarouselApi } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 
 export const HeroSection: React.FC = () => {
   const { data: slides, isLoading } = useHeroSlides();
+  const { data: settingsData } = useLandingSettings('hero');
+  const config = settingsData?.config || defaultHeroConfig;
   const [api, setApi] = useState<CarouselApi>();
 
   const plugin = React.useRef(
-    Autoplay({ delay: 5000, stopOnInteraction: true })
+    Autoplay({ delay: (config.autoplaySpeed || 5) * 1000, stopOnInteraction: true })
   );
 
   if (isLoading) {
@@ -71,6 +74,7 @@ export const HeroSection: React.FC = () => {
         {slides.map((slide: any) => {
           const overlayColor = slide.overlayColor || '#042241';
           const overlayOpacity = slide.overlayOpacity ?? 0.6;
+          const slideHeight = config.height || '700px';
 
           // Converter cor hex para rgba
           const hexToRgb = (hex: string) => {
@@ -88,8 +92,9 @@ export const HeroSection: React.FC = () => {
           return (
           <CarouselItem key={slide.id}>
             <section
-              className="h-[700px] bg-cover bg-center relative overflow-hidden"
+              className="bg-cover bg-center relative overflow-hidden"
               style={{
+                height: slideHeight,
                 backgroundImage: `${overlayGradient}, url("${slide.backgroundValue}")`
               }}
             >

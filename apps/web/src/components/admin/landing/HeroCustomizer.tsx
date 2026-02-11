@@ -106,8 +106,14 @@ export const HeroCustomizer = () => {
   });
 
   const onSettingsSubmit = (data: HeroConfig) => {
+    // Validar e formatar altura: adicionar 'px' se apenas números forem fornecidos
+    let formattedHeight = data.height;
+    if (formattedHeight && /^\d+$/.test(formattedHeight)) {
+      formattedHeight = `${formattedHeight}px`;
+    }
+
     updateSettings.mutate(
-      { section: 'hero', config: data },
+      { section: 'hero', config: { ...data, height: formattedHeight } },
       {
         onSuccess: () => {
           toast.success('Configurações do Hero salvas com sucesso!');
@@ -261,26 +267,27 @@ export const HeroCustomizer = () => {
 
   const renderSlideForm = (slideId: string, formData: SlideFormData) => (
     <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-      {/* Título */}
-      <div className="space-y-2">
-        <Label htmlFor={`slide-title-${slideId}`}>Título</Label>
-        <Input
-          id={`slide-title-${slideId}`}
-          value={formData.title}
-          onChange={(e) => updateFormField(slideId, 'title', e.target.value)}
-          placeholder="Refúgio dos seus sonhos"
-        />
-      </div>
+      {/* Título e Subtítulo em grid 2 colunas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor={`slide-title-${slideId}`}>Título</Label>
+          <Input
+            id={`slide-title-${slideId}`}
+            value={formData.title}
+            onChange={(e) => updateFormField(slideId, 'title', e.target.value)}
+            placeholder="Refúgio dos seus sonhos"
+          />
+        </div>
 
-      {/* Subtítulo */}
-      <div className="space-y-2">
-        <Label htmlFor={`slide-subtitle-${slideId}`}>Subtítulo</Label>
-        <Input
-          id={`slide-subtitle-${slideId}`}
-          value={formData.subtitle}
-          onChange={(e) => updateFormField(slideId, 'subtitle', e.target.value)}
-          placeholder="O refúgio perfeito para se desconectar"
-        />
+        <div className="space-y-2">
+          <Label htmlFor={`slide-subtitle-${slideId}`}>Subtítulo</Label>
+          <Input
+            id={`slide-subtitle-${slideId}`}
+            value={formData.subtitle}
+            onChange={(e) => updateFormField(slideId, 'subtitle', e.target.value)}
+            placeholder="O refúgio perfeito para se desconectar"
+          />
+        </div>
       </div>
 
       {/* Descrição */}
@@ -440,8 +447,8 @@ export const HeroCustomizer = () => {
       {/* Visibilidade dos Elementos */}
       <div className="space-y-3 pt-4 border-t">
         <Label>Elementos Visíveis</Label>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="flex items-center justify-between p-3 bg-white rounded border">
             <Label htmlFor={`showTitle-${slideId}`} className="font-normal">Mostrar Título</Label>
             <Switch
               id={`showTitle-${slideId}`}
@@ -449,7 +456,7 @@ export const HeroCustomizer = () => {
               onCheckedChange={(checked) => updateFormField(slideId, 'showTitle', checked)}
             />
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-3 bg-white rounded border">
             <Label htmlFor={`showSubtitle-${slideId}`} className="font-normal">Mostrar Subtítulo</Label>
             <Switch
               id={`showSubtitle-${slideId}`}
@@ -457,7 +464,7 @@ export const HeroCustomizer = () => {
               onCheckedChange={(checked) => updateFormField(slideId, 'showSubtitle', checked)}
             />
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-3 bg-white rounded border">
             <Label htmlFor={`showDescription-${slideId}`} className="font-normal">Mostrar Descrição</Label>
             <Switch
               id={`showDescription-${slideId}`}
@@ -465,7 +472,7 @@ export const HeroCustomizer = () => {
               onCheckedChange={(checked) => updateFormField(slideId, 'showDescription', checked)}
             />
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-3 bg-white rounded border">
             <Label htmlFor={`showButton-${slideId}`} className="font-normal">Mostrar Botão</Label>
             <Switch
               id={`showButton-${slideId}`}
@@ -473,7 +480,7 @@ export const HeroCustomizer = () => {
               onCheckedChange={(checked) => updateFormField(slideId, 'showButton', checked)}
             />
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-3 bg-white rounded border">
             <Label htmlFor={`showRating-${slideId}`} className="font-normal">Mostrar Avaliações</Label>
             <Switch
               id={`showRating-${slideId}`}
@@ -481,7 +488,7 @@ export const HeroCustomizer = () => {
               onCheckedChange={(checked) => updateFormField(slideId, 'showRating', checked)}
             />
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-3 bg-white rounded border">
             <Label htmlFor={`isActive-${slideId}`} className="font-normal">Slide Ativo</Label>
             <Switch
               id={`isActive-${slideId}`}
@@ -916,6 +923,18 @@ export const HeroCustomizer = () => {
                 {...settingsForm.register('autoplaySpeed', { valueAsNumber: true })}
                 placeholder="5"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="height">Altura Universal dos Slides</Label>
+              <Input
+                id="height"
+                {...settingsForm.register('height')}
+                placeholder="700px"
+              />
+              <p className="text-xs text-muted-foreground">
+                Esta altura será aplicada a TODOS os slides. Exemplos: 500px, 700px, 100vh (altura da tela), 50vh (metade da tela)
+              </p>
             </div>
 
             <div className="flex justify-end pt-4">

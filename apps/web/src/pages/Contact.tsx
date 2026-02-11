@@ -8,8 +8,26 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Phone, Mail, MapPin, Clock, MessageSquare } from 'lucide-react';
+import { useLandingSettings } from '@/hooks/useLanding';
+import { MapEmbed } from '@/components/ui/MapEmbed';
+import {
+  defaultContactHeroConfig,
+  defaultContactCardsConfig,
+  defaultContactFormConfig,
+  defaultContactFAQCTAConfig,
+} from '@/types/contact-config';
 
 const Contact: React.FC = () => {
+  const { data: heroData } = useLandingSettings('contact-hero');
+  const { data: cardsData } = useLandingSettings('contact-cards');
+  const { data: formData } = useLandingSettings('contact-form');
+  const { data: faqCtaData } = useLandingSettings('contact-faq-cta');
+
+  const heroConfig = heroData?.config || defaultContactHeroConfig;
+  const cardsConfig = cardsData?.config || defaultContactCardsConfig;
+  const formConfig = formData?.config || defaultContactFormConfig;
+  const faqCtaConfig = faqCtaData?.config || defaultContactFAQCTAConfig;
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // Form submission logic would go here
@@ -23,52 +41,93 @@ const Contact: React.FC = () => {
       
       <main className="flex-1">
         {/* Hero Section */}
-        <div className="bg-[#0466C8] text-white py-12">
+        <div
+          className="text-white py-12"
+          style={{
+            backgroundColor: heroConfig.backgroundColor || '#0466C8',
+            height: heroConfig.height || 'auto',
+          }}
+        >
           <div className="container mx-auto px-4">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">Entre em Contato</h1>
-            <p className="text-xl max-w-3xl">
-              Estamos à disposição para responder suas dúvidas, receber sugestões ou ajudar com sua reserva.
+            <h1
+              className="text-3xl md:text-4xl font-bold mb-4"
+              style={{ color: heroConfig.titleColor || '#FFFFFF' }}
+            >
+              {heroConfig.title || 'Entre em Contato'}
+            </h1>
+            <p
+              className="text-xl max-w-3xl"
+              style={{ color: heroConfig.subtitleColor || '#FFFFFF' }}
+            >
+              {heroConfig.description || 'Estamos à disposição para responder suas dúvidas, receber sugestões ou ajudar com sua reserva.'}
             </p>
           </div>
         </div>
         
         {/* Contact Information Cards */}
-        <section className="py-12 bg-gray-50">
+        <section className="py-12" style={{ backgroundColor: cardsConfig.backgroundColor || '#F9FAFB' }}>
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Phone Card */}
               <Card className="border-none shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="flex flex-col items-center text-center p-8">
-                  <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-                    <Phone className="h-8 w-8 text-[#0466C8]" />
+                  <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                    style={{ backgroundColor: `${cardsConfig.cardIconColor || '#0466C8'}20` }}
+                  >
+                    <Phone className="h-8 w-8" style={{ color: cardsConfig.cardIconColor || '#0466C8' }} />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Telefone</h3>
-                  <p className="text-gray-600 mb-4">Estamos disponíveis para atendê-lo por telefone em horário comercial.</p>
-                  <a href="tel:+551155555555" className="text-[#0466C8] font-medium hover:underline">(11) 5555-5555</a>
+                  <h3 className="text-xl font-bold mb-2">{cardsConfig.phoneTitle || 'Telefone'}</h3>
+                  <p className="text-gray-600 mb-4">{cardsConfig.phoneDescription}</p>
+                  <a
+                    href={`tel:+55${cardsConfig.phoneNumber?.replace(/\D/g, '')}`}
+                    className="font-medium hover:underline"
+                    style={{ color: cardsConfig.cardLinkColor || '#0466C8' }}
+                  >
+                    {cardsConfig.phoneNumber || '(11) 5555-5555'}
+                  </a>
                 </CardContent>
               </Card>
-              
+
               {/* WhatsApp Card */}
               <Card className="border-none shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="flex flex-col items-center text-center p-8">
-                  <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-                    <MessageSquare className="h-8 w-8 text-[#0466C8]" />
+                  <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                    style={{ backgroundColor: `${cardsConfig.cardIconColor || '#0466C8'}20` }}
+                  >
+                    <MessageSquare className="h-8 w-8" style={{ color: cardsConfig.cardIconColor || '#0466C8' }} />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">WhatsApp</h3>
-                  <p className="text-gray-600 mb-4">Envie mensagens pelo WhatsApp para atendimento rápido.</p>
-                  <a href="https://wa.me/5511999999999" className="text-[#0466C8] font-medium hover:underline">(11) 99999-9999</a>
+                  <h3 className="text-xl font-bold mb-2">{cardsConfig.whatsappTitle || 'WhatsApp'}</h3>
+                  <p className="text-gray-600 mb-4">{cardsConfig.whatsappDescription}</p>
+                  <a
+                    href={`https://wa.me/55${cardsConfig.whatsappNumber?.replace(/\D/g, '')}`}
+                    className="font-medium hover:underline"
+                    style={{ color: cardsConfig.cardLinkColor || '#0466C8' }}
+                  >
+                    {cardsConfig.whatsappNumber || '(11) 99999-9999'}
+                  </a>
                 </CardContent>
               </Card>
-              
+
               {/* Email Card */}
               <Card className="border-none shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="flex flex-col items-center text-center p-8">
-                  <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-                    <Mail className="h-8 w-8 text-[#0466C8]" />
+                  <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                    style={{ backgroundColor: `${cardsConfig.cardIconColor || '#0466C8'}20` }}
+                  >
+                    <Mail className="h-8 w-8" style={{ color: cardsConfig.cardIconColor || '#0466C8' }} />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">E-mail</h3>
-                  <p className="text-gray-600 mb-4">Envie um e-mail para nossa equipe e responderemos em até 24 horas.</p>
-                  <a href="mailto:contato@aguasclaras.com" className="text-[#0466C8] font-medium hover:underline">contato@aguasclaras.com</a>
+                  <h3 className="text-xl font-bold mb-2">{cardsConfig.emailTitle || 'E-mail'}</h3>
+                  <p className="text-gray-600 mb-4">{cardsConfig.emailDescription}</p>
+                  <a
+                    href={`mailto:${cardsConfig.emailAddress}`}
+                    className="font-medium hover:underline"
+                    style={{ color: cardsConfig.cardLinkColor || '#0466C8' }}
+                  >
+                    {cardsConfig.emailAddress || 'contato@hotel.com'}
+                  </a>
                 </CardContent>
               </Card>
             </div>
@@ -76,14 +135,19 @@ const Contact: React.FC = () => {
         </section>
         
         {/* Contact Form and Map */}
-        <section className="py-16">
+        <section className="py-16" style={{ backgroundColor: formConfig.backgroundColor || '#FFFFFF' }}>
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               {/* Contact Form */}
               <div>
-                <h2 className="text-3xl font-bold mb-6 text-[#0466C8]">Envie uma Mensagem</h2>
+                <h2
+                  className="text-3xl font-bold mb-6"
+                  style={{ color: formConfig.titleColor || '#0466C8' }}
+                >
+                  {formConfig.formTitle || 'Envie uma Mensagem'}
+                </h2>
                 <p className="text-gray-700 mb-8">
-                  Preencha o formulário abaixo com suas informações e entraremos em contato o mais breve possível.
+                  {formConfig.formDescription || 'Preencha o formulário abaixo com suas informações e entraremos em contato o mais breve possível.'}
                 </p>
                 
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -159,11 +223,15 @@ const Contact: React.FC = () => {
                     </label>
                   </div>
                   
-                  <Button 
+                  <Button
                     type="submit"
-                    className="w-full bg-[#0466C8] hover:bg-[#0355A6] text-white rounded-full py-3"
+                    className="w-full rounded-full py-3"
+                    style={{
+                      backgroundColor: formConfig.buttonColor || '#0466C8',
+                      color: formConfig.buttonTextColor || '#FFFFFF',
+                    }}
                   >
-                    Enviar Mensagem
+                    {formConfig.buttonText || 'Enviar Mensagem'}
                   </Button>
                 </form>
               </div>
@@ -171,40 +239,50 @@ const Contact: React.FC = () => {
               {/* Map and Additional Information */}
               <div className="space-y-8">
                 <div>
-                  <h2 className="text-3xl font-bold mb-6 text-[#0466C8]">Nossa Localização</h2>
+                  <h2
+                    className="text-3xl font-bold mb-6"
+                    style={{ color: formConfig.titleColor || '#0466C8' }}
+                  >
+                    {formConfig.mapTitle || 'Nossa Localização'}
+                  </h2>
                   <p className="text-gray-700 mb-6">
-                    Visite-nos e conheça pessoalmente toda a estrutura do Hotel Águas Claras.
+                    {formConfig.mapDescription || 'Visite-nos e conheça pessoalmente toda a estrutura do Hotel Águas Claras.'}
                   </p>
-                  
-                  <div className="h-[400px] bg-gray-200 rounded-lg overflow-hidden relative">
-                    {/* Placeholder for a real map integration */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <MapPin size={32} />
-                      <span className="ml-2">Mapa disponível em breve</span>
-                    </div>
+
+                  <div className="h-[400px] rounded-lg overflow-hidden">
+                    <MapEmbed
+                      address={`${formConfig.addressLine1}, ${formConfig.addressLine2}`}
+                      height="400px"
+                    />
                   </div>
                 </div>
                 
                 {/* Additional Contact Information */}
                 <div className="bg-gray-50 p-6 rounded-lg border border-gray-100">
                   <h3 className="text-xl font-bold mb-4">Informações de Contato</h3>
-                  
+
                   <div className="space-y-4">
                     <div className="flex items-start">
-                      <MapPin className="h-6 w-6 text-[#0466C8] mr-3 mt-0.5" />
+                      <MapPin
+                        className="h-6 w-6 mr-3 mt-0.5"
+                        style={{ color: formConfig.titleColor || '#0466C8' }}
+                      />
                       <div>
-                        <p className="font-medium">Endereço:</p>
-                        <p className="text-gray-600">Rua das Águas, 123, Centro</p>
-                        <p className="text-gray-600">Águas Claras - SP, 12345-678</p>
+                        <p className="font-medium">{formConfig.addressLabel || 'Endereço:'}</p>
+                        <p className="text-gray-600">{formConfig.addressLine1}</p>
+                        <p className="text-gray-600">{formConfig.addressLine2}</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center">
-                      <Clock className="h-6 w-6 text-[#0466C8] mr-3" />
+                      <Clock
+                        className="h-6 w-6 mr-3"
+                        style={{ color: formConfig.titleColor || '#0466C8' }}
+                      />
                       <div>
-                        <p className="font-medium">Horário de Funcionamento:</p>
-                        <p className="text-gray-600">Recepção: 24 horas</p>
-                        <p className="text-gray-600">Atendimento telefônico: 8h às 22h</p>
+                        <p className="font-medium">{formConfig.hoursLabel || 'Horário de Funcionamento:'}</p>
+                        <p className="text-gray-600">{formConfig.hoursLine1}</p>
+                        <p className="text-gray-600">{formConfig.hoursLine2}</p>
                       </div>
                     </div>
                   </div>
@@ -215,17 +293,31 @@ const Contact: React.FC = () => {
         </section>
         
         {/* FAQs Section */}
-        <section className="py-12 bg-gray-50">
+        <section className="py-12" style={{ backgroundColor: faqCtaConfig.backgroundColor || '#F9FAFB' }}>
           <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-4">Perguntas Frequentes</h2>
-            <p className="text-gray-700 mb-8 max-w-3xl mx-auto">
-              Encontre respostas para as perguntas mais comuns sobre nossa hospedagem e serviços.
+            <h2
+              className="text-3xl font-bold mb-4"
+              style={{ color: faqCtaConfig.titleColor || '#000000' }}
+            >
+              {faqCtaConfig.title || 'Perguntas Frequentes'}
+            </h2>
+            <p
+              className="mb-8 max-w-3xl mx-auto"
+              style={{ color: faqCtaConfig.subtitleColor || '#374151' }}
+            >
+              {faqCtaConfig.description || 'Encontre respostas para as perguntas mais comuns sobre nossa hospedagem e serviços.'}
             </p>
             <Button
-              className="bg-[#0466C8] hover:bg-[#0355A6] text-white rounded-full px-8 py-3"
+              className="rounded-full px-8 py-3"
+              style={{
+                backgroundColor: faqCtaConfig.buttonColor || '#0466C8',
+                color: faqCtaConfig.buttonTextColor || '#FFFFFF',
+              }}
               asChild
             >
-              <a href="/faq">Ver todas as FAQs</a>
+              <a href={faqCtaConfig.buttonUrl || '/faq'}>
+                {faqCtaConfig.buttonText || 'Ver todas as FAQs'}
+              </a>
             </Button>
           </div>
         </section>

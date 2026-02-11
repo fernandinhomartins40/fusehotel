@@ -53,7 +53,7 @@ const LandingCustomizer = () => {
             <TabsTrigger value="gallery">Galeria</TabsTrigger>
             <TabsTrigger value="partners">Parceiros</TabsTrigger>
             <TabsTrigger value="newsletter">Newsletter</TabsTrigger>
-            <TabsTrigger value="footer">Footer</TabsTrigger>
+            <TabsTrigger value="footer">Rodapé</TabsTrigger>
           </TabsList>
 
           <TabsContent value="header">

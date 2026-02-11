@@ -90,41 +90,44 @@ export const HeaderCustomizer = () => {
               />
             </div>
 
-            <ColorPickerField
-              label="Cor de Fundo"
-              value={form.watch('backgroundColor') || '#FFFFFF'}
-              onChange={(color) => form.setValue('backgroundColor', color)}
-            />
+            {/* Cores em grid 2 colunas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ColorPickerField
+                label="Cor de Fundo"
+                value={form.watch('backgroundColor') || '#FFFFFF'}
+                onChange={(color) => form.setValue('backgroundColor', color)}
+              />
 
-            <ColorPickerField
-              label="Cor do Texto"
-              value={form.watch('textColor') || '#000000'}
-              onChange={(color) => form.setValue('textColor', color)}
-            />
+              <ColorPickerField
+                label="Cor do Texto"
+                value={form.watch('textColor') || '#000000'}
+                onChange={(color) => form.setValue('textColor', color)}
+              />
 
-            <ColorPickerField
-              label="Cor do Texto (Hover)"
-              value={form.watch('hoverColor') || '#0466C8'}
-              onChange={(color) => form.setValue('hoverColor', color)}
-            />
+              <ColorPickerField
+                label="Cor do Texto (Hover)"
+                value={form.watch('hoverColor') || '#0466C8'}
+                onChange={(color) => form.setValue('hoverColor', color)}
+              />
 
-            <ColorPickerField
-              label="Cor de Fundo do Botão"
-              value={form.watch('buttonBackground') || '#0466C8'}
-              onChange={(color) => form.setValue('buttonBackground', color)}
-            />
+              <ColorPickerField
+                label="Cor de Fundo do Botão"
+                value={form.watch('buttonBackground') || '#0466C8'}
+                onChange={(color) => form.setValue('buttonBackground', color)}
+              />
 
-            <ColorPickerField
-              label="Cor de Fundo do Botão (Hover)"
-              value={form.watch('buttonHover') || '#0354A8'}
-              onChange={(color) => form.setValue('buttonHover', color)}
-            />
+              <ColorPickerField
+                label="Cor de Fundo do Botão (Hover)"
+                value={form.watch('buttonHover') || '#0354A8'}
+                onChange={(color) => form.setValue('buttonHover', color)}
+              />
 
-            <ColorPickerField
-              label="Cor do Texto do Botão"
-              value={form.watch('buttonTextColor') || '#FFFFFF'}
-              onChange={(color) => form.setValue('buttonTextColor', color)}
-            />
+              <ColorPickerField
+                label="Cor do Texto do Botão"
+                value={form.watch('buttonTextColor') || '#FFFFFF'}
+                onChange={(color) => form.setValue('buttonTextColor', color)}
+              />
+            </div>
 
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={updateSettings.isPending}>

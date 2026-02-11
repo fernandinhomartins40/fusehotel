@@ -31,15 +31,17 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import { Eye, Filter, Loader2 } from 'lucide-react';
+import { Eye, Filter, Loader2, CalendarPlus } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ReservationDetails } from '@/components/admin/ReservationDetails';
 import { useAdminReservations, useUpdateReservationStatus } from '@/hooks/useAdminReservations';
+import { CreateReservationDialog } from '@/components/admin/reservations/CreateReservationDialog';
 
 export function Reservations() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedReservation, setSelectedReservation] = useState<any>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   const isMobile = useIsMobile();
 
@@ -178,26 +180,32 @@ export function Reservations() {
               {isLoading ? 'Carregando...' : `${reservations?.length || 0} reservas encontradas`}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4" />
-            <Select
-              value={statusFilter}
-              onValueChange={handleFilterChange}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filtrar por status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os status</SelectItem>
-                <SelectItem value="PENDING">Pendente</SelectItem>
-                <SelectItem value="CONFIRMED">Confirmada</SelectItem>
-                <SelectItem value="CHECKED_IN">Check-in feito</SelectItem>
-                <SelectItem value="CHECKED_OUT">Check-out feito</SelectItem>
-                <SelectItem value="CANCELLED">Cancelada</SelectItem>
-                <SelectItem value="COMPLETED">Concluída</SelectItem>
-                <SelectItem value="NO_SHOW">Não compareceu</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex items-center gap-4">
+            <Button onClick={() => setShowCreateDialog(true)} size="lg">
+              <CalendarPlus className="mr-2 h-5 w-5" />
+              Nova Reserva
+            </Button>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4" />
+              <Select
+                value={statusFilter}
+                onValueChange={handleFilterChange}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="PENDING">Pendente</SelectItem>
+                  <SelectItem value="CONFIRMED">Confirmada</SelectItem>
+                  <SelectItem value="CHECKED_IN">Check-in feito</SelectItem>
+                  <SelectItem value="CHECKED_OUT">Check-out feito</SelectItem>
+                  <SelectItem value="CANCELLED">Cancelada</SelectItem>
+                  <SelectItem value="COMPLETED">Concluída</SelectItem>
+                  <SelectItem value="NO_SHOW">Não compareceu</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
@@ -273,6 +281,12 @@ export function Reservations() {
         )}
 
         <ReservationDetailsWrapper />
+
+        {/* Create Reservation Dialog */}
+        <CreateReservationDialog
+          open={showCreateDialog}
+          onOpenChange={setShowCreateDialog}
+        />
       </div>
     </AdminLayout>
   );

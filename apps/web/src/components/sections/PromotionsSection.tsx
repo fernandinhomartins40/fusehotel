@@ -84,7 +84,7 @@ export const PromotionsSection = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {featuredPromotions.map((promotion) => (
               <div key={promotion.id} className="h-full">
-                <PromotionCard promotion={promotion} />
+                <PromotionCard promotion={promotion} config={config} />
               </div>
             ))}
           </div>
@@ -96,7 +96,7 @@ export const PromotionsSection = () => {
                 {featuredPromotions.map((promotion) => (
                   <CarouselItem key={promotion.id} className="pl-4 md:basis-1/2 lg:basis-1/3">
                     <div className="h-full">
-                      <PromotionCard promotion={promotion} />
+                      <PromotionCard promotion={promotion} config={config} />
                     </div>
                   </CarouselItem>
                 ))}

@@ -482,6 +482,7 @@ model HeroSlide {
   textColor        String   @default("#FFFFFF")
   overlayColor     String   @default("#042241")
   overlayOpacity   Float    @default(0.6)
+  height           String   @default("700px")
   order            Int
   isActive         Boolean  @default(true)
   showTitle        Boolean  @default(true)
@@ -534,6 +535,93 @@ model Partner {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([order])
+  @@index([isActive])
+}
+
+enum ServiceCategory {
+  ACCOMMODATION
+  GASTRONOMY
+  RECREATION
+  BUSINESS
+  SPECIAL
+}
+
+model ServiceItem {
+  id          String          @id @default(uuid())
+  category    ServiceCategory
+  title       String
+  subtitle    String?
+  description String          @db.Text
+  image       String
+  icon        String?
+  features    String[]
+  order       Int
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([category])
+  @@index([order])
+  @@index([isActive])
+}
+
+model TeamMember {
+  id          String   @id @default(uuid())
+  name        String
+  role        String
+  description String   @db.Text
+  image       String
+  order       Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([order])
+  @@index([isActive])
+}
+
+model Award {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  icon        String
+  order       Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([order])
+  @@index([isActive])
+}
+
+model FAQCategory {
+  id        String   @id @default(uuid())
+  name      String
+  order     Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items FAQItem[]
+
+  @@index([order])
+  @@index([isActive])
+}
+
+model FAQItem {
+  id         String      @id @default(uuid())
+  categoryId String
+  question   String
+  answer     String      @db.Text
+  order      Int
+  isActive   Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  category FAQCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
   @@index([order])
   @@index([isActive])
 }

@@ -1,0 +1,466 @@
+name: Deploy FuseHotel to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_PASSWORD }}" > ~/.ssh/vps_password
+          chmod 600 ~/.ssh/vps_password
+
+      - name: Sync code to VPS
+        run: |
+          # Instalar sshpass para autenticação com senha
+          sudo apt-get update && sudo apt-get install -y sshpass rsync
+
+          # Criar diretório no VPS
+          sshpass -f ~/.ssh/vps_password ssh -o StrictHostKeyChecking=no root@72.60.10.112 "mkdir -p /root/fusehotel"
+
+          # Verificar estrutura do projeto antes do rsync
+          echo "=== Verificando estrutura localmente antes do rsync ==="
+          ls -la apps/api/src/ | head -20
+          ls -la apps/web/src/ | head -20
+
+          # Sincronizar código via rsync
+          sshpass -f ~/.ssh/vps_password rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='apps/api/dist' \
+            --exclude='apps/web/dist' \
+            --exclude='apps/api/uploads' \
+            --exclude='apps/api/logs' \
+            --exclude='.env' \
+            --exclude='.env.local' \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./ root@72.60.10.112:/root/fusehotel/
+
+          # Verificar se código foi copiado
+          echo "=== Verificando estrutura na VPS após rsync ==="
+          sshpass -f ~/.ssh/vps_password ssh -o StrictHostKeyChecking=no root@72.60.10.112 "ls -la /root/fusehotel/apps/api/src/ | head -20"
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: 72.60.10.112
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 22
+          timeout: 600s
+          command_timeout: 600s
+          script: |
+            set -e
+
+            echo "=== Iniciando Deploy FuseHotel ==="
+
+            # Diretório da aplicação
+            APP_DIR="/root/fusehotel"
+            cd $APP_DIR
+
+            # ===== VERIFICAÇÃO PRÉ-DEPLOY =====
+            echo "=== Executando verificação pré-deploy ==="
+            if [ -f "scripts/pre-deploy-check.sh" ]; then
+              chmod +x scripts/pre-deploy-check.sh
+              if bash scripts/pre-deploy-check.sh; then
+                echo "✅ Verificação pré-deploy passou"
+              else
+                echo "⚠️ Verificação pré-deploy teve avisos - continuando deploy"
+              fi
+            else
+              echo "⚠️ Script pre-deploy-check.sh não encontrado, pulando verificação"
+            fi
+            echo ""
+
+            # ===== BACKUP PRÉ-DEPLOY =====
+            echo "=== Criando backup pré-deploy ==="
+            if [ -f "scripts/auto-backup-uploads.sh" ]; then
+              chmod +x scripts/auto-backup-uploads.sh
+              if bash scripts/auto-backup-uploads.sh; then
+                echo "✅ Backup pré-deploy criado com sucesso"
+              else
+                echo "⚠️ Backup pré-deploy falhou, mas continuando deploy"
+              fi
+            else
+              echo "⚠️ Script auto-backup-uploads.sh não encontrado, pulando backup"
+            fi
+            echo ""
+
+            # Parar containers existentes (SEM -v para preservar volumes)
+            echo "Parando containers existentes..."
+            docker-compose -f docker-compose.vps.yml down || true
+
+            # Verificar e garantir que volumes críticos existam
+            echo "=== Verificando volumes Docker ==="
+            if ! docker volume ls | grep -q "fusehotel.*uploads_data"; then
+              echo "⚠️ Volume uploads_data não existe, será criado no próximo docker-compose up"
+            else
+              echo "✓ Volume uploads_data encontrado"
+              docker volume inspect $(docker volume ls --format '{{.Name}}' | grep "fusehotel.*uploads_data") | grep Mountpoint || true
+            fi
+
+            if ! docker volume ls | grep -q "fusehotel.*postgres_data"; then
+              echo "⚠️ Volume postgres_data não existe, será criado no próximo docker-compose up"
+            else
+              echo "✓ Volume postgres_data encontrado"
+            fi
+
+            echo "Verificando código sincronizado..."
+            ls -la
+
+            # Criar arquivo .env
+            echo "Criando arquivo .env..."
+            cat > .env << 'EOF'
+            # Node.js
+            NODE_ENV=production
+
+            # Application
+            PORT=3001
+
+            # PostgreSQL
+            POSTGRES_USER=fusehotel
+            POSTGRES_PASSWORD=fusehotel2024secure
+            POSTGRES_DB=fusehotel
+
+            # Database URL (PostgreSQL)
+            DATABASE_URL=postgresql://fusehotel:fusehotel2024secure@postgres:5432/fusehotel
+
+            # JWT
+            JWT_SECRET=fusehotel-production-secret-$(date +%s)-$(openssl rand -hex 16)
+            JWT_REFRESH_SECRET=fusehotel-refresh-secret-$(date +%s)-$(openssl rand -hex 16)
+            JWT_EXPIRES_IN=7d
+            JWT_ADMIN_EXPIRES_IN=8h
+
+            # CORS
+            FRONTEND_URL=https://www.perolahotel.com
+            CORS_ORIGIN=https://www.perolahotel.com,http://www.perolahotel.com,https://perolahotel.com,http://perolahotel.com,http://72.60.10.112:3090,http://localhost:3090
+
+            # Logs
+            LOG_LEVEL=info
+
+            # Seed
+            RUN_SEED=true
+            EOF
+
+            # Adicionar BUILD_TIMESTAMP ao .env
+            echo "BUILD_TIMESTAMP=$(date +%s)" >> .env
+
+            # Limpar containers e imagens antigas (PRESERVAR volumes)
+            echo "Limpando recursos antigos..."
+            docker container prune -f || true
+            docker image prune -af || true
+
+            # Garantir BUILD_TIMESTAMP como variável de ambiente ANTES do build
+            export BUILD_TIMESTAMP=$(date +%s)
+            echo "BUILD_TIMESTAMP=${BUILD_TIMESTAMP}"
+
+            # ===== VALIDAÇÃO PRÉ-BUILD: Verificar estrutura do projeto =====
+            echo "=== Validando estrutura do projeto antes do build ==="
+
+            if [ ! -f "apps/api/src/server.ts" ]; then
+              echo "❌ ERRO: server.ts não encontrado!"
+              exit 1
+            fi
+            echo "✓ server.ts encontrado"
+
+            if [ ! -f "apps/api/src/app.ts" ]; then
+              echo "❌ ERRO: app.ts não encontrado!"
+              exit 1
+            fi
+            echo "✓ app.ts encontrado"
+
+            if [ ! -f "apps/api/src/prisma/schema.prisma" ]; then
+              echo "❌ ERRO: schema.prisma não encontrado!"
+              exit 1
+            fi
+            echo "✓ schema.prisma encontrado"
+
+            if [ ! -d "apps/web/src" ]; then
+              echo "❌ ERRO: diretório web/src não encontrado!"
+              exit 1
+            fi
+            echo "✓ Estrutura web encontrada"
+
+            # Validar rotas críticas
+            if [ ! -d "apps/api/src/routes" ]; then
+              echo "❌ ERRO: diretório routes não encontrado!"
+              exit 1
+            fi
+            echo "✓ Routes encontrado"
+
+            if [ ! -d "apps/api/src/controllers" ]; then
+              echo "❌ ERRO: diretório controllers não encontrado!"
+              exit 1
+            fi
+            echo "✓ Controllers encontrado"
+
+            if [ ! -d "apps/api/src/services" ]; then
+              echo "❌ ERRO: diretório services não encontrado!"
+              exit 1
+            fi
+            echo "✓ Services encontrado"
+
+            echo "=== Todos os arquivos críticos validados ==="
+
+            # Parar e remover containers antigos PRIMEIRO
+            echo "Parando e removendo containers antigos (preservando volumes)..."
+            docker-compose -f docker-compose.vps.yml down --remove-orphans || true
+            docker rm -f fusehotel-api-vps 2>/dev/null || true
+            docker rm -f fusehotel-web-vps 2>/dev/null || true
+            docker rm -f fusehotel-nginx-vps 2>/dev/null || true
+            docker rm -f fusehotel-postgres-vps 2>/dev/null || true
+
+            # Remover imagens antigas para forçar rebuild completo
+            echo "Removendo imagens antigas do fusehotel..."
+            docker rmi fusehotel-api-vps 2>/dev/null || true
+            docker rmi fusehotel-web-vps 2>/dev/null || true
+            docker rmi $(docker images -q 'fusehotel*') 2>/dev/null || true
+
+            # Build das imagens Docker
+            echo "Construindo imagens Docker..."
+            docker-compose -f docker-compose.vps.yml build --no-cache --pull || { echo "❌ Erro ao construir imagens Docker"; exit 1; }
+            echo "✅ Imagens Docker construídas com sucesso"
+
+            # Iniciar containers
+            echo "Iniciando containers..."
+            docker-compose -f docker-compose.vps.yml up -d --remove-orphans || { echo "❌ Erro ao iniciar containers"; exit 1; }
+            echo "✅ Containers iniciados"
+
+            # Aguardar containers iniciarem
+            echo "Aguardando containers iniciarem..."
+            sleep 15
+
+            # Verificar status dos containers
+            echo "=== Verificando status dos containers ==="
+            docker-compose -f docker-compose.vps.yml ps
+
+            # Verificar se containers estão rodando
+            echo "=== Verificando se containers existem ==="
+            if ! docker ps -a | grep -q fusehotel-api-vps; then
+              echo "❌ Container fusehotel-api-vps não foi criado!"
+              docker-compose -f docker-compose.vps.yml logs
+              exit 1
+            fi
+
+            if ! docker ps | grep -q fusehotel-api-vps; then
+              echo "❌ Container fusehotel-api-vps não está rodando!"
+              echo "=== Logs do container API ==="
+              docker logs fusehotel-api-vps --tail=100
+              exit 1
+            fi
+            echo "✓ Container fusehotel-api-vps está rodando"
+
+            if ! docker ps | grep -q fusehotel-postgres-vps; then
+              echo "❌ Container fusehotel-postgres-vps não está rodando!"
+              echo "=== Logs do PostgreSQL ==="
+              docker logs fusehotel-postgres-vps --tail=50
+              exit 1
+            fi
+            echo "✓ Container fusehotel-postgres-vps está rodando"
+
+            if ! docker ps | grep -q fusehotel-web-vps; then
+              echo "❌ Container fusehotel-web-vps não está rodando!"
+              echo "=== Logs do Web ==="
+              docker logs fusehotel-web-vps --tail=50
+              exit 1
+            fi
+            echo "✓ Container fusehotel-web-vps está rodando"
+
+            if ! docker ps | grep -q fusehotel-nginx-vps; then
+              echo "❌ Container fusehotel-nginx-vps não está rodando!"
+              echo "=== Logs do Nginx ==="
+              docker logs fusehotel-nginx-vps --tail=50
+              exit 1
+            fi
+            echo "✓ Container fusehotel-nginx-vps está rodando"
+
+            # Aguardar aplicação inicializar completamente (Prisma migrations rodando)
+            echo "Aguardando aplicação inicializar (60s — Prisma migrations)..."
+            sleep 60
+
+            # ===== DIAGNÓSTICO: Verificar logs =====
+            echo "=== Logs da Aplicação (últimas 100 linhas) ==="
+            docker logs fusehotel-api-vps --tail=100
+
+            echo "=== Logs do Nginx ==="
+            docker logs fusehotel-nginx-vps --tail=50
+
+            # ===== CONFIGURAR NGINX HOST =====
+            echo "=== Configurando Nginx para portas 80, 443 e 3090 ==="
+
+            # Criar configuração do Nginx
+            cat > /etc/nginx/sites-available/perolahotel.conf << 'NGINX_EOF'
+            # Redirecionar HTTP para HTTPS
+            server {
+                listen 80;
+                listen [::]:80;
+
+                server_name perolahotel.com www.perolahotel.com;
+
+                return 301 https://$server_name$request_uri;
+            }
+
+            # HTTPS - Servidor principal
+            server {
+                listen 443 ssl http2;
+                listen [::]:443 ssl http2;
+
+                server_name perolahotel.com www.perolahotel.com;
+
+                # SSL - Let's Encrypt
+                ssl_certificate /etc/letsencrypt/live/perolahotel.com/fullchain.pem;
+                ssl_certificate_key /etc/letsencrypt/live/perolahotel.com/privkey.pem;
+                include /etc/letsencrypt/options-ssl-nginx.conf;
+                ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+                # Logs
+                access_log /var/log/nginx/perolahotel-access.log;
+                error_log /var/log/nginx/perolahotel-error.log;
+
+                # Limite de upload
+                client_max_body_size 10M;
+
+                # Health check
+                location /health {
+                    proxy_pass http://127.0.0.1:3090/health;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+
+                # API Backend
+                location /api/ {
+                    proxy_pass http://127.0.0.1:3090/api/;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection 'upgrade';
+                    proxy_set_header Host $host;
+                    proxy_cache_bypass $http_upgrade;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+
+                    proxy_connect_timeout 60s;
+                    proxy_send_timeout 60s;
+                    proxy_read_timeout 60s;
+                }
+
+                # Upload de imagens
+                location /uploads/ {
+                    proxy_pass http://127.0.0.1:3090/uploads/;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+
+                # Frontend
+                location / {
+                    proxy_pass http://127.0.0.1:3090/;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection 'upgrade';
+                    proxy_set_header Host $host;
+                    proxy_cache_bypass $http_upgrade;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+            }
+            NGINX_EOF
+
+            # Habilitar site
+            ln -sf /etc/nginx/sites-available/perolahotel.conf /etc/nginx/sites-enabled/
+
+            # Testar e recarregar Nginx (reload para zero downtime)
+            nginx -t && systemctl reload nginx
+            echo "✅ Nginx configurado com sucesso nas portas 80, 443 e 3090"
+
+            # Aguardar Nginx iniciar
+            sleep 3
+
+            # Verificar se está escutando nas portas corretas
+            echo ""
+            echo "=== Verificando portas em uso ==="
+            netstat -tulpn | grep nginx | grep -E ":80 |:443 |:3090 "
+
+            # ===== VERIFICAR HEALTH CHECK =====
+            echo "=== Verificando health check ==="
+            for i in {1..15}; do
+              if curl -f http://localhost:3090/health; then
+                echo "✅ FuseHotel está rodando na porta 3090!"
+
+                echo ""
+                echo "=== Testando frontend porta 3090 ==="
+                curl -I http://localhost:3090 | head -5
+
+                echo ""
+                echo "=== Testando HTTPS ==="
+                curl -Ik https://perolahotel.com | head -5 || echo "⚠️ SSL ainda não configurado - rode certbot primeiro"
+
+                echo ""
+                echo "=== Verificando volume de uploads ==="
+                UPLOAD_FILES=$(docker exec fusehotel-api-vps find /app/uploads -type f 2>/dev/null | wc -l || echo "0")
+                echo "📁 Arquivos em uploads: $UPLOAD_FILES"
+
+                if [ "$UPLOAD_FILES" -gt 0 ]; then
+                  echo "✅ Volume de uploads contém $UPLOAD_FILES arquivo(s)"
+                  echo "Exemplos de arquivos:"
+                  docker exec fusehotel-api-vps ls -lh /app/uploads | head -5 || true
+                else
+                  echo "⚠️ Nenhum arquivo encontrado em uploads"
+                  echo "Isso é normal para novo deploy. Imagens serão preservadas após upload."
+                fi
+
+                echo ""
+                echo "✅ Deploy concluído - aplicação está rodando!"
+                echo "📍 Domínio: https://perolahotel.com"
+                echo "📍 Domínio: https://www.perolahotel.com"
+                echo "📍 IP:Porta: http://72.60.10.112:3090"
+                echo "📦 Volumes: PERSISTENTES entre deploys"
+                exit 0
+              fi
+              echo "Tentativa $i/15 falhou, aguardando 10s..."
+
+              # Mostrar logs a cada 3 tentativas
+              if [ $((i % 3)) -eq 0 ]; then
+                echo "=== Logs recentes ==="
+                docker logs fusehotel-api-vps --tail=30
+                docker logs fusehotel-nginx-vps --tail=20
+              fi
+
+              sleep 10
+            done
+
+            echo "⚠️ Health check falhou após 15 tentativas"
+            echo "Logs completos:"
+            docker-compose -f docker-compose.vps.yml logs
+            exit 1
+
+      - name: Verify Deployment
+        if: success()
+        run: |
+          echo "✅ Deploy concluído com sucesso!"
+          echo "🌐 FuseHotel disponível em: https://www.perolahotel.com"
+          echo "🌐 Acesso alternativo: http://72.60.10.112:3090"
+          echo "📊 Health check: http://72.60.10.112:3090/health"
+          echo ""
+          echo "⚠️ IMPORTANTE: Configure SSL com certbot:"
+          echo "sudo certbot --nginx -d perolahotel.com -d www.perolahotel.com"

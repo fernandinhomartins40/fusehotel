@@ -28,6 +28,7 @@ import {
   Eye,
   Ban,
   CheckCircle,
+  UserPlus,
 } from 'lucide-react';
 import { useCustomers, useToggleCustomerStatus } from '@/hooks/useCustomers';
 import { format } from 'date-fns';
@@ -39,6 +40,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { CreateCustomerDialog } from '@/components/admin/customers/CreateCustomerDialog';
 
 const Customers: React.FC = () => {
   const [search, setSearch] = useState('');
@@ -46,6 +48,7 @@ const Customers: React.FC = () => {
   const [filterActive, setFilterActive] = useState<string>('all');
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   const filters = {
     search: search || undefined,
@@ -86,6 +89,10 @@ const Customers: React.FC = () => {
               Gerencie todos os clientes cadastrados no sistema
             </p>
           </div>
+          <Button onClick={() => setShowCreateDialog(true)} size="lg">
+            <UserPlus className="mr-2 h-5 w-5" />
+            Novo Cliente
+          </Button>
         </div>
 
         {/* Stats Cards */}
@@ -389,6 +396,12 @@ const Customers: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Create Customer Dialog */}
+      <CreateCustomerDialog
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+      />
     </AdminLayout>
   );
 };

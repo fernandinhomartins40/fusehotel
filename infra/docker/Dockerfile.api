@@ -5,28 +5,26 @@ RUN apk add --no-cache openssl
 
 WORKDIR /app
 
-# Copiar package.json da raiz
+# Copiar package.json da raiz (monorepo)
 COPY package*.json ./
 
-# Copiar shared package completo (dependência local)
+# Copiar shared package (dependência local)
 COPY packages/shared ./packages/shared
 
-# Copiar API package.json e tsconfig
+# Copiar package.json e código fonte da pasta apps/api
 COPY apps/api/package*.json ./apps/api/
 COPY apps/api/tsconfig.json ./apps/api/
+COPY apps/api/src ./apps/api/src
 
-# Instalar dependências do monorepo
+# Instalar dependências do monorepo (shared + api)
 RUN npm install --workspace=@fusehotel/shared --workspace=@fusehotel/api
 
 # Build do shared package primeiro
 WORKDIR /app/packages/shared
 RUN npm run build
 
-# Voltar para diretório da API
+# Voltar para diretório da api
 WORKDIR /app/apps/api
-
-# Copiar código fonte da API
-COPY apps/api/src ./src
 
 # Gerar Prisma Client com schema específico
 RUN npx prisma generate --schema=./src/prisma/schema.prisma
@@ -50,12 +48,9 @@ COPY --from=builder /app/apps/api/src ./src
 # Copiar package.json
 COPY --from=builder /app/apps/api/package.json ./
 
-# Copiar node_modules completo da raiz (inclui shared e todas as dependências)
+# Copiar node_modules completo (inclui shared)
 COPY --from=builder /app/node_modules ./node_modules
-
-# Copiar também o pacote shared buildado
-COPY --from=builder /app/packages/shared/dist ./node_modules/@fusehotel/shared/dist
-COPY --from=builder /app/packages/shared/package.json ./node_modules/@fusehotel/shared/
+COPY --from=builder /app/packages/shared ./node_modules/@fusehotel/shared
 
 # Criar diretórios
 RUN mkdir -p uploads logs

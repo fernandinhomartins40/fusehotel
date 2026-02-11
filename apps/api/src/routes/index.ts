@@ -10,6 +10,13 @@ import newsletterRoutes from './newsletter.routes';
 import contactRoutes from './contact.routes';
 import uploadRoutes from './upload.routes';
 import landingRoutes from './landing.routes';
+import serviceItemsRoutes from './service-items.routes';
+import teamMembersRoutes from './team-members.routes';
+import awardsRoutes from './awards.routes';
+import faqCategoriesRoutes from './faq-categories.routes';
+import faqItemsRoutes from './faq-items.routes';
+import scheduleRoutes from './schedule.routes';
+import systemSettingsRoutes from './system-settings.routes';
 
 const router = Router();
 
@@ -20,9 +27,16 @@ router.use('/amenities', amenityRoutes);
 router.use('/reservations', reservationRoutes);
 router.use('/promotions', promotionRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/system-settings', systemSettingsRoutes);
 router.use('/newsletter', newsletterRoutes);
 router.use('/contact', contactRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/landing', landingRoutes);
+router.use('/services', serviceItemsRoutes);
+router.use('/about', teamMembersRoutes);
+router.use('/about', awardsRoutes);
+router.use('/faq', faqCategoriesRoutes);
+router.use('/faq', faqItemsRoutes);
+router.use('/schedule', scheduleRoutes);
 
 export default router;

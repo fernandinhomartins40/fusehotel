@@ -22,6 +22,7 @@ export interface HeroConfig extends BaseSectionConfig {
   transitionEffect?: 'fade' | 'slide';
   showNavigationArrows?: boolean;
   showDotsIndicator?: boolean;
+  height?: string; // Altura universal para todos os slides (ex: 700px, 100vh)
 }
 
 // Accommodations Section Configuration
@@ -32,6 +33,21 @@ export interface AccommodationsConfig extends BaseSectionConfig {
   buttonText?: string;
   buttonColor?: string;
   buttonHoverColor?: string;
+  // Card Styling
+  cardBadgeBackground?: string;
+  cardBadgeText?: string;
+  cardBorderColor?: string;
+  cardBackground?: string;
+  cardTitleColor?: string;
+  cardDescriptionColor?: string;
+  cardIconColor?: string;
+  cardPriceLabelColor?: string;
+  cardPriceValueColor?: string;
+  cardButtonBorderColor?: string;
+  cardButtonTextColor?: string;
+  cardButtonHoverBackground?: string;
+  cardButtonHoverText?: string;
+  cardBorderRadius?: string;
 }
 
 // Promotions Section Configuration
@@ -40,6 +56,21 @@ export interface PromotionsConfig extends BaseSectionConfig {
   description?: string;
   buttonText?: string;
   buttonColor?: string;
+  // Card Styling
+  cardBorderColor?: string;
+  cardBackground?: string;
+  cardBadgeBackground?: string;
+  cardBadgeText?: string;
+  cardTitleColor?: string;
+  cardDateColor?: string;
+  cardDescriptionColor?: string;
+  cardFeatureBadgeBackground?: string;
+  cardFeatureBadgeText?: string;
+  cardOriginalPriceColor?: string;
+  cardDiscountedPriceColor?: string;
+  cardButtonBackground?: string;
+  cardButtonTextColor?: string;
+  cardBorderRadius?: string;
 }
 
 // Highlights Section Configuration
@@ -74,14 +105,19 @@ export interface NewsletterConfig extends BaseSectionConfig {
 export interface FooterConfig extends BaseSectionConfig {
   logo?: string;
   textColor?: string;
+  headingColor?: string;
   linkColor?: string;
   linkHoverColor?: string;
+  copyrightColor?: string;
+  borderColor?: string;
+  mapBackgroundColor?: string;
   aboutText?: string;
   copyright?: string;
   address?: string;
   phone?: string;
   whatsapp?: string;
   email?: string;
+  businessHours?: string;
   facebookUrl?: string;
   instagramUrl?: string;
   linkedinUrl?: string;
@@ -103,6 +139,7 @@ export const defaultHeroConfig: HeroConfig = {
   transitionEffect: 'slide',
   showNavigationArrows: true,
   showDotsIndicator: true,
+  height: '700px',
 };
 
 export const defaultAccommodationsConfig: AccommodationsConfig = {
@@ -115,6 +152,21 @@ export const defaultAccommodationsConfig: AccommodationsConfig = {
   buttonText: 'Ver Detalhes',
   buttonColor: '#0466C8',
   buttonHoverColor: '#0354A8',
+  // Card defaults
+  cardBadgeBackground: '#0466C8',
+  cardBadgeText: '#FFFFFF',
+  cardBorderColor: '#E5E5E5',
+  cardBackground: '#FFFFFF',
+  cardTitleColor: '#1D1D1F',
+  cardDescriptionColor: '#6B7280',
+  cardIconColor: '#0466C8',
+  cardPriceLabelColor: '#6B7280',
+  cardPriceValueColor: '#000000',
+  cardButtonBorderColor: '#0466C8',
+  cardButtonTextColor: '#0466C8',
+  cardButtonHoverBackground: '#0466C8',
+  cardButtonHoverText: '#FFFFFF',
+  cardBorderRadius: '8px',
 };
 
 export const defaultPromotionsConfig: PromotionsConfig = {
@@ -124,6 +176,21 @@ export const defaultPromotionsConfig: PromotionsConfig = {
   titleColor: '#000000',
   buttonText: 'Ver Promoção',
   buttonColor: '#0466C8',
+  // Card defaults
+  cardBorderColor: '#E5E5E5',
+  cardBackground: '#FFFFFF',
+  cardBadgeBackground: '#0466C8',
+  cardBadgeText: '#FFFFFF',
+  cardTitleColor: '#000000',
+  cardDateColor: '#6B7280',
+  cardDescriptionColor: '#6B7280',
+  cardFeatureBadgeBackground: '#F3F4F6',
+  cardFeatureBadgeText: '#374151',
+  cardOriginalPriceColor: '#9CA3AF',
+  cardDiscountedPriceColor: '#0466C8',
+  cardButtonBackground: '#0466C8',
+  cardButtonTextColor: '#FFFFFF',
+  cardBorderRadius: '8px',
 };
 
 export const defaultHighlightsConfig: HighlightsConfig = {
@@ -162,16 +229,22 @@ export const defaultNewsletterConfig: NewsletterConfig = {
 
 export const defaultFooterConfig: FooterConfig = {
   backgroundColor: '#1A1A1A',
-  textColor: '#FFFFFF',
+  textColor: '#9CA3AF',
+  headingColor: '#FFFFFF',
   linkColor: '#0466C8',
   linkHoverColor: '#0354A8',
+  copyrightColor: '#6B7280',
+  borderColor: '#1F2937',
+  mapBackgroundColor: '#1F2937',
   aboutText: 'Oferecemos experiências únicas em hospedagem com conforto, elegância e atendimento personalizado.',
   copyright: '© 2024 FuseHotel. Todos os direitos reservados.',
   address: 'Rua Exemplo, 123 - Cidade, Estado',
   phone: '(11) 1234-5678',
   whatsapp: '(11) 98765-4321',
   email: 'contato@fusehotel.com',
+  businessHours: 'Recepção 24h\nCheck-in: 14h\nCheck-out: 12h',
   facebookUrl: 'https://facebook.com',
   instagramUrl: 'https://instagram.com',
   linkedinUrl: 'https://linkedin.com',
+  logo: '/lovable-uploads/91e13e81-bbd9-4aab-b810-d81bb336ecb8.png',
 };

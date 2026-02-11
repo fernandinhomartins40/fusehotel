@@ -6,7 +6,7 @@ interface Highlight {
   id: string;
   title: string;
   subtitle: string;
-  imageUrl: string;
+  image: string;
   order: number;
   isActive: boolean;
 }
@@ -60,7 +60,7 @@ export const HighlightsSection: React.FC = () => {
           {highlights.map((highlight: Highlight) => (
             <div key={highlight.id} className="relative overflow-hidden rounded-[5px]">
               <img
-                src={highlight.imageUrl}
+                src={highlight.image}
                 alt={highlight.title}
                 className="w-full h-[333px] object-cover"
               />

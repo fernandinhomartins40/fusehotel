@@ -1,0 +1,75 @@
+FROM node:20-alpine AS builder
+
+ARG BUILD_TIMESTAMP
+ENV BUILD_TIMESTAMP=${BUILD_TIMESTAMP}
+
+# Instalar OpenSSL para Prisma
+RUN apk add --no-cache openssl
+
+WORKDIR /app
+
+# Copiar package.json da raiz (monorepo)
+COPY package*.json ./
+
+# Copiar shared package (dependência local)
+COPY packages/shared ./packages/shared
+
+# Copiar package.json e código fonte da pasta apps/api
+COPY apps/api/package*.json ./apps/api/
+COPY apps/api/tsconfig.json ./apps/api/
+COPY apps/api/src ./apps/api/src
+
+# Instalar dependências do monorepo (shared + api)
+RUN npm install --workspace=@fusehotel/shared --workspace=@fusehotel/api
+
+# Build do shared package primeiro
+WORKDIR /app/packages/shared
+RUN npm run build
+
+# Voltar para diretório da api
+WORKDIR /app/apps/api
+
+# Gerar Prisma Client com schema específico
+RUN npx prisma generate --schema=./src/prisma/schema.prisma
+
+# Build da API
+RUN npm run build
+
+# ===== PRODUCTION IMAGE =====
+FROM node:20-alpine
+
+# Instalar OpenSSL para Prisma
+RUN apk add --no-cache openssl curl
+
+WORKDIR /app
+
+# Copiar build da API
+COPY --from=builder /app/apps/api/dist ./dist
+
+# Copiar código fonte (necessário para Prisma migrations e seeds)
+COPY --from=builder /app/apps/api/src ./src
+
+# Copiar package.json
+COPY --from=builder /app/apps/api/package.json ./
+
+# Copiar node_modules completo (inclui shared e Prisma Client)
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/shared ./node_modules/@fusehotel/shared
+
+# Criar diretórios
+RUN mkdir -p uploads logs
+
+# Criar usuário não-root
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+RUN chown -R nodejs:nodejs /app
+
+USER nodejs
+
+EXPOSE 3001
+
+# Healthcheck endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3001/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+
+# Script de inicialização que roda migrations e seeds antes de iniciar o servidor
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=./src/prisma/schema.prisma && node dist/server.js"]

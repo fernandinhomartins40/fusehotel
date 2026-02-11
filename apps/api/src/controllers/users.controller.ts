@@ -3,6 +3,15 @@ import { UserService } from '../services/users.service';
 import { sendSuccess } from '../utils/response';
 
 export class UserController {
+  static async create(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = await UserService.create(req.body);
+      return sendSuccess(res, user, 'Cliente criado com sucesso', 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getProfile(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;

@@ -24,7 +24,7 @@ interface Highlight {
   id: string;
   title: string;
   subtitle: string;
-  imageUrl: string;
+  image: string;
   order: number;
   isActive: boolean;
 }
@@ -38,8 +38,8 @@ export const HighlightsCustomizer = () => {
   const deleteHighlight = useDeleteHighlight();
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ title: '', subtitle: '', imageUrl: '' });
-  const [newHighlight, setNewHighlight] = useState({ title: '', subtitle: '', imageUrl: '' });
+  const [editForm, setEditForm] = useState({ title: '', subtitle: '', image: '' });
+  const [newHighlight, setNewHighlight] = useState({ title: '', subtitle: '', image: '' });
   const [showNewForm, setShowNewForm] = useState(false);
 
   const config = settingsData?.config || defaultHighlightsConfig;
@@ -71,7 +71,7 @@ export const HighlightsCustomizer = () => {
   };
 
   const handleCreateHighlight = () => {
-    if (!newHighlight.title || !newHighlight.subtitle || !newHighlight.imageUrl) {
+    if (!newHighlight.title || !newHighlight.subtitle || !newHighlight.image) {
       toast.error('Preencha todos os campos');
       return;
     }
@@ -80,12 +80,12 @@ export const HighlightsCustomizer = () => {
       {
         title: newHighlight.title,
         subtitle: newHighlight.subtitle,
-        imageUrl: newHighlight.imageUrl,
+        image: newHighlight.image,
         isActive: true
       },
       {
         onSuccess: () => {
-          setNewHighlight({ title: '', subtitle: '', imageUrl: '' });
+          setNewHighlight({ title: '', subtitle: '', image: '' });
           setShowNewForm(false);
         }
       }
@@ -97,12 +97,12 @@ export const HighlightsCustomizer = () => {
     setEditForm({
       title: highlight.title,
       subtitle: highlight.subtitle,
-      imageUrl: highlight.imageUrl
+      image: highlight.image
     });
   };
 
   const handleSaveEdit = (id: string) => {
-    if (!editForm.title || !editForm.subtitle || !editForm.imageUrl) {
+    if (!editForm.title || !editForm.subtitle || !editForm.image) {
       toast.error('Preencha todos os campos');
       return;
     }
@@ -113,7 +113,7 @@ export const HighlightsCustomizer = () => {
         data: {
           title: editForm.title,
           subtitle: editForm.subtitle,
-          imageUrl: editForm.imageUrl
+          image: editForm.image
         }
       },
       {
@@ -263,8 +263,8 @@ export const HighlightsCustomizer = () => {
                 <Label>Imagem</Label>
                 <ImageUploader
                   category="LANDING_HIGHLIGHTS"
-                  value={newHighlight.imageUrl}
-                  onChange={(url) => setNewHighlight(prev => ({ ...prev, imageUrl: url }))}
+                  value={newHighlight.image}
+                  onChange={(url) => setNewHighlight(prev => ({ ...prev, image: url }))}
                 />
               </div>
 
@@ -309,8 +309,8 @@ export const HighlightsCustomizer = () => {
                       <Label>Imagem</Label>
                       <ImageUploader
                         category="LANDING_HIGHLIGHTS"
-                        value={editForm.imageUrl}
-                        onChange={(url) => setEditForm(prev => ({ ...prev, imageUrl: url }))}
+                        value={editForm.image}
+                        onChange={(url) => setEditForm(prev => ({ ...prev, image: url }))}
                       />
                     </div>
 
@@ -349,7 +349,7 @@ export const HighlightsCustomizer = () => {
                   <>
                     <div className="relative">
                       <img
-                        src={highlight.imageUrl}
+                        src={highlight.image}
                         alt={highlight.title}
                         className="w-full h-48 object-cover"
                       />

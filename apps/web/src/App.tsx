@@ -18,10 +18,15 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminAccommodations from "./pages/admin/Accommodations";
 import Reservations from "./pages/admin/Reservations";
-import Settings from "./pages/admin/Settings";
+import SettingsNew from "./pages/admin/SettingsNew";
 import PackagesPromotions from "./pages/admin/PackagesPromotions";
 import Customers from "./pages/admin/Customers";
 import LandingCustomizer from "./pages/admin/LandingCustomizer";
+import ServicesCustomizer from "./pages/admin/ServicesCustomizer";
+import AboutCustomizer from "./pages/admin/AboutCustomizer";
+import FAQCustomizer from "./pages/admin/FAQCustomizer";
+import ContactCustomizer from "./pages/admin/ContactCustomizer";
+import Schedule from "./pages/admin/Schedule";
 import AboutUs from "./pages/AboutUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import FAQ from "./pages/FAQ";
@@ -91,6 +96,14 @@ const App = () => {
                 }
               />
               <Route
+                path="/admin/schedule"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <Schedule />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/admin/packages-promotions"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
@@ -110,7 +123,7 @@ const App = () => {
                 path="/admin/settings"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN']}>
-                    <Settings />
+                    <SettingsNew />
                   </ProtectedRoute>
                 }
               />
@@ -119,6 +132,38 @@ const App = () => {
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
                     <LandingCustomizer />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/services-customizer"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <ServicesCustomizer />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/about-customizer"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <AboutCustomizer />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/faq-customizer"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <FAQCustomizer />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/contact-customizer"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <ContactCustomizer />
                   </ProtectedRoute>
                 }
               />

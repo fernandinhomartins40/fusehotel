@@ -2,12 +2,17 @@ import React from 'react';
 import { Phone, MessageSquare, Mail, LayoutDashboard, MapPin, Clock, Facebook, Instagram, Linkedin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { MapEmbed } from '@/components/ui/MapEmbed';
 import { useLandingSettings } from '@/hooks/useLanding';
 import { defaultFooterConfig } from '@/types/landing-config';
 
 export const Footer: React.FC = () => {
   const { data: footerConfig } = useLandingSettings('footer');
   const config = footerConfig?.config || defaultFooterConfig;
+
+  console.log('Footer - footerConfig:', footerConfig);
+  console.log('Footer - config:', config);
+  console.log('Footer - address:', config.address);
 
   return (
     <footer
@@ -219,12 +224,10 @@ export const Footer: React.FC = () => {
             <h3 className="font-semibold text-xl mb-4" style={{ color: config.headingColor || '#FFFFFF' }}>
               Localização
             </h3>
-            <div className="h-48 rounded-md overflow-hidden relative" style={{ backgroundColor: config.mapBackgroundColor || '#1F2937' }}>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <MapPin size={32} style={{ color: config.textColor || '#9CA3AF' }} />
-                <span className="ml-2" style={{ color: config.textColor || '#9CA3AF' }}>Mapa disponível em breve</span>
-              </div>
-            </div>
+            <MapEmbed
+              address={config.address || ''}
+              height="192px"
+            />
             {/* Admin Access Button */}
             <div className="mt-4">
               <Button variant="outline" size="sm" className="bg-transparent border-white hover:bg-white hover:text-black" style={{ color: config.headingColor || '#FFFFFF' }} asChild>

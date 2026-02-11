@@ -97,23 +97,124 @@ export const PromotionsCustomizer = () => {
               />
             </div>
 
-            <ColorPickerField
-              label="Cor de Fundo"
-              value={form.watch('backgroundColor') || '#FFFFFF'}
-              onChange={(color) => form.setValue('backgroundColor', color)}
-            />
+            {/* Cores da Seção em grid 2 colunas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ColorPickerField
+                label="Cor de Fundo"
+                value={form.watch('backgroundColor') || '#FFFFFF'}
+                onChange={(color) => form.setValue('backgroundColor', color)}
+              />
 
-            <ColorPickerField
-              label="Cor do Título"
-              value={form.watch('titleColor') || '#000000'}
-              onChange={(color) => form.setValue('titleColor', color)}
-            />
+              <ColorPickerField
+                label="Cor do Título"
+                value={form.watch('titleColor') || '#000000'}
+                onChange={(color) => form.setValue('titleColor', color)}
+              />
 
-            <ColorPickerField
-              label="Cor do Botão"
-              value={form.watch('buttonColor') || '#0466C8'}
-              onChange={(color) => form.setValue('buttonColor', color)}
-            />
+              <ColorPickerField
+                label="Cor do Botão"
+                value={form.watch('buttonColor') || '#0466C8'}
+                onChange={(color) => form.setValue('buttonColor', color)}
+              />
+            </div>
+
+            {/* Estilização dos Cards */}
+            <div className="pt-6 border-t">
+              <h3 className="text-lg font-semibold mb-4">Estilização dos Cards de Promoções</h3>
+
+              {/* Cores dos Cards em grid 2 colunas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ColorPickerField
+                  label="Cor da Borda do Card"
+                  value={form.watch('cardBorderColor') || '#E5E5E5'}
+                  onChange={(color) => form.setValue('cardBorderColor', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor de Fundo do Card"
+                  value={form.watch('cardBackground') || '#FFFFFF'}
+                  onChange={(color) => form.setValue('cardBackground', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor de Fundo do Badge de Tipo"
+                  value={form.watch('cardBadgeBackground') || '#0466C8'}
+                  onChange={(color) => form.setValue('cardBadgeBackground', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor do Texto do Badge de Tipo"
+                  value={form.watch('cardBadgeText') || '#FFFFFF'}
+                  onChange={(color) => form.setValue('cardBadgeText', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor do Título do Card"
+                  value={form.watch('cardTitleColor') || '#000000'}
+                  onChange={(color) => form.setValue('cardTitleColor', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor da Data de Validade"
+                  value={form.watch('cardDateColor') || '#6B7280'}
+                  onChange={(color) => form.setValue('cardDateColor', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor da Descrição do Card"
+                  value={form.watch('cardDescriptionColor') || '#6B7280'}
+                  onChange={(color) => form.setValue('cardDescriptionColor', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor de Fundo das Tags de Features"
+                  value={form.watch('cardFeatureBadgeBackground') || '#F3F4F6'}
+                  onChange={(color) => form.setValue('cardFeatureBadgeBackground', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor do Texto das Tags de Features"
+                  value={form.watch('cardFeatureBadgeText') || '#374151'}
+                  onChange={(color) => form.setValue('cardFeatureBadgeText', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor do Preço Original (Tachado)"
+                  value={form.watch('cardOriginalPriceColor') || '#9CA3AF'}
+                  onChange={(color) => form.setValue('cardOriginalPriceColor', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor do Preço com Desconto"
+                  value={form.watch('cardDiscountedPriceColor') || '#0466C8'}
+                  onChange={(color) => form.setValue('cardDiscountedPriceColor', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor de Fundo do Botão"
+                  value={form.watch('cardButtonBackground') || '#0466C8'}
+                  onChange={(color) => form.setValue('cardButtonBackground', color)}
+                />
+
+                <ColorPickerField
+                  label="Cor do Texto do Botão"
+                  value={form.watch('cardButtonTextColor') || '#FFFFFF'}
+                  onChange={(color) => form.setValue('cardButtonTextColor', color)}
+                />
+
+                <div className="space-y-2">
+                  <Label htmlFor="cardBorderRadius">Arredondamento das Bordas</Label>
+                  <Input
+                    id="cardBorderRadius"
+                    {...form.register('cardBorderRadius')}
+                    placeholder="8px"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Exemplos: 0px, 8px, 16px
+                  </p>
+                </div>
+              </div>
+            </div>
 
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={updateSettings.isPending}>

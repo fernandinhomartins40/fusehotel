@@ -117,3 +117,33 @@ export function useToggleCustomerStatus() {
     },
   });
 }
+
+export interface CreateCustomerData {
+  name: string;
+  email: string;
+  phone?: string;
+  whatsapp?: string;
+  cpf?: string;
+  password?: string;
+  role?: 'CUSTOMER' | 'ADMIN' | 'MANAGER';
+}
+
+export function useCreateCustomer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (customerData: CreateCustomerData) => {
+      const { data } = await apiClient.post('/users', customerData);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast.success('Cliente criado com sucesso!');
+    },
+    onError: (error: any) => {
+      toast.error('Erro ao criar cliente', {
+        description: error.response?.data?.message || 'Tente novamente',
+      });
+    },
+  });
+}

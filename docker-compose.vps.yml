@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fusehotel-postgres-vps
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fusehotel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fusehotel2024secure}
+      POSTGRES_DB: ${POSTGRES_DB:-fusehotel}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - fusehotel-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fusehotel}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.api.vps
+      args:
+        BUILD_TIMESTAMP: ${BUILD_TIMESTAMP:-0}
+    container_name: fusehotel-api-vps
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      JWT_ADMIN_EXPIRES_IN: ${JWT_ADMIN_EXPIRES_IN:-8h}
+      FRONTEND_URL: ${FRONTEND_URL}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      RUN_SEED: ${RUN_SEED:-false}
+    volumes:
+      - uploads_data:/app/uploads
+      - logs_data:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fusehotel-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  web:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.web.vps
+      args:
+        BUILD_TIMESTAMP: ${BUILD_TIMESTAMP:-0}
+    container_name: fusehotel-web-vps
+    networks:
+      - fusehotel-network
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: fusehotel-nginx-vps
+    volumes:
+      - ./infra/nginx/nginx.vps.conf:/etc/nginx/nginx.conf:ro
+      - nginx_logs:/var/log/nginx
+    ports:
+      - "3090:80"
+    depends_on:
+      - api
+      - web
+    networks:
+      - fusehotel-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  fusehotel-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  uploads_data:
+    driver: local
+  logs_data:
+    driver: local
+  nginx_logs:
+    driver: local
