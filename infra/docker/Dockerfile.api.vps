@@ -71,5 +71,6 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD curl -f http://localhost:3001/health || exit 1
 
-# Script de inicialização que roda migrations e seeds antes de iniciar o servidor
-CMD ["sh", "-c", "npx prisma migrate deploy --schema=./src/prisma/schema.prisma && node dist/server.js"]
+# Script de inicialização que sincroniza schema, executa seeds e inicia o servidor
+# Usando db push pois não temos migrations (schema-first approach)
+CMD ["sh", "-c", "npx prisma db push --schema=./src/prisma/schema.prisma --accept-data-loss --skip-generate && if [ \"$RUN_SEED\" = \"true\" ]; then npx ts-node src/prisma/seeds/index.ts || echo 'Seeds not executed or failed'; fi && node dist/server.js"]
