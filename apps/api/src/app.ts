@@ -28,6 +28,18 @@ if (env.NODE_ENV === 'development') {
   });
 }
 
+// Health check sem prefixo /api para Docker healthchecks
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: env.NODE_ENV,
+    version: '1.0.0'
+  });
+});
+
+// Health check com prefixo /api para compatibilidade
 app.get(`${env.API_PREFIX}/health`, (req, res) => {
   res.json({
     status: 'ok',
