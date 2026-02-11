@@ -216,13 +216,30 @@ jobs:
 
             echo "=== Todos os arquivos críticos validados ==="
 
-            # Parar e remover containers antigos PRIMEIRO
-            echo "Parando e removendo containers antigos (preservando volumes)..."
+            # ===== LIMPEZA COMPLETA DE CONTAINERS ANTIGOS =====
+            echo "=== Parando e removendo containers antigos (preservando volumes) ==="
+
+            # Parar todos os containers do fusehotel primeiro
+            echo "Parando containers..."
+            docker stop fusehotel-api-vps fusehotel-web-vps fusehotel-nginx-vps fusehotel-postgres-vps 2>/dev/null || true
+
+            # Garantir que docker-compose pare tudo
             docker-compose -f docker-compose.vps.yml down --remove-orphans || true
+
+            # Forçar remoção de containers específicos (caso ainda existam)
+            echo "Removendo containers forçadamente..."
             docker rm -f fusehotel-api-vps 2>/dev/null || true
             docker rm -f fusehotel-web-vps 2>/dev/null || true
             docker rm -f fusehotel-nginx-vps 2>/dev/null || true
             docker rm -f fusehotel-postgres-vps 2>/dev/null || true
+
+            # Verificar se todos foram removidos
+            echo "Verificando se containers foram removidos..."
+            if docker ps -a | grep -E "fusehotel-(api|web|nginx|postgres)-vps"; then
+              echo "⚠️ Alguns containers ainda existem, forçando remoção novamente..."
+              docker ps -a | grep -E "fusehotel-(api|web|nginx|postgres)-vps" | awk '{print $1}' | xargs -r docker rm -f
+            fi
+            echo "✅ Todos os containers antigos foram removidos"
 
             # Remover imagens antigas para forçar rebuild completo
             echo "Removendo imagens antigas do fusehotel..."
@@ -235,9 +252,9 @@ jobs:
             docker-compose -f docker-compose.vps.yml build --no-cache --pull || { echo "❌ Erro ao construir imagens Docker"; exit 1; }
             echo "✅ Imagens Docker construídas com sucesso"
 
-            # Iniciar containers
+            # Iniciar containers (com force-recreate para garantir containers novos)
             echo "Iniciando containers..."
-            docker-compose -f docker-compose.vps.yml up -d --remove-orphans || { echo "❌ Erro ao iniciar containers"; exit 1; }
+            docker-compose -f docker-compose.vps.yml up -d --force-recreate --remove-orphans || { echo "❌ Erro ao iniciar containers"; exit 1; }
             echo "✅ Containers iniciados"
 
             # Aguardar containers iniciarem
