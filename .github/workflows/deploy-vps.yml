@@ -300,11 +300,13 @@ jobs:
             docker logs fusehotel-nginx-vps --tail=50
 
             # ===== RECARREGAR NGINX =====
-            echo "=== Recarregando Nginx (configuração via certbot já existente) ==="
+            echo "=== Recarregando Nginx (SEM modificar configurações existentes) ==="
 
-            # Apenas recarregar configuração existente
+            # IMPORTANTE: Apenas recarrega configuração existente
+            # NÃO cria, modifica ou remove arquivos de configuração
+            # SSL e configurações das outras aplicações permanecem intactas
             nginx -t && systemctl reload nginx || echo "⚠️ Nginx reload falhou, mas continuando..."
-            echo "✅ Nginx recarregado"
+            echo "✅ Nginx recarregado - todas configurações mantidas"
 
             sleep 3
 
@@ -374,5 +376,5 @@ jobs:
           echo "🌐 Acesso alternativo: http://72.60.10.112:3090"
           echo "📊 Health check: http://72.60.10.112:3090/health"
           echo ""
-          echo "⚠️ IMPORTANTE: Configure SSL com certbot:"
-          echo "sudo certbot --nginx -d perolahotel.com -d www.perolahotel.com"
+          echo "📦 Volumes preservados entre deploys"
+          echo "🔒 SSL/Nginx: Configurações existentes mantidas"
