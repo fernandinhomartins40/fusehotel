@@ -73,4 +73,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 # Script de inicialização que sincroniza schema, executa seeds e inicia o servidor
 # Usando db push pois não temos migrations (schema-first approach)
-CMD ["sh", "-c", "npx prisma db push --schema=./src/prisma/schema.prisma --accept-data-loss --skip-generate && if [ \"$RUN_SEED\" = \"true\" ]; then npx ts-node src/prisma/seeds/index.ts || echo 'Seeds not executed or failed'; fi && node dist/server.js"]
+CMD ["sh", "-c", "npx prisma db push --schema=./src/prisma/schema.prisma --accept-data-loss --skip-generate && if [ \"$RUN_SEED\" = \"true\" ]; then node dist/prisma/seeds/index.js || echo 'Seeds not executed or failed'; fi && node dist/server.js"]
