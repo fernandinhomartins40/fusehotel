@@ -1,9 +1,10 @@
-import { prisma } from '../config/database';
-import { hashPassword, comparePassword, generateAccessToken, generateRefreshToken } from '../utils/crypto';
-import { UnauthorizedError, ConflictError, NotFoundError, BadRequestError } from '../utils/errors';
-import { LoginCredentials, RegisterData, AuthResponse } from '@fusehotel/shared';
-import { v4 as uuidv4 } from 'uuid';
 import { addDays } from 'date-fns';
+import { LoginCredentials, RegisterData, AuthResponse } from '@fusehotel/shared';
+import { prisma } from '../config/database';
+import { comparePassword, generateAccessToken, generateRefreshToken, hashPassword } from '../utils/crypto';
+import { BadRequestError, ConflictError, NotFoundError, UnauthorizedError } from '../utils/errors';
+import { EmailService } from './email.service';
+import { PasswordResetService } from './password-reset.service';
 
 export class AuthService {
   static async register(data: RegisterData): Promise<AuthResponse> {
@@ -11,9 +12,9 @@ export class AuthService {
       where: {
         OR: [
           { email: data.email },
-          { cpf: data.cpf || undefined }
-        ]
-      }
+          { cpf: data.cpf || undefined },
+        ],
+      },
     });
 
     if (existingUser) {
@@ -36,7 +37,7 @@ export class AuthService {
         name: true,
         role: true,
         profileImage: true,
-      }
+      },
     });
 
     const accessToken = generateAccessToken({
@@ -51,7 +52,7 @@ export class AuthService {
         token: refreshToken,
         userId: user.id,
         expiresAt: addDays(new Date(), 7),
-      }
+      },
     });
 
     return {
@@ -59,7 +60,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role as any,
+        role: user.role as AuthResponse['user']['role'],
         profileImage: user.profileImage,
       },
       tokens: {
@@ -67,19 +68,18 @@ export class AuthService {
         refreshToken,
         expiresIn: 900,
         tokenType: 'Bearer',
-      }
+      },
     };
   }
 
   static async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    // Buscar por email OU WhatsApp (para usuários provisórios)
     const user = await prisma.user.findFirst({
       where: {
         OR: [
           { email: credentials.email },
-          { whatsapp: credentials.email.replace(/\D/g, '') }, // Remove formatação para buscar WhatsApp
-        ]
-      }
+          { whatsapp: credentials.email.replace(/\D/g, '') },
+        ],
+      },
     });
 
     if (!user || !user.isActive) {
@@ -93,7 +93,7 @@ export class AuthService {
 
     await prisma.user.update({
       where: { id: user.id },
-      data: { lastLoginAt: new Date() }
+      data: { lastLoginAt: new Date() },
     });
 
     const accessToken = generateAccessToken({
@@ -108,7 +108,7 @@ export class AuthService {
         token: refreshToken,
         userId: user.id,
         expiresAt: addDays(new Date(), 7),
-      }
+      },
     });
 
     return {
@@ -116,7 +116,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role as any,
+        role: user.role as AuthResponse['user']['role'],
         profileImage: user.profileImage,
       },
       tokens: {
@@ -124,14 +124,14 @@ export class AuthService {
         refreshToken,
         expiresIn: 900,
         tokenType: 'Bearer',
-      }
+      },
     };
   }
 
   static async refreshToken(token: string): Promise<{ accessToken: string }> {
     const refreshToken = await prisma.refreshToken.findUnique({
       where: { token },
-      include: { user: true }
+      include: { user: true },
     });
 
     if (!refreshToken || refreshToken.expiresAt < new Date()) {
@@ -149,33 +149,28 @@ export class AuthService {
 
   static async logout(token: string): Promise<void> {
     await prisma.refreshToken.deleteMany({
-      where: { token }
+      where: { token },
     });
   }
 
   static async forgotPassword(email: string): Promise<void> {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      return; // Não revelar se o email existe
+      return;
     }
 
-    const resetToken = uuidv4();
-    await prisma.passwordReset.create({
-      data: {
-        userId: user.id,
-        token: resetToken,
-        expiresAt: addDays(new Date(), 1),
-      }
+    const token = await PasswordResetService.issueToken(user.id);
+    await EmailService.sendPasswordResetEmail({
+      to: email,
+      name: user.name,
+      token,
     });
-
-    // TODO: Enviar email com o token
-    console.log(`Reset token para ${email}: ${resetToken}`);
   }
 
   static async resetPassword(token: string, newPassword: string): Promise<void> {
     const resetToken = await prisma.passwordReset.findUnique({
       where: { token },
-      include: { user: true }
+      include: { user: true },
     });
 
     if (!resetToken || resetToken.used || resetToken.expiresAt < new Date()) {
@@ -187,12 +182,12 @@ export class AuthService {
     await prisma.$transaction([
       prisma.user.update({
         where: { id: resetToken.userId },
-        data: { password: hashedPassword }
+        data: { password: hashedPassword },
       }),
       prisma.passwordReset.update({
         where: { id: resetToken.id },
-        data: { used: true }
-      })
+        data: { used: true },
+      }),
     ]);
   }
 
@@ -210,7 +205,7 @@ export class AuthService {
     const hashedPassword = await hashPassword(newPassword);
     await prisma.user.update({
       where: { id: userId },
-      data: { password: hashedPassword }
+      data: { password: hashedPassword },
     });
   }
 }

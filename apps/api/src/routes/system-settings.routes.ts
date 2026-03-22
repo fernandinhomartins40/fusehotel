@@ -7,6 +7,7 @@ const router = Router();
 
 // Public routes
 router.get('/public', SystemSettingsController.getPublicSettings);
+router.get('/content/:key', SystemSettingsController.getContent);
 
 // Admin routes - Visual Identity
 router.get(
@@ -27,12 +28,6 @@ router.get('/seo', authenticate, requireRole(['ADMIN']), SystemSettingsControlle
 router.put('/seo', authenticate, requireRole(['ADMIN']), SystemSettingsController.updateSEO);
 
 // Admin routes - Content (policies, terms, etc.)
-router.get(
-  '/content/:key',
-  authenticate,
-  requireRole(['ADMIN']),
-  SystemSettingsController.getContent
-);
 router.put(
   '/content/:key',
   authenticate,

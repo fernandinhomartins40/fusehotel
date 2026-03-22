@@ -105,3 +105,55 @@ export function useLogout() {
     },
   });
 }
+
+export function useForgotPassword() {
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (email: string) => {
+      const { data } = await apiClient.post('/auth/forgot-password', { email });
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Solicitação enviada',
+        description: 'Se o email existir, você receberá as instruções de redefinição.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao solicitar recuperação',
+        description: error.response?.data?.message || 'Tente novamente mais tarde',
+      });
+    },
+  });
+}
+
+export function useResetPassword() {
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      token: string;
+      newPassword: string;
+      confirmPassword: string;
+    }) => {
+      const { data } = await apiClient.post('/auth/reset-password', payload);
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Senha redefinida',
+        description: 'Você já pode acessar sua conta com a nova senha.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao redefinir senha',
+        description: error.response?.data?.message || 'Token inválido ou expirado',
+      });
+    },
+  });
+}

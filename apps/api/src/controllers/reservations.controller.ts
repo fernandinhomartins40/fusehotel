@@ -14,7 +14,7 @@ export class ReservationController {
 
   static async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const reservation = await ReservationService.getById(req.params.id);
+      const reservation = await ReservationService.getByIdForUser(req.params.id, req.user!);
       return sendSuccess(res, reservation);
     } catch (error) {
       next(error);
@@ -43,7 +43,7 @@ export class ReservationController {
   static async cancel(req: Request, res: Response, next: NextFunction) {
     try {
       const { reason } = req.body;
-      const reservation = await ReservationService.cancel(req.params.id, reason);
+      const reservation = await ReservationService.cancel(req.params.id, reason, req.user!);
       return sendSuccess(res, reservation, 'Reserva cancelada com sucesso');
     } catch (error) {
       next(error);

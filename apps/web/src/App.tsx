@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -32,21 +31,20 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import FAQ from "./pages/FAQ";
 import Contact from "./pages/Contact";
 import Services from "./pages/Services";
+import ResetPassword from "./pages/ResetPassword";
+import TermsOfService from "./pages/TermsOfService";
 
 const App = () => {
-  console.log('App component rendered');
-  
-  // Create QueryClient inside component to avoid SSR issues
   const [queryClient] = React.useState(() => new QueryClient({
     defaultOptions: {
       queries: {
         refetchOnWindowFocus: false,
         retry: 1,
-        staleTime: 5 * 60 * 1000, // 5 minutes
+        staleTime: 5 * 60 * 1000,
       },
     },
   }));
-  
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -63,14 +61,14 @@ const App = () => {
               <Route path="/area-do-cliente" element={<CustomerArea />} />
               <Route path="/sobre-nos" element={<AboutUs />} />
               <Route path="/politicas-de-privacidade" element={<PrivacyPolicy />} />
+              <Route path="/termos-de-uso" element={<TermsOfService />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/contato" element={<Contact />} />
               <Route path="/servicos" element={<Services />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
 
-              {/* Admin Login - Public */}
               <Route path="/admin/login" element={<AdminLogin />} />
 
-              {/* Admin routes - Protected */}
               <Route
                 path="/admin"
                 element={
@@ -168,7 +166,6 @@ const App = () => {
                 }
               />
 
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

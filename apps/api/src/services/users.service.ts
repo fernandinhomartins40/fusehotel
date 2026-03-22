@@ -1,61 +1,52 @@
 import { prisma } from '../config/database';
-import { NotFoundError, BadRequestError } from '../utils/errors';
-import { hashPassword } from '../utils/crypto';
+import { BadRequestError, NotFoundError } from '../utils/errors';
+import { generateSecurePassword, hashPassword } from '../utils/crypto';
+import { EmailService } from './email.service';
+import { PasswordResetService } from './password-reset.service';
+
+type UserRole = 'CUSTOMER' | 'ADMIN' | 'MANAGER';
+
+interface CreateUserData {
+  name: string;
+  email: string;
+  phone?: string;
+  whatsapp?: string;
+  cpf?: string;
+  password?: string;
+  role?: UserRole;
+}
+
+interface UpdateUserData {
+  name?: string;
+  email?: string;
+  phone?: string | null;
+  whatsapp?: string | null;
+  cpf?: string | null;
+  profileImage?: string | null;
+  role?: UserRole;
+  isActive?: boolean;
+  password?: string;
+  emailVerified?: boolean;
+}
+
+interface ListUserFilters {
+  role?: string;
+  isActive?: string;
+  isProvisional?: string;
+  search?: string;
+}
 
 export class UserService {
-  static async create(data: {
-    name: string;
-    email: string;
-    phone?: string;
-    whatsapp?: string;
-    cpf?: string;
-    password?: string;
-    role?: 'CUSTOMER' | 'ADMIN' | 'MANAGER';
-  }) {
-    // Verificar se email já existe
-    const existingUser = await prisma.user.findUnique({
-      where: { email: data.email }
-    });
+  static async create(data: CreateUserData) {
+    await this.ensureUniqueFields(data);
 
-    if (existingUser) {
-      throw new BadRequestError('Email já cadastrado');
+    const shouldSendSetupEmail = !data.password;
+
+    if (shouldSendSetupEmail && !EmailService.isConfigured()) {
+      throw new BadRequestError('Defina uma senha manualmente ou configure SMTP para envio do acesso inicial');
     }
 
-    // Verificar se CPF já existe (se fornecido)
-    if (data.cpf) {
-      const existingCpf = await prisma.user.findUnique({
-        where: { cpf: data.cpf }
-      });
-
-      if (existingCpf) {
-        throw new BadRequestError('CPF já cadastrado');
-      }
-    }
-
-    // Verificar se WhatsApp já existe (se fornecido)
-    if (data.whatsapp) {
-      const cleanWhatsApp = data.whatsapp.replace(/\D/g, '');
-      const existingWhatsApp = await prisma.user.findUnique({
-        where: { whatsapp: cleanWhatsApp }
-      });
-
-      if (existingWhatsApp) {
-        throw new BadRequestError('WhatsApp já cadastrado');
-      }
-    }
-
-    // Gerar senha padrão se não fornecida (primeiras 3 letras do nome)
-    let password = data.password;
-    if (!password) {
-      const firstThreeLetters = data.name
-        .substring(0, 3)
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, ''); // Remover acentos
-      password = firstThreeLetters;
-    }
-
-    const hashedPassword = await hashPassword(password);
+    const hashedPassword = await hashPassword(data.password || generateSecurePassword());
 
     const user = await prisma.user.create({
       data: {
@@ -80,11 +71,21 @@ export class UserService {
         role: true,
         isActive: true,
         createdAt: true,
-      }
+      },
     });
+
+    if (shouldSendSetupEmail) {
+      const token = await PasswordResetService.issueToken(user.id);
+      await EmailService.sendPortalAccessEmail({
+        to: user.email,
+        name: user.name,
+        token,
+      });
+    }
 
     return user;
   }
+
   static async getById(id: string) {
     const user = await prisma.user.findUnique({
       where: { id },
@@ -103,7 +104,7 @@ export class UserService {
         lastLoginAt: true,
         createdAt: true,
         updatedAt: true,
-      }
+      },
     });
 
     if (!user) {
@@ -113,46 +114,94 @@ export class UserService {
     return user;
   }
 
-  static async list(filters: any) {
+  static async list(filters: ListUserFilters) {
+    const search = filters.search?.trim();
+    const normalizedRole =
+      filters.role === 'CUSTOMER' ||
+      filters.role === 'ADMIN' ||
+      filters.role === 'MANAGER'
+        ? filters.role
+        : undefined;
+
     return prisma.user.findMany({
       where: {
-        role: filters.role,
+        role: normalizedRole,
         isActive: filters.isActive !== undefined ? filters.isActive === 'true' : undefined,
+        isProvisional: filters.isProvisional !== undefined ? filters.isProvisional === 'true' : undefined,
+        OR: search
+          ? [
+              { name: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+              { whatsapp: { contains: search.replace(/\D/g, '') } },
+            ]
+          : undefined,
       },
       select: {
         id: true,
         email: true,
         name: true,
         phone: true,
+        whatsapp: true,
+        cpf: true,
         role: true,
         isActive: true,
+        isProvisional: true,
         emailVerified: true,
+        lastLoginAt: true,
         createdAt: true,
+        _count: {
+          select: {
+            reservations: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   }
 
-  static async update(id: string, data: any) {
-    const updateData: any = {};
+  static async update(id: string, data: UpdateUserData) {
+    await this.getById(id);
 
-    // Campos que sempre podem ser atualizados
+    const updateData: Record<string, unknown> = {};
+
     if (data.name !== undefined) updateData.name = data.name;
     if (data.phone !== undefined) updateData.phone = data.phone;
     if (data.profileImage !== undefined) updateData.profileImage = data.profileImage;
+    if (data.role !== undefined) updateData.role = data.role;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+    if (data.emailVerified !== undefined) updateData.emailVerified = data.emailVerified;
+    if (data.password) updateData.password = await hashPassword(data.password);
 
-    // Campos especiais (completar cadastro de provisórios)
-    if (data.cpf !== undefined) updateData.cpf = data.cpf;
-    if (data.whatsapp !== undefined) updateData.whatsapp = data.whatsapp.replace(/\D/g, '');
+    if (data.cpf !== undefined) {
+      const cleanCpf = data.cpf || null;
+
+      if (cleanCpf) {
+        await this.ensureCpfAvailable(cleanCpf, id);
+      }
+
+      updateData.cpf = cleanCpf;
+    }
+
+    if (data.whatsapp !== undefined) {
+      const cleanWhatsApp = data.whatsapp ? data.whatsapp.replace(/\D/g, '') : null;
+
+      if (cleanWhatsApp) {
+        await this.ensureWhatsAppAvailable(cleanWhatsApp, id);
+      }
+
+      updateData.whatsapp = cleanWhatsApp;
+    }
+
     if (data.email !== undefined) {
-      // Se estava com email provisório e está atualizando, marcar como não provisório
+      await this.ensureEmailAvailable(data.email, id);
       updateData.email = data.email;
+
       if (data.email.includes('@') && !data.email.includes('@provisional.fusehotel.com')) {
         updateData.isProvisional = false;
       }
     }
 
-    const user = await prisma.user.update({
+    return prisma.user.update({
       where: { id },
       data: updateData,
       select: {
@@ -163,15 +212,82 @@ export class UserService {
         whatsapp: true,
         cpf: true,
         role: true,
+        isActive: true,
         isProvisional: true,
+        emailVerified: true,
         profileImage: true,
-      }
+        lastLoginAt: true,
+      },
     });
+  }
 
-    return user;
+  static async updateStatus(id: string, isActive: boolean) {
+    await this.getById(id);
+
+    return prisma.user.update({
+      where: { id },
+      data: { isActive },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isActive: true,
+      },
+    });
   }
 
   static async delete(id: string) {
     await prisma.user.delete({ where: { id } });
+  }
+
+  private static async ensureUniqueFields(data: CreateUserData) {
+    await this.ensureEmailAvailable(data.email);
+
+    if (data.cpf) {
+      await this.ensureCpfAvailable(data.cpf);
+    }
+
+    if (data.whatsapp) {
+      await this.ensureWhatsAppAvailable(data.whatsapp.replace(/\D/g, ''));
+    }
+  }
+
+  private static async ensureEmailAvailable(email: string, userId?: string) {
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        email,
+        id: userId ? { not: userId } : undefined,
+      },
+    });
+
+    if (existingUser) {
+      throw new BadRequestError('Email já cadastrado');
+    }
+  }
+
+  private static async ensureCpfAvailable(cpf: string, userId?: string) {
+    const existingCpf = await prisma.user.findFirst({
+      where: {
+        cpf,
+        id: userId ? { not: userId } : undefined,
+      },
+    });
+
+    if (existingCpf) {
+      throw new BadRequestError('CPF já cadastrado');
+    }
+  }
+
+  private static async ensureWhatsAppAvailable(whatsapp: string, userId?: string) {
+    const existingWhatsApp = await prisma.user.findFirst({
+      where: {
+        whatsapp,
+        id: userId ? { not: userId } : undefined,
+      },
+    });
+
+    if (existingWhatsApp) {
+      throw new BadRequestError('WhatsApp já cadastrado');
+    }
   }
 }

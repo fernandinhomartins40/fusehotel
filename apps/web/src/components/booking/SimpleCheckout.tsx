@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { MessageCircle, Calendar, Users, Loader2 } from 'lucide-react';
+import { MessageCircle, Calendar, Users, Loader2, Mail } from 'lucide-react';
 import { useCreateReservation } from '@/hooks/useReservations';
 import { useSettings } from '@/hooks/useSettings';
 import { format, differenceInDays } from 'date-fns';
@@ -35,6 +35,7 @@ export function SimpleCheckout({
   extraBedPrice,
 }: SimpleCheckoutProps) {
   const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
   const [guestWhatsApp, setGuestWhatsApp] = useState('');
   const createReservation = useCreateReservation();
   const { data: settings } = useSettings();
@@ -49,7 +50,7 @@ export function SimpleCheckout({
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
     }).format(value);
   };
 
@@ -75,13 +76,17 @@ export function SimpleCheckout({
       return;
     }
 
+    if (!guestEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
+      toast.error('Por favor, preencha um email válido');
+      return;
+    }
+
     if (!guestWhatsApp || guestWhatsApp.replace(/\D/g, '').length < 10) {
       toast.error('Por favor, preencha um WhatsApp válido');
       return;
     }
 
     try {
-      // 1. Criar reserva no backend
       const reservation = await createReservation.mutateAsync({
         accommodationId,
         checkInDate: checkInDate.toISOString(),
@@ -89,16 +94,17 @@ export function SimpleCheckout({
         numberOfGuests,
         numberOfExtraBeds,
         guestName,
+        guestEmail,
         guestWhatsApp: guestWhatsApp.replace(/\D/g, ''),
       });
 
-      // 2. Gerar mensagem formatada para WhatsApp (sem emojis para evitar problemas de encoding)
       const message = `*NOVA RESERVA - FUSEHOTEL*
 
 *Codigo:* ${reservation.data.reservationCode}
 
 *DADOS DO HOSPEDE*
 Nome: ${guestName}
+Email: ${guestEmail}
 WhatsApp: ${guestWhatsApp}
 
 *DETALHES DA ACOMODACAO*
@@ -110,29 +116,24 @@ Check-in: ${format(checkInDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
 Check-out: ${format(checkOutDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
 Diarias: ${numberOfNights} ${numberOfNights === 1 ? 'noite' : 'noites'}
 Hospedes: ${numberOfGuests} ${numberOfGuests === 1 ? 'pessoa' : 'pessoas'}
-${numberOfExtraBeds > 0 ? `Camas extras: ${numberOfExtraBeds}\n` : ''}
-*VALOR TOTAL: ${formatCurrency(totalAmount)}*
+${numberOfExtraBeds > 0 ? `Camas extras: ${numberOfExtraBeds}\n` : ''}*VALOR TOTAL: ${formatCurrency(totalAmount)}*
 
 Gostaria de confirmar esta reserva!
       `.trim();
 
-      // 3. Redirecionar para WhatsApp
       const hotelWhatsApp = settings?.hotelWhatsApp?.replace(/\D/g, '') || '5511999999999';
       const whatsappUrl = `https://wa.me/${hotelWhatsApp}?text=${encodeURIComponent(message)}`;
 
-      // 4. Abrir WhatsApp em nova aba
       window.open(whatsappUrl, '_blank');
 
-      // 5. Mostrar confirmação
       toast.success('Reserva criada! Você será redirecionado para o WhatsApp.', {
-        description: `Código da reserva: ${reservation.data.reservationCode}`,
+        description: `Código da reserva: ${reservation.data.reservationCode}. O acesso à área do cliente será preparado para ${guestEmail}.`,
         duration: 5000,
       });
 
-      // Limpar formulário
       setGuestName('');
+      setGuestEmail('');
       setGuestWhatsApp('');
-
     } catch (error: any) {
       toast.error('Erro ao criar reserva', {
         description: error.response?.data?.message || 'Tente novamente mais tarde',
@@ -150,7 +151,6 @@ Gostaria de confirmar esta reserva!
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Resumo da reserva */}
         <div className="bg-gray-50 p-4 rounded-lg space-y-3">
           <h3 className="font-semibold text-lg mb-3">Resumo da Reserva</h3>
 
@@ -166,7 +166,7 @@ Gostaria de confirmar esta reserva!
                 Check-in:
               </span>
               <span className="font-medium">
-                {format(checkInDate, "dd/MM/yyyy")}
+                {format(checkInDate, 'dd/MM/yyyy')}
               </span>
             </div>
 
@@ -176,7 +176,7 @@ Gostaria de confirmar esta reserva!
                 Check-out:
               </span>
               <span className="font-medium">
-                {format(checkOutDate, "dd/MM/yyyy")}
+                {format(checkOutDate, 'dd/MM/yyyy')}
               </span>
             </div>
 
@@ -230,7 +230,6 @@ Gostaria de confirmar esta reserva!
           </div>
         </div>
 
-        {/* Formulário simplificado */}
         <div className="space-y-4">
           <div>
             <Label htmlFor="guestName">Nome Completo *</Label>
@@ -241,6 +240,24 @@ Gostaria de confirmar esta reserva!
               placeholder="João da Silva"
               className="mt-1"
             />
+          </div>
+
+          <div>
+            <Label htmlFor="guestEmail" className="flex items-center gap-2">
+              <Mail size={16} />
+              Email *
+            </Label>
+            <Input
+              id="guestEmail"
+              type="email"
+              value={guestEmail}
+              onChange={(e) => setGuestEmail(e.target.value)}
+              placeholder="voce@exemplo.com"
+              className="mt-1"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Usaremos este email para preparar seu acesso à área do cliente.
+            </p>
           </div>
 
           <div>
@@ -259,11 +276,10 @@ Gostaria de confirmar esta reserva!
           </div>
         </div>
 
-        {/* Botão de checkout */}
         <Button
           onClick={handleCheckout}
           className="w-full bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2 h-12"
-          disabled={createReservation.isPending || !guestName || !guestWhatsApp}
+          disabled={createReservation.isPending || !guestName || !guestEmail || !guestWhatsApp}
         >
           {createReservation.isPending ? (
             <>

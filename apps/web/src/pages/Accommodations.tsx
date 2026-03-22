@@ -5,6 +5,9 @@ import { RoomCard } from '@/components/ui/RoomCard';
 import { useAccommodations } from '@/hooks/useAccommodations';
 import { Loader2 } from 'lucide-react';
 
+const FALLBACK_ACCOMMODATION_IMAGE =
+  '/lovable-uploads/2b637749-b3cc-4943-8c7b-195634e4be2d.png';
+
 const Accommodations = () => {
   const { data: accommodations, isLoading, error } = useAccommodations({ isAvailable: true });
 
@@ -53,7 +56,11 @@ const Accommodations = () => {
                     key={accommodation.id}
                     title={accommodation.name}
                     description={accommodation.shortDescription || accommodation.description}
-                    image={accommodation.images && accommodation.images.length > 0 ? accommodation.images[0].url : '/placeholder.jpg'}
+                    image={
+                      accommodation.images && accommodation.images.length > 0
+                        ? accommodation.images[0].url
+                        : FALLBACK_ACCOMMODATION_IMAGE
+                    }
                     area={accommodation.area ? `${accommodation.area} m²` : 'Área não informada'}
                     capacity={`Até ${accommodation.capacity} Pessoa${accommodation.capacity > 1 ? 's' : ''}`}
                     price={`${formatCurrency(Number(accommodation.pricePerNight))}/diária`}

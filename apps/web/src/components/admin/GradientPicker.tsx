@@ -9,12 +9,14 @@ interface GradientPickerProps {
   onChange: (gradient: string) => void;
 }
 
+type GradientDirection = 'horizontal' | 'vertical' | 'diagonal';
+
 export const GradientPicker = ({ label, value, onChange }: GradientPickerProps) => {
   // Parse gradient or use defaults
   const [color1, setColor1] = useState('#0466C8');
   const [color2, setColor2] = useState('#0355A6');
   const [color3, setColor3] = useState('#023E7D');
-  const [direction, setDirection] = useState<'horizontal' | 'vertical' | 'diagonal'>('horizontal');
+  const [direction, setDirection] = useState<GradientDirection>('horizontal');
   const [useThreeColors, setUseThreeColors] = useState(false);
 
   // Parse existing gradient value on mount
@@ -36,10 +38,16 @@ export const GradientPicker = ({ label, value, onChange }: GradientPickerProps) 
         else if (deg === 135) setDirection('diagonal');
       }
     }
-  }, []);
+  }, [value]);
 
   // Generate gradient string
-  const generateGradient = (c1: string, c2: string, c3: string, dir: string, three: boolean) => {
+  const generateGradient = (
+    c1: string,
+    c2: string,
+    c3: string,
+    dir: GradientDirection,
+    three: boolean
+  ) => {
     const degrees = dir === 'horizontal' ? 90 : dir === 'vertical' ? 180 : 135;
 
     if (three) {
@@ -53,7 +61,7 @@ export const GradientPicker = ({ label, value, onChange }: GradientPickerProps) 
   useEffect(() => {
     const gradient = generateGradient(color1, color2, color3, direction, useThreeColors);
     onChange(gradient);
-  }, [color1, color2, color3, direction, useThreeColors]);
+  }, [color1, color2, color3, direction, onChange, useThreeColors]);
 
   return (
     <div className="space-y-4">
@@ -70,7 +78,10 @@ export const GradientPicker = ({ label, value, onChange }: GradientPickerProps) 
       {/* Direction */}
       <div className="space-y-2">
         <Label className="text-sm">Direção do Gradiente</Label>
-        <RadioGroup value={direction} onValueChange={(val) => setDirection(val as any)}>
+        <RadioGroup
+          value={direction}
+          onValueChange={(val) => setDirection(val as GradientDirection)}
+        >
           <div className="flex gap-4">
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="horizontal" id={`${label}-horizontal`} />

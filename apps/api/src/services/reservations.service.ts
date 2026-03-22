@@ -1,14 +1,18 @@
-import { prisma } from '../config/database';
-import { NotFoundError, BadRequestError } from '../utils/errors';
-import { v4 as uuidv4 } from 'uuid';
-import { differenceInDays } from 'date-fns';
-import {
-  CreateReservationDto,
-  ReservationFilters,
-  CancelReservationDto
-} from '@fusehotel/shared';
 import { Prisma } from '@prisma/client';
-import { hashPassword } from '../utils/crypto';
+import { differenceInDays } from 'date-fns';
+import { v4 as uuidv4 } from 'uuid';
+import { prisma } from '../config/database';
+import { generateSecurePassword, hashPassword } from '../utils/crypto';
+import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors';
+import { logger } from '../utils/logger';
+import { CreateReservationDto, ReservationFilters } from '@fusehotel/shared';
+import { EmailService } from './email.service';
+import { PasswordResetService } from './password-reset.service';
+
+interface RequestUser {
+  id: string;
+  role: string;
+}
 
 export class ReservationService {
   static async list(filters: ReservationFilters) {
@@ -29,11 +33,11 @@ export class ReservationService {
             id: true,
             name: true,
             type: true,
-            images: { where: { isPrimary: true }, take: 1 }
-          }
-        }
+            images: { where: { isPrimary: true }, take: 1 },
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -43,19 +47,19 @@ export class ReservationService {
       include: {
         accommodation: {
           include: {
-            images: { where: { isPrimary: true }, take: 1 }
-          }
+            images: { where: { isPrimary: true }, take: 1 },
+          },
         },
         user: {
           select: {
             id: true,
             name: true,
             email: true,
-            phone: true
-          }
+            phone: true,
+          },
         },
-        payments: true
-      }
+        payments: true,
+      },
     });
 
     if (!reservation) {
@@ -65,13 +69,19 @@ export class ReservationService {
     return reservation;
   }
 
+  static async getByIdForUser(id: string, requester: RequestUser) {
+    const reservation = await this.getById(id);
+    this.ensureReservationAccess(reservation.userId, requester);
+    return reservation;
+  }
+
   static async getByCode(code: string) {
     const reservation = await prisma.reservation.findUnique({
       where: { reservationCode: code },
       include: {
         accommodation: true,
-        payments: true
-      }
+        payments: true,
+      },
     });
 
     if (!reservation) {
@@ -83,7 +93,7 @@ export class ReservationService {
 
   static async create(data: CreateReservationDto, userId?: string) {
     const accommodation = await prisma.accommodation.findUnique({
-      where: { id: data.accommodationId }
+      where: { id: data.accommodationId },
     });
 
     if (!accommodation || !accommodation.isAvailable) {
@@ -105,46 +115,50 @@ export class ReservationService {
     const taxes = subtotal * 0.02;
     const totalAmount = subtotal + extraBedsCost + serviceFee + taxes;
 
-    // Criar ou buscar usuário provisório se não houver userId
     let finalUserId = userId;
 
     if (!userId && data.guestWhatsApp) {
-      const whatsapp = data.guestWhatsApp.replace(/\D/g, ''); // Limpar formatação
+      const whatsapp = data.guestWhatsApp.replace(/\D/g, '');
 
-      // Buscar usuário pelo WhatsApp
       let user = await prisma.user.findUnique({
-        where: { whatsapp }
+        where: { whatsapp },
       });
 
-      // Se não existe, criar usuário provisório
       if (!user) {
-        const firstThreeLetters = data.guestName
-          .substring(0, 3)
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, ''); // Remover acentos
-
-        const password = await hashPassword(firstThreeLetters);
+        const hashedPassword = await hashPassword(generateSecurePassword());
 
         user = await prisma.user.create({
           data: {
             name: data.guestName,
-            whatsapp: whatsapp,
+            whatsapp,
             email: data.guestEmail || `${whatsapp}@provisional.fusehotel.com`,
-            password: password,
+            password: hashedPassword,
             phone: data.guestPhone,
             cpf: data.guestCpf,
             role: 'CUSTOMER',
             isProvisional: true,
-            emailVerified: false
-          }
+            emailVerified: false,
+          },
         });
+
+        if (data.guestEmail && EmailService.isConfigured()) {
+          try {
+            const token = await PasswordResetService.issueToken(user.id);
+            await EmailService.sendPortalAccessEmail({
+              to: data.guestEmail,
+              name: data.guestName,
+              token,
+            });
+          } catch (error) {
+            logger.warn(`Falha ao enviar acesso inicial para ${data.guestEmail}: ${String(error)}`);
+          }
+        }
       }
 
       finalUserId = user.id;
     }
 
-    const reservation = await prisma.reservation.create({
+    return prisma.reservation.create({
       data: {
         reservationCode: `FH-${Date.now()}-${uuidv4().substring(0, 8).toUpperCase()}`,
         accommodationId: data.accommodationId,
@@ -169,15 +183,14 @@ export class ReservationService {
         specialRequests: data.specialRequests,
       },
       include: {
-        accommodation: true
-      }
+        accommodation: true,
+      },
     });
-
-    return reservation;
   }
 
-  static async cancel(id: string, reason: string) {
+  static async cancel(id: string, reason: string, requester: RequestUser) {
     const reservation = await this.getById(id);
+    this.ensureReservationAccess(reservation.userId, requester);
 
     if (reservation.status === 'CANCELLED') {
       throw new BadRequestError('Reserva já cancelada');
@@ -188,17 +201,15 @@ export class ReservationService {
       data: {
         status: 'CANCELLED',
         cancelledAt: new Date(),
-        cancellationReason: reason
-      }
+        cancellationReason: reason,
+      },
     });
   }
 
   static async updateStatus(id: string, status: string) {
     const reservation = await this.getById(id);
+    const updateData: Record<string, unknown> = { status };
 
-    const updateData: any = { status };
-
-    // Atualizar timestamps baseado no status
     if (status === 'CHECKED_IN' && !reservation.checkedInAt) {
       updateData.checkedInAt = new Date();
     }
@@ -218,10 +229,10 @@ export class ReservationService {
             id: true,
             name: true,
             type: true,
-            images: { where: { isPrimary: true }, take: 1 }
-          }
-        }
-      }
+            images: { where: { isPrimary: true }, take: 1 },
+          },
+        },
+      },
     });
   }
 
@@ -232,7 +243,7 @@ export class ReservationService {
       throw new BadRequestError('Não é possível editar uma reserva cancelada ou finalizada');
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
 
     if (data.checkInDate) updateData.checkInDate = new Date(data.checkInDate);
     if (data.checkOutDate) updateData.checkOutDate = new Date(data.checkOutDate);
@@ -240,7 +251,6 @@ export class ReservationService {
     if (data.numberOfExtraBeds !== undefined) updateData.numberOfExtraBeds = data.numberOfExtraBeds;
     if (data.specialRequests !== undefined) updateData.specialRequests = data.specialRequests;
 
-    // Recalcular valores se datas mudaram
     if (data.checkInDate || data.checkOutDate) {
       const checkIn = data.checkInDate ? new Date(data.checkInDate) : reservation.checkInDate;
       const checkOut = data.checkOutDate ? new Date(data.checkOutDate) : reservation.checkOutDate;
@@ -251,12 +261,12 @@ export class ReservationService {
       }
 
       const accommodation = await prisma.accommodation.findUnique({
-        where: { id: reservation.accommodationId }
+        where: { id: reservation.accommodationId },
       });
 
       if (accommodation) {
         const subtotal = Number(accommodation.pricePerNight) * numberOfNights;
-        const extraBedsCost = (updateData.numberOfExtraBeds || reservation.numberOfExtraBeds) * Number(accommodation.extraBedPrice) * numberOfNights;
+        const extraBedsCost = (Number(updateData.numberOfExtraBeds) || reservation.numberOfExtraBeds) * Number(accommodation.extraBedPrice) * numberOfNights;
         const serviceFee = subtotal * 0.05;
         const taxes = subtotal * 0.02;
         const totalAmount = subtotal + extraBedsCost + serviceFee + taxes;
@@ -274,8 +284,18 @@ export class ReservationService {
       where: { id },
       data: updateData,
       include: {
-        accommodation: true
-      }
+        accommodation: true,
+      },
     });
+  }
+
+  private static ensureReservationAccess(reservationUserId: string | null, requester: RequestUser) {
+    if (requester.role === 'ADMIN' || requester.role === 'MANAGER') {
+      return;
+    }
+
+    if (!reservationUserId || reservationUserId !== requester.id) {
+      throw new ForbiddenError('Você não tem permissão para acessar esta reserva');
+    }
   }
 }

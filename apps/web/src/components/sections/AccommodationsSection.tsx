@@ -7,6 +7,9 @@ import { useLandingSettings } from '@/hooks/useLanding';
 import { defaultAccommodationsConfig } from '@/types/landing-config';
 import { Loader2, ArrowRight } from 'lucide-react';
 
+const FALLBACK_ACCOMMODATION_IMAGE =
+  '/lovable-uploads/2b637749-b3cc-4943-8c7b-195634e4be2d.png';
+
 export const AccommodationsSection: React.FC = () => {
   const { data: accommodations, isLoading, error } = useAccommodations({
     isAvailable: true,
@@ -88,7 +91,11 @@ export const AccommodationsSection: React.FC = () => {
                 key={accommodation.id}
                 title={accommodation.name}
                 description={accommodation.shortDescription || accommodation.description}
-                image={accommodation.images && accommodation.images.length > 0 ? accommodation.images[0].url : '/placeholder.jpg'}
+                image={
+                  accommodation.images && accommodation.images.length > 0
+                    ? accommodation.images[0].url
+                    : FALLBACK_ACCOMMODATION_IMAGE
+                }
                 area={accommodation.area ? `${accommodation.area} m²` : 'Área não informada'}
                 capacity={`Até ${accommodation.capacity} Pessoa${accommodation.capacity > 1 ? 's' : ''}`}
                 price={`${formatCurrency(Number(accommodation.pricePerNight))}/diária`}

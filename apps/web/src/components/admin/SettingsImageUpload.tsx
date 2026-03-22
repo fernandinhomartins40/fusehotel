@@ -1,8 +1,9 @@
-
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Image, UploadCloud } from 'lucide-react';
+import { Loader2, UploadCloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { apiClient } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 interface ImageUploadProps {
   value?: string;
@@ -13,19 +14,39 @@ interface ImageUploadProps {
 
 export function SettingsImageUpload({ value, onChange, label, className }: ImageUploadProps) {
   const [preview, setPreview] = useState<string | null>(value || null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  useEffect(() => {
+    setPreview(value || null);
+  }, [value]);
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
-    if (file) {
-      // In a real application, you would upload this file to a server
-      // For now, we'll just create a local preview URL
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setPreview(result);
-        onChange(result);
-      };
-      reader.readAsDataURL(file);
+    if (!file) {
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', 'GENERAL');
+
+      const response = await apiClient.post('/upload/single/GENERAL', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      const uploadedFile = response.data.data;
+      setPreview(uploadedFile.url);
+      onChange(uploadedFile.url);
+      toast.success('Imagem enviada com sucesso!');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Erro ao enviar imagem');
+    } finally {
+      setIsUploading(false);
     }
   }, [onChange]);
 
@@ -35,6 +56,7 @@ export function SettingsImageUpload({ value, onChange, label, className }: Image
       'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
     },
     maxFiles: 1,
+    disabled: isUploading,
   });
 
   const removeImage = () => {
@@ -43,20 +65,26 @@ export function SettingsImageUpload({ value, onChange, label, className }: Image
   };
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn('space-y-2', className)}>
       {label && <p className="text-sm font-medium">{label}</p>}
-      
+
       <div
         {...getRootProps()}
         className={cn(
-          "border-2 border-dashed rounded-md p-4 transition-colors cursor-pointer",
-          isDragActive ? "border-primary bg-muted" : "border-muted-foreground/25 hover:border-muted-foreground/50",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          'border-2 border-dashed rounded-md p-4 transition-colors cursor-pointer',
+          isDragActive ? 'border-primary bg-muted' : 'border-muted-foreground/25 hover:border-muted-foreground/50',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          isUploading && 'cursor-wait opacity-70'
         )}
       >
         <input {...getInputProps()} />
-        
-        {preview ? (
+
+        {isUploading ? (
+          <div className="flex flex-col items-center justify-center p-4 text-muted-foreground text-sm">
+            <Loader2 className="h-10 w-10 mb-2 animate-spin" />
+            <p className="font-medium">Enviando imagem...</p>
+          </div>
+        ) : preview ? (
           <div className="relative">
             <img
               src={preview}

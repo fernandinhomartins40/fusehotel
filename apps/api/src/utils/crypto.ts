@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { env } from '../config/environment';
@@ -17,6 +18,12 @@ export function generateAccessToken(payload: { userId: string; email: string; ro
 
 export function generateRefreshToken(): string {
   return uuidv4();
+}
+
+export function generateSecurePassword(length: number = 16): string {
+  return randomBytes(length)
+    .toString('base64url')
+    .slice(0, Math.max(length, 12));
 }
 
 export function verifyAccessToken(token: string): any {

@@ -35,8 +35,6 @@ export const RoomCard: React.FC<RoomCardProps> = ({
 
   const linkPath = `/acomodacoes/${slug}`;
 
-  console.log('RoomCard rendered:', { title, slug, linkPath });
-
   // Valores padrão das cores
   const badgeBackground = config?.cardBadgeBackground || '#0466C8';
   const badgeText = config?.cardBadgeText || '#FFFFFF';

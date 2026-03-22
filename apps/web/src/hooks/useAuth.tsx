@@ -19,12 +19,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [authVerified, setAuthVerified] = useState(false);
 
   useEffect(() => {
-    // Prevenir múltiplas verificações simultâneas
     if (authVerified) {
       return;
     }
 
-    // Recuperar usuário do localStorage na inicialização
     const storedUser = localStorage.getItem('user');
 
     if (storedUser) {
@@ -36,8 +34,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     }
 
-    // Verificar se usuário está autenticado através do cookie (httpOnly)
-    // Tentar buscar perfil do usuário se houver cookie
     const verifyAuth = async () => {
       try {
         const response = await apiClient.get('/users/profile');
@@ -55,12 +51,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     };
 
-    if (!storedUser) {
-      verifyAuth();
-    } else {
-      setIsLoading(false);
-      setAuthVerified(true);
-    }
+    verifyAuth();
   }, [authVerified]);
 
   const logout = async () => {

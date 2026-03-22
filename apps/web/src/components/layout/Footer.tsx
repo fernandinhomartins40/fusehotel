@@ -10,10 +10,6 @@ export const Footer: React.FC = () => {
   const { data: footerConfig } = useLandingSettings('footer');
   const config = footerConfig?.config || defaultFooterConfig;
 
-  console.log('Footer - footerConfig:', footerConfig);
-  console.log('Footer - config:', config);
-  console.log('Footer - address:', config.address);
-
   return (
     <footer
       className="w-full text-white"
@@ -262,26 +258,26 @@ export const Footer: React.FC = () => {
                   </Link>
                 </li>
                 <li>
-                  <a
-                    href="#"
+                  <Link
+                    to="/termos-de-uso"
                     className="transition-colors"
                     style={{ color: config.copyrightColor || '#6B7280' }}
                     onMouseEnter={(e) => e.currentTarget.style.color = config.headingColor || '#FFFFFF'}
                     onMouseLeave={(e) => e.currentTarget.style.color = config.copyrightColor || '#6B7280'}
                   >
                     Termos de Uso
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
-                    href="#"
+                  <Link
+                    to="/politicas-de-privacidade"
                     className="transition-colors"
                     style={{ color: config.copyrightColor || '#6B7280' }}
                     onMouseEnter={(e) => e.currentTarget.style.color = config.headingColor || '#FFFFFF'}
                     onMouseLeave={(e) => e.currentTarget.style.color = config.copyrightColor || '#6B7280'}
                   >
                     Cookies
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>

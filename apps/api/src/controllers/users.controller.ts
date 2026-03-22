@@ -50,6 +50,24 @@ export class UserController {
     }
   }
 
+  static async updateById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = await UserService.update(req.params.id, req.body);
+      return sendSuccess(res, user, 'Usuário atualizado com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updateStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = await UserService.updateStatus(req.params.id, Boolean(req.body.isActive));
+      return sendSuccess(res, user, 'Status do usuário atualizado com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async delete(req: Request, res: Response, next: NextFunction) {
     try {
       await UserService.delete(req.params.id);

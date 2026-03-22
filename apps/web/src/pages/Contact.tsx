@@ -1,23 +1,45 @@
-
-import React from 'react';
-import { Header } from '@/components/layout/Header';
+import axios from 'axios';
+import React, { useState } from 'react';
 import { Footer } from '@/components/layout/Footer';
+import { Header } from '@/components/layout/Header';
+import { MapEmbed } from '@/components/ui/MapEmbed';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Phone, Mail, MapPin, Clock, MessageSquare } from 'lucide-react';
 import { useLandingSettings } from '@/hooks/useLanding';
-import { MapEmbed } from '@/components/ui/MapEmbed';
+import { apiClient } from '@/lib/api-client';
 import {
-  defaultContactHeroConfig,
   defaultContactCardsConfig,
-  defaultContactFormConfig,
   defaultContactFAQCTAConfig,
+  defaultContactFormConfig,
+  defaultContactHeroConfig,
 } from '@/types/contact-config';
+import { Clock, Mail, MapPin, MessageSquare, Phone } from 'lucide-react';
+import { toast } from 'sonner';
+
+type ContactFormState = {
+  name: string;
+  email: string;
+  phone: string;
+  subject: string;
+  message: string;
+};
+
+const initialFormState: ContactFormState = {
+  name: '',
+  email: '',
+  phone: '',
+  subject: '',
+  message: '',
+};
 
 const Contact: React.FC = () => {
+  const [form, setForm] = useState<ContactFormState>(initialFormState);
+  const [acceptedPolicy, setAcceptedPolicy] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const { data: heroData } = useLandingSettings('contact-hero');
   const { data: cardsData } = useLandingSettings('contact-cards');
   const { data: formData } = useLandingSettings('contact-form');
@@ -28,21 +50,50 @@ const Contact: React.FC = () => {
   const formConfig = formData?.config || defaultContactFormConfig;
   const faqCtaConfig = faqCtaData?.config || defaultContactFAQCTAConfig;
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { id, value } = event.target;
+
+    setForm((current) => ({
+      ...current,
+      [id]: value,
+    }));
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Form submission logic would go here
-    console.log("Form submitted");
-    // Show success message or redirect
+
+    if (!acceptedPolicy) {
+      toast.error('Voce precisa aceitar a politica de privacidade.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await apiClient.post('/contact/send-message', form);
+      toast.success('Mensagem enviada com sucesso!');
+      setForm(initialFormState);
+      setAcceptedPolicy(false);
+    } catch (error: unknown) {
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message
+        : null;
+
+      toast.error(message || 'Nao foi possivel enviar sua mensagem.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <Header />
-      
+
       <main className="flex-1">
-        {/* Hero Section */}
         <div
-          className="text-white py-12"
+          className="py-12 text-white"
           style={{
             backgroundColor: heroConfig.backgroundColor || '#0466C8',
             height: heroConfig.height || 'auto',
@@ -50,35 +101,46 @@ const Contact: React.FC = () => {
         >
           <div className="container mx-auto px-4">
             <h1
-              className="text-3xl md:text-4xl font-bold mb-4"
+              className="mb-4 text-3xl font-bold md:text-4xl"
               style={{ color: heroConfig.titleColor || '#FFFFFF' }}
             >
               {heroConfig.title || 'Entre em Contato'}
             </h1>
             <p
-              className="text-xl max-w-3xl"
+              className="max-w-3xl text-xl"
               style={{ color: heroConfig.subtitleColor || '#FFFFFF' }}
             >
-              {heroConfig.description || 'Estamos à disposição para responder suas dúvidas, receber sugestões ou ajudar com sua reserva.'}
+              {heroConfig.description ||
+                'Estamos a disposicao para responder suas duvidas, receber sugestoes ou ajudar com sua reserva.'}
             </p>
           </div>
         </div>
-        
-        {/* Contact Information Cards */}
-        <section className="py-12" style={{ backgroundColor: cardsConfig.backgroundColor || '#F9FAFB' }}>
+
+        <section
+          className="py-12"
+          style={{ backgroundColor: cardsConfig.backgroundColor || '#F9FAFB' }}
+        >
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Phone Card */}
-              <Card className="border-none shadow-md hover:shadow-lg transition-shadow">
-                <CardContent className="flex flex-col items-center text-center p-8">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+              <Card className="border-none shadow-md transition-shadow hover:shadow-lg">
+                <CardContent className="flex flex-col items-center p-8 text-center">
                   <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
-                    style={{ backgroundColor: `${cardsConfig.cardIconColor || '#0466C8'}20` }}
+                    className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
+                    style={{
+                      backgroundColor: `${cardsConfig.cardIconColor || '#0466C8'}20`,
+                    }}
                   >
-                    <Phone className="h-8 w-8" style={{ color: cardsConfig.cardIconColor || '#0466C8' }} />
+                    <Phone
+                      className="h-8 w-8"
+                      style={{ color: cardsConfig.cardIconColor || '#0466C8' }}
+                    />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{cardsConfig.phoneTitle || 'Telefone'}</h3>
-                  <p className="text-gray-600 mb-4">{cardsConfig.phoneDescription}</p>
+                  <h3 className="mb-2 text-xl font-bold">
+                    {cardsConfig.phoneTitle || 'Telefone'}
+                  </h3>
+                  <p className="mb-4 text-gray-600">
+                    {cardsConfig.phoneDescription}
+                  </p>
                   <a
                     href={`tel:+55${cardsConfig.phoneNumber?.replace(/\D/g, '')}`}
                     className="font-medium hover:underline"
@@ -89,17 +151,25 @@ const Contact: React.FC = () => {
                 </CardContent>
               </Card>
 
-              {/* WhatsApp Card */}
-              <Card className="border-none shadow-md hover:shadow-lg transition-shadow">
-                <CardContent className="flex flex-col items-center text-center p-8">
+              <Card className="border-none shadow-md transition-shadow hover:shadow-lg">
+                <CardContent className="flex flex-col items-center p-8 text-center">
                   <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
-                    style={{ backgroundColor: `${cardsConfig.cardIconColor || '#0466C8'}20` }}
+                    className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
+                    style={{
+                      backgroundColor: `${cardsConfig.cardIconColor || '#0466C8'}20`,
+                    }}
                   >
-                    <MessageSquare className="h-8 w-8" style={{ color: cardsConfig.cardIconColor || '#0466C8' }} />
+                    <MessageSquare
+                      className="h-8 w-8"
+                      style={{ color: cardsConfig.cardIconColor || '#0466C8' }}
+                    />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{cardsConfig.whatsappTitle || 'WhatsApp'}</h3>
-                  <p className="text-gray-600 mb-4">{cardsConfig.whatsappDescription}</p>
+                  <h3 className="mb-2 text-xl font-bold">
+                    {cardsConfig.whatsappTitle || 'WhatsApp'}
+                  </h3>
+                  <p className="mb-4 text-gray-600">
+                    {cardsConfig.whatsappDescription}
+                  </p>
                   <a
                     href={`https://wa.me/55${cardsConfig.whatsappNumber?.replace(/\D/g, '')}`}
                     className="font-medium hover:underline"
@@ -110,17 +180,25 @@ const Contact: React.FC = () => {
                 </CardContent>
               </Card>
 
-              {/* Email Card */}
-              <Card className="border-none shadow-md hover:shadow-lg transition-shadow">
-                <CardContent className="flex flex-col items-center text-center p-8">
+              <Card className="border-none shadow-md transition-shadow hover:shadow-lg">
+                <CardContent className="flex flex-col items-center p-8 text-center">
                   <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
-                    style={{ backgroundColor: `${cardsConfig.cardIconColor || '#0466C8'}20` }}
+                    className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
+                    style={{
+                      backgroundColor: `${cardsConfig.cardIconColor || '#0466C8'}20`,
+                    }}
                   >
-                    <Mail className="h-8 w-8" style={{ color: cardsConfig.cardIconColor || '#0466C8' }} />
+                    <Mail
+                      className="h-8 w-8"
+                      style={{ color: cardsConfig.cardIconColor || '#0466C8' }}
+                    />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{cardsConfig.emailTitle || 'E-mail'}</h3>
-                  <p className="text-gray-600 mb-4">{cardsConfig.emailDescription}</p>
+                  <h3 className="mb-2 text-xl font-bold">
+                    {cardsConfig.emailTitle || 'E-mail'}
+                  </h3>
+                  <p className="mb-4 text-gray-600">
+                    {cardsConfig.emailDescription}
+                  </p>
                   <a
                     href={`mailto:${cardsConfig.emailAddress}`}
                     className="font-medium hover:underline"
@@ -133,37 +211,41 @@ const Contact: React.FC = () => {
             </div>
           </div>
         </section>
-        
-        {/* Contact Form and Map */}
-        <section className="py-16" style={{ backgroundColor: formConfig.backgroundColor || '#FFFFFF' }}>
+
+        <section
+          className="py-16"
+          style={{ backgroundColor: formConfig.backgroundColor || '#FFFFFF' }}
+        >
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              {/* Contact Form */}
+            <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
               <div>
                 <h2
-                  className="text-3xl font-bold mb-6"
+                  className="mb-6 text-3xl font-bold"
                   style={{ color: formConfig.titleColor || '#0466C8' }}
                 >
                   {formConfig.formTitle || 'Envie uma Mensagem'}
                 </h2>
-                <p className="text-gray-700 mb-8">
-                  {formConfig.formDescription || 'Preencha o formulário abaixo com suas informações e entraremos em contato o mais breve possível.'}
+                <p className="mb-8 text-gray-700">
+                  {formConfig.formDescription ||
+                    'Preencha o formulario abaixo com suas informacoes e entraremos em contato o mais breve possivel.'}
                 </p>
-                
+
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <label htmlFor="nome" className="block text-sm font-medium text-gray-700">
+                      <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                         Nome*
                       </label>
                       <Input
-                        id="nome"
+                        id="name"
                         type="text"
                         placeholder="Seu nome completo"
                         required
+                        value={form.name}
+                        onChange={handleChange}
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                         E-mail*
@@ -173,102 +255,121 @@ const Contact: React.FC = () => {
                         type="email"
                         placeholder="seu.email@exemplo.com"
                         required
+                        value={form.email}
+                        onChange={handleChange}
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
-                    <label htmlFor="telefone" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
                       Telefone
                     </label>
                     <Input
-                      id="telefone"
+                      id="phone"
                       type="tel"
                       placeholder="(00) 00000-0000"
+                      value={form.phone}
+                      onChange={handleChange}
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
-                    <label htmlFor="assunto" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="subject" className="block text-sm font-medium text-gray-700">
                       Assunto*
                     </label>
                     <Input
-                      id="assunto"
+                      id="subject"
                       type="text"
                       placeholder="O assunto da sua mensagem"
                       required
+                      value={form.subject}
+                      onChange={handleChange}
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
-                    <label htmlFor="mensagem" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="message" className="block text-sm font-medium text-gray-700">
                       Mensagem*
                     </label>
                     <Textarea
-                      id="mensagem"
+                      id="message"
                       placeholder="Escreva sua mensagem aqui..."
                       rows={6}
                       required
                       className="resize-none"
+                      value={form.message}
+                      onChange={handleChange}
                     />
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="termos" required />
-                    <label
-                      htmlFor="termos"
-                      className="text-sm text-gray-600"
-                    >
-                      Concordo com a <a href="/politicas-de-privacidade" className="text-[#0466C8] hover:underline">Política de Privacidade</a>
+                    <Checkbox
+                      id="terms"
+                      checked={acceptedPolicy}
+                      onCheckedChange={(checked) => setAcceptedPolicy(checked === true)}
+                    />
+                    <label htmlFor="terms" className="text-sm text-gray-600">
+                      Concordo com a{' '}
+                      <a
+                        href="/politicas-de-privacidade"
+                        className="text-[#0466C8] hover:underline"
+                      >
+                        Politica de Privacidade
+                      </a>
                     </label>
                   </div>
-                  
+
                   <Button
                     type="submit"
                     className="w-full rounded-full py-3"
+                    disabled={isSubmitting}
                     style={{
                       backgroundColor: formConfig.buttonColor || '#0466C8',
                       color: formConfig.buttonTextColor || '#FFFFFF',
                     }}
                   >
-                    {formConfig.buttonText || 'Enviar Mensagem'}
+                    {isSubmitting
+                      ? 'Enviando...'
+                      : formConfig.buttonText || 'Enviar Mensagem'}
                   </Button>
                 </form>
               </div>
-              
-              {/* Map and Additional Information */}
+
               <div className="space-y-8">
                 <div>
                   <h2
-                    className="text-3xl font-bold mb-6"
+                    className="mb-6 text-3xl font-bold"
                     style={{ color: formConfig.titleColor || '#0466C8' }}
                   >
-                    {formConfig.mapTitle || 'Nossa Localização'}
+                    {formConfig.mapTitle || 'Nossa Localizacao'}
                   </h2>
-                  <p className="text-gray-700 mb-6">
-                    {formConfig.mapDescription || 'Visite-nos e conheça pessoalmente toda a estrutura do Hotel Águas Claras.'}
+                  <p className="mb-6 text-gray-700">
+                    {formConfig.mapDescription ||
+                      'Visite-nos e conheca pessoalmente toda a estrutura do hotel.'}
                   </p>
 
-                  <div className="h-[400px] rounded-lg overflow-hidden">
+                  <div className="h-[400px] overflow-hidden rounded-lg">
                     <MapEmbed
                       address={`${formConfig.addressLine1}, ${formConfig.addressLine2}`}
                       height="400px"
                     />
                   </div>
                 </div>
-                
-                {/* Additional Contact Information */}
-                <div className="bg-gray-50 p-6 rounded-lg border border-gray-100">
-                  <h3 className="text-xl font-bold mb-4">Informações de Contato</h3>
+
+                <div className="rounded-lg border border-gray-100 bg-gray-50 p-6">
+                  <h3 className="mb-4 text-xl font-bold">Informacoes de Contato</h3>
 
                   <div className="space-y-4">
                     <div className="flex items-start">
                       <MapPin
-                        className="h-6 w-6 mr-3 mt-0.5"
+                        className="mr-3 mt-0.5 h-6 w-6"
                         style={{ color: formConfig.titleColor || '#0466C8' }}
                       />
                       <div>
-                        <p className="font-medium">{formConfig.addressLabel || 'Endereço:'}</p>
+                        <p className="font-medium">
+                          {formConfig.addressLabel || 'Endereco:'}
+                        </p>
                         <p className="text-gray-600">{formConfig.addressLine1}</p>
                         <p className="text-gray-600">{formConfig.addressLine2}</p>
                       </div>
@@ -276,11 +377,13 @@ const Contact: React.FC = () => {
 
                     <div className="flex items-center">
                       <Clock
-                        className="h-6 w-6 mr-3"
+                        className="mr-3 h-6 w-6"
                         style={{ color: formConfig.titleColor || '#0466C8' }}
                       />
                       <div>
-                        <p className="font-medium">{formConfig.hoursLabel || 'Horário de Funcionamento:'}</p>
+                        <p className="font-medium">
+                          {formConfig.hoursLabel || 'Horario de Funcionamento:'}
+                        </p>
                         <p className="text-gray-600">{formConfig.hoursLine1}</p>
                         <p className="text-gray-600">{formConfig.hoursLine2}</p>
                       </div>
@@ -291,21 +394,24 @@ const Contact: React.FC = () => {
             </div>
           </div>
         </section>
-        
-        {/* FAQs Section */}
-        <section className="py-12" style={{ backgroundColor: faqCtaConfig.backgroundColor || '#F9FAFB' }}>
+
+        <section
+          className="py-12"
+          style={{ backgroundColor: faqCtaConfig.backgroundColor || '#F9FAFB' }}
+        >
           <div className="container mx-auto px-4 text-center">
             <h2
-              className="text-3xl font-bold mb-4"
+              className="mb-4 text-3xl font-bold"
               style={{ color: faqCtaConfig.titleColor || '#000000' }}
             >
               {faqCtaConfig.title || 'Perguntas Frequentes'}
             </h2>
             <p
-              className="mb-8 max-w-3xl mx-auto"
+              className="mx-auto mb-8 max-w-3xl"
               style={{ color: faqCtaConfig.subtitleColor || '#374151' }}
             >
-              {faqCtaConfig.description || 'Encontre respostas para as perguntas mais comuns sobre nossa hospedagem e serviços.'}
+              {faqCtaConfig.description ||
+                'Encontre respostas para as perguntas mais comuns sobre nossa hospedagem e servicos.'}
             </p>
             <Button
               className="rounded-full px-8 py-3"
@@ -322,7 +428,7 @@ const Contact: React.FC = () => {
           </div>
         </section>
       </main>
-      
+
       <Footer />
     </div>
   );

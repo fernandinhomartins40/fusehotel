@@ -40,7 +40,8 @@ type SEOFormValues = {
 
 const SettingsNew = () => {
   const [activeTab, setActiveTab] = useState('hotel-config');
-  const [policyContent, setPolicyContent] = useState('');
+  const [privacyContent, setPrivacyContent] = useState('');
+  const [termsContent, setTermsContent] = useState('');
 
   const { data: hotelSettings, isLoading: isLoadingHotel } = useSettings();
   const updateHotelSettings = useUpdateSettings();
@@ -54,6 +55,14 @@ const SettingsNew = () => {
   const { data: privacyPolicy } = useContent('privacy-policy');
   const { data: termsOfService } = useContent('terms-of-service');
   const updateContent = useUpdateContent();
+
+  useEffect(() => {
+    setPrivacyContent(privacyPolicy || '');
+  }, [privacyPolicy]);
+
+  useEffect(() => {
+    setTermsContent(termsOfService || '');
+  }, [termsOfService]);
 
   const hotelConfigForm = useForm<HotelConfigFormValues>({
     defaultValues: {
@@ -75,7 +84,7 @@ const SettingsNew = () => {
         hotelAddress: hotelSettings.hotelAddress || '',
       });
     }
-  }, [hotelSettings]);
+  }, [hotelConfigForm, hotelSettings]);
 
   const visualForm = useForm<VisualIdentityFormValues>({
     defaultValues: {
@@ -99,7 +108,7 @@ const SettingsNew = () => {
         accentColor: visualSettings.branding_accentColor || '#9b87f5',
       });
     }
-  }, [visualSettings]);
+  }, [visualForm, visualSettings]);
 
   const seoForm = useForm<SEOFormValues>({
     defaultValues: {
@@ -117,7 +126,7 @@ const SettingsNew = () => {
         keywords: seoSettings.seo_keywords || '',
       });
     }
-  }, [seoSettings]);
+  }, [seoForm, seoSettings]);
 
   const onHotelConfigSubmit = (data: HotelConfigFormValues) => {
     updateHotelSettings.mutate(data);
@@ -399,13 +408,13 @@ const SettingsNew = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Textarea
-                    value={privacyPolicy || ''}
-                    onChange={(e) => setPolicyContent(e.target.value)}
+                    value={privacyContent}
+                    onChange={(e) => setPrivacyContent(e.target.value)}
                     rows={10}
                     placeholder="Digite a política de privacidade..."
                   />
                   <Button
-                    onClick={() => handleSavePolicy('privacy-policy', policyContent || privacyPolicy || '')}
+                    onClick={() => handleSavePolicy('privacy-policy', privacyContent)}
                     disabled={updateContent.isPending}
                   >
                     {updateContent.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -423,13 +432,13 @@ const SettingsNew = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Textarea
-                    defaultValue={termsOfService || ''}
-                    onChange={(e) => setPolicyContent(e.target.value)}
+                    value={termsContent}
+                    onChange={(e) => setTermsContent(e.target.value)}
                     rows={10}
                     placeholder="Digite os termos de serviço..."
                   />
                   <Button
-                    onClick={() => handleSavePolicy('terms-of-service', policyContent || termsOfService || '')}
+                    onClick={() => handleSavePolicy('terms-of-service', termsContent)}
                     disabled={updateContent.isPending}
                   >
                     {updateContent.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -147,8 +147,8 @@ export const CreateCustomerDialog: React.FC<CreateCustomerDialogProps> = ({
               placeholder="Deixe em branco para gerar automaticamente"
             />
             <p className="text-xs text-gray-500">
-              Se não informada, será gerada automaticamente com as primeiras 3 letras do
-              nome
+              Se não informada, o sistema exigirá SMTP configurado para enviar um
+              acesso inicial seguro por email
             </p>
           </div>
 

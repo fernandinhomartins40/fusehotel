@@ -3,17 +3,28 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useLandingSettings } from '@/hooks/useLanding';
 import { defaultNewsletterConfig } from '@/types/landing-config';
+import { apiClient } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 export const NewsletterSection: React.FC = () => {
   const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: settingsData } = useLandingSettings('newsletter');
   const config = settingsData?.config || defaultNewsletterConfig;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle newsletter subscription
-    console.log('Newsletter subscription:', email);
-    setEmail('');
+    setIsSubmitting(true);
+
+    try {
+      await apiClient.post('/newsletter/subscribe', { email });
+      toast.success('Inscrição realizada com sucesso!');
+      setEmail('');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Erro ao inscrever email');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -24,7 +35,6 @@ export const NewsletterSection: React.FC = () => {
       }}
     >
       <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
-        {/* Title */}
         <div className="mb-6 md:mb-0">
           <h3
             className="text-[56px] font-extrabold tracking-tight leading-none uppercase"
@@ -36,7 +46,6 @@ export const NewsletterSection: React.FC = () => {
           </h3>
         </div>
 
-        {/* Form */}
         <div className="w-full md:max-w-md">
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
             <div className="flex-grow">
@@ -52,12 +61,13 @@ export const NewsletterSection: React.FC = () => {
             <Button
               type="submit"
               className="h-12 px-6"
+              disabled={isSubmitting}
               style={{
                 backgroundColor: config.buttonColor,
                 color: '#FFFFFF',
               }}
             >
-              {config.buttonText}
+              {isSubmitting ? 'Enviando...' : config.buttonText}
             </Button>
           </form>
 
