@@ -10,6 +10,7 @@ WORKDIR /app
 
 # Copiar package.json da raiz (monorepo)
 COPY package*.json ./
+COPY scripts/postinstall.cjs ./scripts/
 
 # Copiar shared package (dependência local)
 COPY packages/shared ./packages/shared

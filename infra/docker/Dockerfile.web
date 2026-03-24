@@ -8,6 +8,7 @@ ENV VITE_API_URL=$VITE_API_URL
 
 # Copiar package.json da raiz
 COPY package*.json ./
+COPY scripts/postinstall.cjs ./scripts/
 
 # Copiar shared package (dependência local)
 COPY packages/shared ./packages/shared
