@@ -16,7 +16,7 @@
     "build:api": "npm run build -w @fusehotel/api",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "postinstall": "npm run prisma:generate -w @fusehotel/api",
+    "postinstall": "node ./scripts/postinstall.cjs",
     "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",
     "install:all": "npm install && npm install --workspaces",
     "typecheck": "npm run typecheck --workspaces --if-present"
