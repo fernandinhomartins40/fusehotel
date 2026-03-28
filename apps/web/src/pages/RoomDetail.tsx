@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Check, ArrowLeft, MapPin, Clock, Loader2, Calendar as CalendarIcon, Users } from "lucide-react";
@@ -21,10 +21,12 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAccommodationBySlug } from "@/hooks/useAccommodations";
-import { addDays } from 'date-fns';
+import { useCheckAvailability } from "@/hooks/useSchedule";
+import { getMatchingCheckoutDraft } from "@/lib/checkout-draft";
 
 const RoomDetail: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
+  const [searchParams] = useSearchParams();
   const [showBookingForm, setShowBookingForm] = useState(false);
 
   // Estados para seleção de datas e hóspedes
@@ -39,6 +41,37 @@ const RoomDetail: React.FC = () => {
   const [numberOfExtraBeds, setNumberOfExtraBeds] = useState<number>(0);
 
   const { data: accommodation, isLoading, error } = useAccommodationBySlug(roomId || '');
+  const selectedCheckInDate = checkInDate.toISOString().split('T')[0];
+  const selectedCheckOutDate = checkOutDate.toISOString().split('T')[0];
+  const hasValidDateRange = checkOutDate > checkInDate;
+  const { data: availabilityCheck, isLoading: isCheckingAvailability } = useCheckAvailability(
+    accommodation?.id || '',
+    selectedCheckInDate,
+    selectedCheckOutDate
+  );
+  const isSelectedPeriodUnavailable =
+    hasValidDateRange && availabilityCheck?.isAvailable === false;
+
+  useEffect(() => {
+    if (!accommodation) {
+      return;
+    }
+
+    const draft = getMatchingCheckoutDraft(`/acomodacoes/${roomId}`);
+
+    if (!draft || draft.accommodationId !== accommodation.id) {
+      return;
+    }
+
+    setCheckInDate(new Date(draft.checkInDate));
+    setCheckOutDate(new Date(draft.checkOutDate));
+    setNumberOfGuests(draft.numberOfGuests);
+    setNumberOfExtraBeds(draft.numberOfExtraBeds);
+
+    if (searchParams.get('resumeCheckout') === '1') {
+      setShowBookingForm(true);
+    }
+  }, [accommodation, roomId, searchParams]);
 
   // Loading state
   if (isLoading) {
@@ -98,6 +131,10 @@ const RoomDetail: React.FC = () => {
   const amenities = accommodation.amenities?.map(a => a.amenity.name) || [];
 
   const handleProceedToCheckout = () => {
+    if (!hasValidDateRange || isSelectedPeriodUnavailable) {
+      return;
+    }
+
     setShowBookingForm(true);
   };
 
@@ -332,11 +369,43 @@ const RoomDetail: React.FC = () => {
                     <Button
                       className="w-full bg-[#0466C8] hover:bg-[#0355A6] flex items-center justify-center gap-2"
                       onClick={handleProceedToCheckout}
-                      disabled={!accommodation.isAvailable}
+                      disabled={
+                        !accommodation.isAvailable ||
+                        !hasValidDateRange ||
+                        isCheckingAvailability ||
+                        isSelectedPeriodUnavailable
+                      }
                     >
                       <CalendarIcon size={18} />
-                      {accommodation.isAvailable ? 'Reservar Agora' : 'Indisponível'}
+                      {!accommodation.isAvailable
+                        ? 'Indisponível'
+                        : isCheckingAvailability
+                          ? 'Verificando Agenda...'
+                          : isSelectedPeriodUnavailable
+                            ? 'Sem Disponibilidade'
+                            : 'Reservar Agora'}
                     </Button>
+
+                    {!hasValidDateRange && (
+                      <p className="text-xs text-amber-600 text-center">
+                        O check-out precisa ser posterior ao check-in.
+                      </p>
+                    )}
+
+                    {hasValidDateRange && isSelectedPeriodUnavailable && (
+                      <p className="text-xs text-red-600 text-center">
+                        A agenda indica indisponibilidade para este período.
+                      </p>
+                    )}
+
+                    {hasValidDateRange &&
+                      !isCheckingAvailability &&
+                      !isSelectedPeriodUnavailable &&
+                      accommodation.isAvailable && (
+                        <p className="text-xs text-green-600 text-center">
+                          Período disponível na agenda.
+                        </p>
+                      )}
 
                     <p className="text-xs text-gray-500 text-center">
                       Você não será cobrado ainda

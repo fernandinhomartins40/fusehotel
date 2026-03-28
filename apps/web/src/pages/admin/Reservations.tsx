@@ -1,22 +1,10 @@
 import React, { useState } from 'react';
+import { Eye, Filter, Loader2, CalendarPlus } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { ReservationDetails } from '@/components/admin/ReservationDetails';
+import { CreateReservationDialog } from '@/components/admin/reservations/CreateReservationDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -31,126 +19,146 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import { Eye, Filter, Loader2, CalendarPlus } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { useAdminCancelReservation, useAdminReservations, useUpdateReservationStatus } from '@/hooks/useAdminReservations';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ReservationDetails } from '@/components/admin/ReservationDetails';
-import { useAdminReservations, useUpdateReservationStatus } from '@/hooks/useAdminReservations';
-import { CreateReservationDialog } from '@/components/admin/reservations/CreateReservationDialog';
+import { buildWhatsAppUrl } from '@/lib/whatsapp';
+import type { Reservation, ReservationStatus } from '@/types/reservation';
+
+const reservationStatusLabels: Record<ReservationStatus, string> = {
+  PENDING: 'Pendente',
+  CONFIRMED: 'Confirmada',
+  CHECKED_IN: 'Check-in feito',
+  CHECKED_OUT: 'Check-out feito',
+  CANCELLED: 'Cancelada',
+  COMPLETED: 'Concluida',
+  NO_SHOW: 'Nao compareceu',
+};
+
+const reservationStatusClassNames: Record<ReservationStatus, string> = {
+  PENDING: 'bg-yellow-100 text-yellow-800',
+  CONFIRMED: 'bg-green-100 text-green-800',
+  CHECKED_IN: 'bg-blue-100 text-blue-800',
+  CHECKED_OUT: 'bg-purple-100 text-purple-800',
+  CANCELLED: 'bg-red-100 text-red-800',
+  COMPLETED: 'bg-gray-100 text-gray-800',
+  NO_SHOW: 'bg-orange-100 text-orange-800',
+};
+
+function buildCustomerMessage(
+  reservation: Reservation,
+  action: 'accepted' | 'rejected',
+  reason?: string
+) {
+  const checkInDate = new Date(reservation.checkInDate).toLocaleDateString('pt-BR');
+  const checkOutDate = new Date(reservation.checkOutDate).toLocaleDateString('pt-BR');
+
+  if (action === 'accepted') {
+    return `Ola ${reservation.guestName}, sua solicitacao de reserva ${reservation.reservationCode} para ${reservation.accommodation?.name || 'a acomodacao selecionada'} foi aceita pelo hotel.
+
+Check-in: ${checkInDate}
+Check-out: ${checkOutDate}
+Status: Confirmada
+
+Se precisar de mais alguma informacao, responda esta conversa.`;
+  }
+
+  return `Ola ${reservation.guestName}, sua solicitacao de reserva ${reservation.reservationCode} nao foi aprovada pelo hotel.
+
+Check-in: ${checkInDate}
+Check-out: ${checkOutDate}
+Motivo: ${reason || 'Indisponibilidade para o periodo solicitado.'}
+
+Se desejar, fale conosco para buscarmos uma nova opcao de hospedagem.`;
+}
 
 export function Reservations() {
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedReservation, setSelectedReservation] = useState<any>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-
   const isMobile = useIsMobile();
 
-  // Buscar reservas da API
   const { data: reservations, isLoading, error } = useAdminReservations(
     statusFilter !== 'all' ? { status: statusFilter } : undefined
   );
-
   const updateStatusMutation = useUpdateReservationStatus();
+  const cancelReservationMutation = useAdminCancelReservation();
 
-  // Handle status filter change
-  const handleFilterChange = (value: string) => {
-    setStatusFilter(value);
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('pt-BR');
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+
+  const openCustomerWhatsApp = (reservation: Reservation, message: string) => {
+    window.open(buildWhatsAppUrl(reservation.guestWhatsApp, message), '_blank');
   };
 
-  // View reservation details
-  const handleViewReservation = (reservation: any) => {
+  const handleViewReservation = (reservation: Reservation) => {
     setSelectedReservation(reservation);
     setDetailsOpen(true);
   };
 
-  // Update reservation status
-  const handleUpdateStatus = (id: string, newStatus: string) => {
-    updateStatusMutation.mutate({ id, status: newStatus }, {
-      onSuccess: () => {
-        setDetailsOpen(false);
+  const handleAdvanceStatus = (reservation: Reservation, newStatus: ReservationStatus) => {
+    updateStatusMutation.mutate(
+      { id: reservation.id, status: newStatus },
+      {
+        onSuccess: (updatedReservation) => {
+          setSelectedReservation(updatedReservation);
+
+          if (newStatus === 'CONFIRMED') {
+            openCustomerWhatsApp(
+              updatedReservation,
+              buildCustomerMessage(updatedReservation, 'accepted')
+            );
+            setDetailsOpen(false);
+          }
+        },
       }
-    });
-  };
-
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
-  };
-
-  // Status display helpers
-  const getStatusLabel = (status: string) => {
-    const statusMap: Record<string, string> = {
-      'PENDING': 'Pendente',
-      'CONFIRMED': 'Confirmada',
-      'CHECKED_IN': 'Check-in feito',
-      'CHECKED_OUT': 'Check-out feito',
-      'CANCELLED': 'Cancelada',
-      'COMPLETED': 'Concluída',
-      'NO_SHOW': 'Não compareceu',
-    };
-    return statusMap[status] || status;
-  };
-
-  const getStatusClass = (status: string) => {
-    const statusClassMap: Record<string, string> = {
-      'PENDING': 'bg-yellow-100 text-yellow-800',
-      'CONFIRMED': 'bg-green-100 text-green-800',
-      'CHECKED_IN': 'bg-blue-100 text-blue-800',
-      'CHECKED_OUT': 'bg-purple-100 text-purple-800',
-      'CANCELLED': 'bg-red-100 text-red-800',
-      'COMPLETED': 'bg-gray-100 text-gray-800',
-      'NO_SHOW': 'bg-orange-100 text-orange-800',
-    };
-    return `px-2 py-1 rounded text-xs font-medium ${statusClassMap[status] || ''}`;
-  };
-
-  // Format currency
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  const ReservationDetailsWrapper = () => {
-    if (!selectedReservation) return null;
-
-    const content = (
-      <ReservationDetails
-        reservation={selectedReservation}
-        onUpdateStatus={handleUpdateStatus}
-      />
-    );
-
-    if (isMobile) {
-      return (
-        <Drawer open={detailsOpen} onOpenChange={setDetailsOpen}>
-          <DrawerContent>
-            <DrawerHeader>
-              <DrawerTitle>Detalhes da Reserva</DrawerTitle>
-              <DrawerDescription>Reserva #{selectedReservation.reservationCode}</DrawerDescription>
-            </DrawerHeader>
-            <div className="p-4">
-              {content}
-            </div>
-          </DrawerContent>
-        </Drawer>
-      );
-    }
-
-    return (
-      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Detalhes da Reserva</DialogTitle>
-            <DialogDescription>Reserva #{selectedReservation.reservationCode}</DialogDescription>
-          </DialogHeader>
-          {content}
-        </DialogContent>
-      </Dialog>
     );
   };
+
+  const handleRejectReservation = (reservation: Reservation, reason: string) => {
+    cancelReservationMutation.mutate(
+      { id: reservation.id, reason },
+      {
+        onSuccess: (updatedReservation) => {
+          setSelectedReservation(updatedReservation);
+          openCustomerWhatsApp(
+            updatedReservation,
+            buildCustomerMessage(updatedReservation, 'rejected', reason)
+          );
+          setDetailsOpen(false);
+        },
+      }
+    );
+  };
+
+  const reservationDetails = selectedReservation ? (
+    <ReservationDetails
+      reservation={selectedReservation}
+      onAdvanceStatus={handleAdvanceStatus}
+      onRejectReservation={handleRejectReservation}
+      isUpdatingStatus={updateStatusMutation.isPending}
+      isRejectingReservation={cancelReservationMutation.isPending}
+    />
+  ) : null;
 
   if (error) {
     return (
@@ -158,7 +166,12 @@ export function Reservations() {
         <div className="flex flex-col items-center justify-center p-12 text-center">
           <div className="text-red-600 mb-4">
             <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
           <h2 className="text-xl font-bold mb-2">Erro ao carregar reservas</h2>
@@ -180,17 +193,16 @@ export function Reservations() {
               {isLoading ? 'Carregando...' : `${reservations?.length || 0} reservas encontradas`}
             </p>
           </div>
+
           <div className="flex items-center gap-4">
             <Button onClick={() => setShowCreateDialog(true)} size="lg">
               <CalendarPlus className="mr-2 h-5 w-5" />
               Nova Reserva
             </Button>
+
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4" />
-              <Select
-                value={statusFilter}
-                onValueChange={handleFilterChange}
-              >
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Filtrar por status" />
                 </SelectTrigger>
@@ -201,8 +213,8 @@ export function Reservations() {
                   <SelectItem value="CHECKED_IN">Check-in feito</SelectItem>
                   <SelectItem value="CHECKED_OUT">Check-out feito</SelectItem>
                   <SelectItem value="CANCELLED">Cancelada</SelectItem>
-                  <SelectItem value="COMPLETED">Concluída</SelectItem>
-                  <SelectItem value="NO_SHOW">Não compareceu</SelectItem>
+                  <SelectItem value="COMPLETED">Concluida</SelectItem>
+                  <SelectItem value="NO_SHOW">Nao compareceu</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -222,18 +234,18 @@ export function Reservations() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Código</TableHead>
-                    <TableHead>Hóspede</TableHead>
-                    <TableHead>Acomodação</TableHead>
+                    <TableHead>Codigo</TableHead>
+                    <TableHead>Hospede</TableHead>
+                    <TableHead>Acomodacao</TableHead>
                     <TableHead>Check-in</TableHead>
                     <TableHead>Check-out</TableHead>
                     <TableHead>Valor</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead className="text-right">Acoes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {reservations.map((reservation: any) => (
+                  {reservations.map((reservation: Reservation) => (
                     <TableRow key={reservation.id}>
                       <TableCell className="font-mono text-sm">{reservation.reservationCode}</TableCell>
                       <TableCell className="font-medium">{reservation.guestName}</TableCell>
@@ -242,8 +254,10 @@ export function Reservations() {
                       <TableCell>{formatDate(reservation.checkOutDate)}</TableCell>
                       <TableCell>{formatCurrency(Number(reservation.totalAmount))}</TableCell>
                       <TableCell>
-                        <span className={getStatusClass(reservation.status)}>
-                          {getStatusLabel(reservation.status)}
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${reservationStatusClassNames[reservation.status]}`}
+                        >
+                          {reservationStatusLabels[reservation.status]}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
@@ -266,27 +280,48 @@ export function Reservations() {
             <CardContent className="flex flex-col items-center justify-center p-12 text-center">
               <div className="text-gray-400 mb-4">
                 <svg className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
                 </svg>
               </div>
               <h3 className="text-lg font-semibold mb-2">Nenhuma reserva encontrada</h3>
               <p className="text-gray-600">
                 {statusFilter !== 'all'
                   ? 'Nenhuma reserva encontrada para o filtro selecionado.'
-                  : 'Ainda não há reservas cadastradas no sistema.'
-                }
+                  : 'Ainda nao ha reservas cadastradas no sistema.'}
               </p>
             </CardContent>
           </Card>
         )}
 
-        <ReservationDetailsWrapper />
+        {selectedReservation &&
+          (isMobile ? (
+            <Drawer open={detailsOpen} onOpenChange={setDetailsOpen}>
+              <DrawerContent>
+                <DrawerHeader>
+                  <DrawerTitle>Detalhes da Reserva</DrawerTitle>
+                  <DrawerDescription>Reserva #{selectedReservation.reservationCode}</DrawerDescription>
+                </DrawerHeader>
+                <div className="p-4">{reservationDetails}</div>
+              </DrawerContent>
+            </Drawer>
+          ) : (
+            <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+              <DialogContent className="sm:max-w-[720px]">
+                <DialogHeader>
+                  <DialogTitle>Detalhes da Reserva</DialogTitle>
+                  <DialogDescription>Reserva #{selectedReservation.reservationCode}</DialogDescription>
+                </DialogHeader>
+                {reservationDetails}
+              </DialogContent>
+            </Dialog>
+          ))}
 
-        {/* Create Reservation Dialog */}
-        <CreateReservationDialog
-          open={showCreateDialog}
-          onOpenChange={setShowCreateDialog}
-        />
+        <CreateReservationDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
       </div>
     </AdminLayout>
   );

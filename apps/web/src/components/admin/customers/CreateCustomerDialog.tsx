@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   Dialog,
@@ -18,18 +18,48 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useCreateCustomer, CreateCustomerData } from '@/hooks/useCustomers';
-import { Loader2 } from 'lucide-react';
+import {
+  CreateCustomerData,
+  Customer,
+  useCreateCustomer,
+  useUpdateCustomer,
+} from '@/hooks/useCustomers';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 interface CreateCustomerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  customer?: Customer | null;
+  onSuccess?: () => void;
+  hideRoleField?: boolean;
+  defaultRole?: CustomerFormData['role'];
 }
+
+type CustomerFormData = CreateCustomerData;
+
+const createDefaultValues = (
+  role: CustomerFormData['role'] = 'CUSTOMER'
+): CustomerFormData => ({
+  name: '',
+  email: '',
+  phone: '',
+  whatsapp: '',
+  cpf: '',
+  password: '',
+  role,
+});
 
 export const CreateCustomerDialog: React.FC<CreateCustomerDialogProps> = ({
   open,
   onOpenChange,
+  customer = null,
+  onSuccess,
+  hideRoleField = false,
+  defaultRole = 'CUSTOMER',
 }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const isEditing = !!customer;
+
   const {
     register,
     handleSubmit,
@@ -37,45 +67,91 @@ export const CreateCustomerDialog: React.FC<CreateCustomerDialogProps> = ({
     setValue,
     watch,
     formState: { errors },
-  } = useForm<CreateCustomerData>({
-    defaultValues: {
-      role: 'CUSTOMER',
-    },
+  } = useForm<CustomerFormData>({
+    defaultValues: createDefaultValues(defaultRole),
   });
 
   const createCustomer = useCreateCustomer();
+  const updateCustomer = useUpdateCustomer();
   const role = watch('role');
 
-  const onSubmit = async (data: CreateCustomerData) => {
-    await createCustomer.mutateAsync(data);
-    reset();
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setShowPassword(false);
+
+    if (customer) {
+      reset({
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone || '',
+        whatsapp: customer.whatsapp || '',
+        cpf: customer.cpf || '',
+        password: '',
+        role: customer.role as 'CUSTOMER' | 'ADMIN' | 'MANAGER',
+      });
+      return;
+    }
+
+    reset(createDefaultValues(defaultRole));
+  }, [customer, defaultRole, open, reset]);
+
+  const onSubmit = async (data: CustomerFormData) => {
+    const payload: CustomerFormData = {
+      ...data,
+      phone: data.phone?.trim() || undefined,
+      whatsapp: data.whatsapp?.trim() || undefined,
+      cpf: data.cpf?.trim() || undefined,
+      password: data.password?.trim() || undefined,
+    };
+
+    if (isEditing && customer) {
+      await updateCustomer.mutateAsync({
+        id: customer.id,
+        ...payload,
+      });
+    } else {
+      await createCustomer.mutateAsync(payload);
+    }
+
+    reset(createDefaultValues(defaultRole));
     onOpenChange(false);
+    onSuccess?.();
   };
 
-  const handleClose = () => {
-    reset();
-    onOpenChange(false);
+  const handleDialogChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      reset(createDefaultValues(defaultRole));
+      setShowPassword(false);
+    }
+
+    onOpenChange(nextOpen);
   };
+
+  const isSubmitting = createCustomer.isPending || updateCustomer.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Novo Cliente</DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar Cliente' : 'Novo Cliente'}</DialogTitle>
           <DialogDescription>
-            Cadastre um novo cliente manualmente no sistema
+            {isEditing
+              ? 'Atualize os dados do cliente no sistema'
+              : 'Cadastre um novo cliente manualmente no sistema'}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Nome */}
           <div className="space-y-2">
             <Label htmlFor="name">
               Nome Completo <span className="text-red-500">*</span>
             </Label>
             <Input
               id="name"
-              {...register('name', { required: 'Nome é obrigatório' })}
+              {...register('name', { required: 'Nome e obrigatorio' })}
               placeholder="Digite o nome completo"
             />
             {errors.name && (
@@ -83,7 +159,6 @@ export const CreateCustomerDialog: React.FC<CreateCustomerDialogProps> = ({
             )}
           </div>
 
-          {/* Email */}
           <div className="space-y-2">
             <Label htmlFor="email">
               Email <span className="text-red-500">*</span>
@@ -92,10 +167,10 @@ export const CreateCustomerDialog: React.FC<CreateCustomerDialogProps> = ({
               id="email"
               type="email"
               {...register('email', {
-                required: 'Email é obrigatório',
+                required: 'Email e obrigatorio',
                 pattern: {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: 'Email inválido',
+                  message: 'Email invalido',
                 },
               })}
               placeholder="email@exemplo.com"
@@ -105,7 +180,6 @@ export const CreateCustomerDialog: React.FC<CreateCustomerDialogProps> = ({
             )}
           </div>
 
-          {/* Telefone e WhatsApp */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone</Label>
@@ -126,7 +200,6 @@ export const CreateCustomerDialog: React.FC<CreateCustomerDialogProps> = ({
             </div>
           </div>
 
-          {/* CPF */}
           <div className="space-y-2">
             <Label htmlFor="cpf">CPF</Label>
             <Input
@@ -137,55 +210,71 @@ export const CreateCustomerDialog: React.FC<CreateCustomerDialogProps> = ({
             />
           </div>
 
-          {/* Senha */}
           <div className="space-y-2">
             <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              {...register('password')}
-              placeholder="Deixe em branco para gerar automaticamente"
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                {...register('password')}
+                placeholder={
+                  isEditing
+                    ? 'Deixe em branco para manter a senha atual'
+                    : 'Deixe em branco para gerar automaticamente'
+                }
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((currentValue) => !currentValue)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
             <p className="text-xs text-gray-500">
-              Se não informada, o sistema exigirá SMTP configurado para enviar um
-              acesso inicial seguro por email
+              {isEditing
+                ? 'Preencha apenas se quiser alterar a senha do cliente'
+                : 'Se nao informada, o sistema exigira SMTP configurado para enviar um acesso inicial seguro por email'}
             </p>
           </div>
 
-          {/* Tipo de Usuário */}
-          <div className="space-y-2">
-            <Label htmlFor="role">Tipo de Usuário</Label>
-            <Select
-              value={role}
-              onValueChange={(value) =>
-                setValue('role', value as 'CUSTOMER' | 'ADMIN' | 'MANAGER')
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="CUSTOMER">Cliente</SelectItem>
-                <SelectItem value="MANAGER">Gerente</SelectItem>
-                <SelectItem value="ADMIN">Administrador</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {!hideRoleField && (
+            <div className="space-y-2">
+              <Label htmlFor="role">Tipo de Usuario</Label>
+              <Select
+                value={role}
+                onValueChange={(value) =>
+                  setValue('role', value as 'CUSTOMER' | 'ADMIN' | 'MANAGER')
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CUSTOMER">Cliente</SelectItem>
+                  <SelectItem value="MANAGER">Gerente</SelectItem>
+                  <SelectItem value="ADMIN">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
-              onClick={handleClose}
-              disabled={createCustomer.isPending}
+              onClick={() => handleDialogChange(false)}
+              disabled={isSubmitting}
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={createCustomer.isPending}>
-              {createCustomer.isPending && (
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Criar Cliente
+              {isEditing ? 'Salvar Alteracoes' : 'Criar Cliente'}
             </Button>
           </DialogFooter>
         </form>

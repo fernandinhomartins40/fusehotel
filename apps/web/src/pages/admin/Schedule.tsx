@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -30,6 +31,7 @@ import { Badge } from '@/components/ui/badge';
 import { reservationStatusColors, reservationStatusLabels, paymentStatusLabels } from '@/types/schedule';
 
 export default function Schedule() {
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedAccommodationId, setSelectedAccommodationId] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
@@ -201,6 +203,12 @@ export default function Schedule() {
                       <p className="text-gray-500">Nome</p>
                       <p className="font-medium">{selectedReservation.guestName}</p>
                     </div>
+                    {selectedReservation.guestEmail && (
+                      <div>
+                        <p className="text-gray-500">Email</p>
+                        <p className="font-medium">{selectedReservation.guestEmail}</p>
+                      </div>
+                    )}
                     <div>
                       <p className="text-gray-500">WhatsApp</p>
                       <p className="font-medium">{selectedReservation.guestWhatsApp}</p>
@@ -246,10 +254,13 @@ export default function Schedule() {
                   <Button variant="outline" onClick={() => setSelectedReservation(null)}>
                     Fechar
                   </Button>
-                  <Button onClick={() => {
-                    window.location.href = `/admin/reservations/${selectedReservation.id}`;
-                  }}>
-                    Ver Reserva Completa
+                  <Button
+                    onClick={() => {
+                      setSelectedReservation(null);
+                      navigate('/admin/reservations');
+                    }}
+                  >
+                    Ir para Reservas
                   </Button>
                 </div>
               </div>

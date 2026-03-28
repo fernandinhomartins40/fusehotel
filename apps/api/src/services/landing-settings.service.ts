@@ -52,16 +52,14 @@ export class LandingSettingsService {
     const defaults: Record<string, any> = {
       header: {
         logo: '/lovable-uploads/91e13e81-bbd9-4aab-b810-d81bb336ecb8.png',
-        backgroundColor: '#ffffff',
+        browserTitle: 'Águas Claras',
+        backgroundColor: '#FFFFFF',
         textColor: '#333333',
         hoverColor: '#0466C8',
-        button: {
-          text: 'Área do cliente',
-          icon: 'User',
-          backgroundColor: '#0466C8',
-          hoverColor: '#0355A6',
-          textColor: '#ffffff'
-        }
+        buttonText: 'Área do cliente',
+        buttonBackground: '#0466C8',
+        buttonHover: '#0355A6',
+        buttonTextColor: '#FFFFFF'
       },
       accommodations: {
         title: 'ACOMODAÇÕES',

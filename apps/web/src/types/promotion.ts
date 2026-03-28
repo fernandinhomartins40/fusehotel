@@ -1,4 +1,10 @@
-export type PromotionType = 'PACKAGE' | 'PROMOTION';
+export type PromotionType =
+  | 'PACKAGE'
+  | 'DISCOUNT'
+  | 'SEASONAL'
+  | 'SPECIAL_OFFER'
+  | 'EARLY_BIRD'
+  | 'LAST_MINUTE';
 
 export interface PromotionFeature {
   id: string;

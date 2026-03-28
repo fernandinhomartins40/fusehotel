@@ -14,14 +14,15 @@ export const HeaderCustomizer = () => {
   const { data: settingsData, isLoading } = useLandingSettings('header');
   const updateSettings = useUpdateLandingSettings();
 
-  const config = settingsData?.config || defaultHeaderConfig;
+  const config: HeaderConfig = {
+    ...defaultHeaderConfig,
+    ...(settingsData?.config || {}),
+  };
 
   const form = useForm<HeaderConfig>({
     defaultValues: config,
     values: config,
   });
-
-  const watchedValues = form.watch();
 
   const onSubmit = (data: HeaderConfig) => {
     updateSettings.mutate(
@@ -79,6 +80,15 @@ export const HeaderCustomizer = () => {
               <p className="text-sm text-muted-foreground">
                 Tamanho recomendado: 210x48px
               </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="browserTitle">Título da Aba do Navegador</Label>
+              <Input
+                id="browserTitle"
+                {...form.register('browserTitle')}
+                placeholder="Águas Claras"
+              />
             </div>
 
             <div className="space-y-2">

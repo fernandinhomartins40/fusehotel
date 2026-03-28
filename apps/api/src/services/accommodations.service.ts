@@ -8,10 +8,26 @@ import {
 } from '@fusehotel/shared';
 import { Prisma } from '@prisma/client';
 
+const accommodationInclude = {
+  images: { orderBy: { order: 'asc' as const } },
+  amenities: {
+    include: { amenity: true }
+  }
+};
+
+const mapAccommodationImages = (
+  images: Array<{ url: string; alt: string; order: number; isPrimary: boolean }> = []
+) => images.map((image) => ({
+  url: image.url,
+  alt: image.alt,
+  order: image.order,
+  isPrimary: image.isPrimary
+}));
+
 export class AccommodationService {
   static async list(filters: AccommodationFilters) {
     const where: Prisma.AccommodationWhereInput = {};
-    
+
     if (filters.type) where.type = filters.type;
     if (filters.isAvailable !== undefined) where.isAvailable = filters.isAvailable;
     if (filters.isFeatured !== undefined) where.isFeatured = filters.isFeatured;
@@ -24,12 +40,7 @@ export class AccommodationService {
 
     return prisma.accommodation.findMany({
       where,
-      include: {
-        images: { orderBy: { order: 'asc' } },
-        amenities: {
-          include: { amenity: true }
-        }
-      },
+      include: accommodationInclude,
       orderBy: { createdAt: 'desc' }
     });
   }
@@ -37,16 +48,11 @@ export class AccommodationService {
   static async getById(id: string) {
     const accommodation = await prisma.accommodation.findUnique({
       where: { id },
-      include: {
-        images: { orderBy: { order: 'asc' } },
-        amenities: {
-          include: { amenity: true }
-        }
-      }
+      include: accommodationInclude
     });
 
     if (!accommodation) {
-      throw new NotFoundError('Acomodação não encontrada');
+      throw new NotFoundError('Acomodacao nao encontrada');
     }
 
     return accommodation;
@@ -55,16 +61,11 @@ export class AccommodationService {
   static async getBySlug(slug: string) {
     const accommodation = await prisma.accommodation.findUnique({
       where: { slug },
-      include: {
-        images: { orderBy: { order: 'asc' } },
-        amenities: {
-          include: { amenity: true }
-        }
-      }
+      include: accommodationInclude
     });
 
     if (!accommodation) {
-      throw new NotFoundError('Acomodação não encontrada');
+      throw new NotFoundError('Acomodacao nao encontrada');
     }
 
     return accommodation;
@@ -81,23 +82,23 @@ export class AccommodationService {
         capacity: data.capacity,
         pricePerNight: data.pricePerNight,
         description: data.description,
-        shortDescription: data.shortDescription,
+        shortDescription: data.shortDescription || null,
         floor: data.floor,
-        view: data.view,
+        view: data.view || null,
         area: data.area,
         checkInTime: data.checkInTime,
         checkOutTime: data.checkOutTime,
         extraBeds: data.extraBeds || 0,
         maxExtraBeds: data.maxExtraBeds || 0,
         extraBedPrice: data.extraBedPrice || 0,
-        cancellationPolicy: data.cancellationPolicy,
-        metaTitle: data.metaTitle,
-        metaDescription: data.metaDescription,
+        cancellationPolicy: data.cancellationPolicy || null,
+        metaTitle: data.metaTitle || null,
+        metaDescription: data.metaDescription || null,
         keywords: data.keywords || [],
         isAvailable: data.isAvailable !== false,
         isFeatured: data.isFeatured || false,
         images: {
-          create: data.images || []
+          create: mapAccommodationImages(data.images)
         },
         amenities: {
           create: (data.amenityIds || []).map((amenityId: string) => ({
@@ -105,34 +106,75 @@ export class AccommodationService {
           }))
         }
       },
-      include: {
-        images: true,
-        amenities: { include: { amenity: true } }
-      }
+      include: accommodationInclude
     });
 
     return accommodation;
   }
 
   static async update(id: string, data: UpdateAccommodationDto) {
-    await this.getById(id);
+    const existingAccommodation = await this.getById(id);
+
+    const updateData: Prisma.AccommodationUpdateInput = {
+      ...(data.name !== undefined
+        ? {
+            name: data.name,
+            slug: generateSlug(data.name)
+          }
+        : {}),
+      ...(data.type !== undefined ? { type: data.type } : {}),
+      ...(data.capacity !== undefined ? { capacity: data.capacity } : {}),
+      ...(data.pricePerNight !== undefined ? { pricePerNight: data.pricePerNight } : {}),
+      ...(data.description !== undefined ? { description: data.description } : {}),
+      ...(data.shortDescription !== undefined
+        ? { shortDescription: data.shortDescription || null }
+        : {}),
+      ...(data.floor !== undefined ? { floor: data.floor } : {}),
+      ...(data.view !== undefined ? { view: data.view || null } : {}),
+      ...(data.area !== undefined ? { area: data.area } : {}),
+      ...(data.checkInTime !== undefined ? { checkInTime: data.checkInTime } : {}),
+      ...(data.checkOutTime !== undefined ? { checkOutTime: data.checkOutTime } : {}),
+      ...(data.extraBeds !== undefined ? { extraBeds: data.extraBeds } : {}),
+      ...(data.maxExtraBeds !== undefined ? { maxExtraBeds: data.maxExtraBeds } : {}),
+      ...(data.extraBedPrice !== undefined ? { extraBedPrice: data.extraBedPrice } : {}),
+      ...(data.cancellationPolicy !== undefined
+        ? { cancellationPolicy: data.cancellationPolicy || null }
+        : {}),
+      ...(data.metaTitle !== undefined ? { metaTitle: data.metaTitle || null } : {}),
+      ...(data.metaDescription !== undefined
+        ? { metaDescription: data.metaDescription || null }
+        : {}),
+      ...(data.keywords !== undefined ? { keywords: data.keywords } : {}),
+      ...(data.isAvailable !== undefined ? { isAvailable: data.isAvailable } : {}),
+      ...(data.isFeatured !== undefined ? { isFeatured: data.isFeatured } : {}),
+      ...(data.images !== undefined
+        ? {
+            images: {
+              deleteMany: {},
+              create: mapAccommodationImages(data.images)
+            }
+          }
+        : {}),
+      ...(data.amenityIds !== undefined
+        ? {
+            amenities: {
+              deleteMany: {},
+              create: data.amenityIds.map((amenityId: string) => ({
+                amenityId
+              }))
+            }
+          }
+        : {})
+    };
+
+    if (Object.keys(updateData).length === 0) {
+      return existingAccommodation;
+    }
 
     return prisma.accommodation.update({
       where: { id },
-      data: {
-        name: data.name,
-        type: data.type,
-        capacity: data.capacity,
-        pricePerNight: data.pricePerNight,
-        description: data.description,
-        shortDescription: data.shortDescription,
-        isAvailable: data.isAvailable,
-        isFeatured: data.isFeatured,
-      },
-      include: {
-        images: true,
-        amenities: { include: { amenity: true } }
-      }
+      data: updateData,
+      include: accommodationInclude
     });
   }
 

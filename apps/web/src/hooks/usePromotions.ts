@@ -3,7 +3,14 @@ import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
 import type { Promotion, PromotionFilters, CreatePromotionData } from '@/types/promotion';
 
-// Hook para listar promoções (público ou admin)
+function getPromotionErrorMessage(error: any, fallback: string) {
+  return (
+    error?.response?.data?.errors?.[0]?.message ||
+    error?.response?.data?.message ||
+    fallback
+  );
+}
+
 export function usePromotions(filters?: PromotionFilters) {
   return useQuery({
     queryKey: ['promotions', filters],
@@ -14,7 +21,6 @@ export function usePromotions(filters?: PromotionFilters) {
   });
 }
 
-// Hook para buscar uma promoção por ID
 export function usePromotion(id: string) {
   return useQuery({
     queryKey: ['promotion', id],
@@ -26,7 +32,6 @@ export function usePromotion(id: string) {
   });
 }
 
-// Hook para buscar uma promoção por slug
 export function usePromotionBySlug(slug: string) {
   return useQuery({
     queryKey: ['promotion', 'slug', slug],
@@ -38,7 +43,6 @@ export function usePromotionBySlug(slug: string) {
   });
 }
 
-// Hook para criar promoção (admin)
 export function useCreatePromotion() {
   const queryClient = useQueryClient();
 
@@ -49,16 +53,14 @@ export function useCreatePromotion() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['promotions'] });
-      toast.success('Promoção criada com sucesso!');
+      toast.success('Promocao criada com sucesso!');
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Erro ao criar promoção';
-      toast.error(message);
+      toast.error(getPromotionErrorMessage(error, 'Erro ao criar promocao'));
     },
   });
 }
 
-// Hook para atualizar promoção (admin)
 export function useUpdatePromotion() {
   const queryClient = useQueryClient();
 
@@ -69,16 +71,14 @@ export function useUpdatePromotion() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['promotions'] });
-      toast.success('Promoção atualizada com sucesso!');
+      toast.success('Promocao atualizada com sucesso!');
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Erro ao atualizar promoção';
-      toast.error(message);
+      toast.error(getPromotionErrorMessage(error, 'Erro ao atualizar promocao'));
     },
   });
 }
 
-// Hook para deletar promoção (admin)
 export function useDeletePromotion() {
   const queryClient = useQueryClient();
 
@@ -88,11 +88,10 @@ export function useDeletePromotion() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['promotions'] });
-      toast.success('Promoção removida com sucesso!');
+      toast.success('Promocao removida com sucesso!');
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Erro ao remover promoção';
-      toast.error(message);
+      toast.error(getPromotionErrorMessage(error, 'Erro ao remover promocao'));
     },
   });
 }

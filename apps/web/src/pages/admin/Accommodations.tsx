@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash, Star, Eye, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash, Star, Loader2 } from 'lucide-react';
 import { AccommodationForm } from '@/components/admin/AccommodationForm';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Accommodation, AccommodationFormData } from '@/types/accommodation';

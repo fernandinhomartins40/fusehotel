@@ -115,6 +115,7 @@ export interface CreateReservationDto {
   guestNationality?: string;
   guestDocumentNumber?: string;
   specialRequests?: string;
+  promotionId?: string;
   promotionCode?: string;
 }
 

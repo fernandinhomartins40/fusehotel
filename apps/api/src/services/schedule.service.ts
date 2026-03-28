@@ -1,6 +1,5 @@
-import { PrismaClient, ReservationStatus } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Prisma, ReservationStatus } from '@prisma/client';
+import { prisma } from '../config/database';
 
 interface ScheduleQueryParams {
   startDate: string;
@@ -8,24 +7,28 @@ interface ScheduleQueryParams {
   accommodationId?: string;
 }
 
+interface ScheduleReservation {
+  id: string;
+  reservationCode: string;
+  checkInDate: string;
+  checkOutDate: string;
+  numberOfNights: number;
+  numberOfGuests: number;
+  guestName: string;
+  guestEmail: string | null;
+  guestPhone: string | null;
+  guestWhatsApp: string;
+  status: ReservationStatus;
+  paymentStatus: string;
+}
+
 interface AccommodationSchedule {
   id: string;
   name: string;
   type: string;
   capacity: number;
-  reservations: Array<{
-    id: string;
-    reservationCode: string;
-    checkInDate: string;
-    checkOutDate: string;
-    numberOfNights: number;
-    numberOfGuests: number;
-    guestName: string;
-    guestPhone: string | null;
-    guestWhatsApp: string;
-    status: ReservationStatus;
-    paymentStatus: string;
-  }>;
+  isAvailable: boolean;
+  reservations: ScheduleReservation[];
   availability: Array<{
     date: string;
     isAvailable: boolean;
@@ -33,79 +36,39 @@ interface AccommodationSchedule {
   }>;
 }
 
-export class ScheduleService {
-  /**
-   * Get schedule overview for all accommodations or specific accommodation
-   */
-  async getSchedule(params: ScheduleQueryParams): Promise<AccommodationSchedule[]> {
-    const { startDate, endDate, accommodationId } = params;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+const NON_BLOCKING_STATUSES: ReservationStatus[] = [
+  ReservationStatus.CANCELLED,
+  ReservationStatus.NO_SHOW,
+];
 
-    // Get accommodations
+type ReservationDateRange = {
+  checkInDate: Date | string;
+  checkOutDate: Date | string;
+};
+
+export class ScheduleService {
+  async getSchedule(params: ScheduleQueryParams): Promise<AccommodationSchedule[]> {
+    const rangeStart = this.toDateKey(params.startDate);
+    const rangeEndInclusive = this.toDateKey(params.endDate);
+    const rangeEndExclusive = this.addDays(rangeEndInclusive, 1);
+
     const accommodations = await prisma.accommodation.findMany({
-      where: accommodationId ? { id: accommodationId } : { isAvailable: true },
+      where: params.accommodationId ? { id: params.accommodationId } : {},
       include: {
         reservations: {
-          where: {
-            AND: [
-              {
-                OR: [
-                  {
-                    // Reservation starts within date range
-                    checkInDate: {
-                      gte: start,
-                      lte: end,
-                    },
-                  },
-                  {
-                    // Reservation ends within date range
-                    checkOutDate: {
-                      gte: start,
-                      lte: end,
-                    },
-                  },
-                  {
-                    // Reservation spans entire date range
-                    AND: [
-                      { checkInDate: { lte: start } },
-                      { checkOutDate: { gte: end } },
-                    ],
-                  },
-                ],
-              },
-              {
-                status: {
-                  notIn: [ReservationStatus.CANCELLED, ReservationStatus.NO_SHOW],
-                },
-              },
-            ],
-          },
-          orderBy: {
-            checkInDate: 'asc',
-          },
+          where: this.buildReservationCandidateWhere(rangeStart, rangeEndExclusive),
+          orderBy: { checkInDate: 'asc' },
         },
       },
-      orderBy: {
-        name: 'asc',
-      },
+      orderBy: { name: 'asc' },
     });
 
-    // Build schedule for each accommodation
-    const schedules: AccommodationSchedule[] = accommodations.map((accommodation) => {
-      // Generate availability calendar
-      const availability = this.generateAvailabilityCalendar(
-        start,
-        end,
-        accommodation.reservations
-      );
-
-      return {
-        id: accommodation.id,
-        name: accommodation.name,
-        type: accommodation.type,
-        capacity: accommodation.capacity,
-        reservations: accommodation.reservations.map((reservation) => ({
+    return accommodations.map((accommodation) => {
+      const reservations = accommodation.reservations
+        .filter((reservation) =>
+          this.doesReservationOverlapRange(reservation, rangeStart, rangeEndExclusive)
+        )
+        .map((reservation) => ({
           id: reservation.id,
           reservationCode: reservation.reservationCode,
           checkInDate: reservation.checkInDate.toISOString(),
@@ -113,195 +76,252 @@ export class ScheduleService {
           numberOfNights: reservation.numberOfNights,
           numberOfGuests: reservation.numberOfGuests,
           guestName: reservation.guestName,
+          guestEmail: reservation.guestEmail,
           guestPhone: reservation.guestPhone,
           guestWhatsApp: reservation.guestWhatsApp,
           status: reservation.status,
           paymentStatus: reservation.paymentStatus,
-        })),
-        availability,
+        }));
+
+      return {
+        id: accommodation.id,
+        name: accommodation.name,
+        type: accommodation.type,
+        capacity: accommodation.capacity,
+        isAvailable: accommodation.isAvailable,
+        reservations,
+        availability: this.generateAvailabilityCalendar(
+          rangeStart,
+          rangeEndInclusive,
+          reservations,
+          accommodation.isAvailable
+        ),
       };
     });
-
-    return schedules;
   }
 
-  /**
-   * Generate daily availability calendar for an accommodation
-   */
+  async checkAvailability(
+    accommodationId: string,
+    startDate: string | Date,
+    endDate: string | Date,
+    excludeReservationId?: string
+  ): Promise<boolean> {
+    const accommodation = await prisma.accommodation.findUnique({
+      where: { id: accommodationId },
+      select: { id: true, isAvailable: true },
+    });
+
+    if (!accommodation || !accommodation.isAvailable) {
+      return false;
+    }
+
+    const rangeStart = this.toDateKey(startDate);
+    const rangeEndExclusive = this.toDateKey(endDate);
+
+    if (rangeEndExclusive <= rangeStart) {
+      return false;
+    }
+
+    const candidateReservations = await prisma.reservation.findMany({
+      where: this.buildReservationCandidateWhere(rangeStart, rangeEndExclusive, {
+        accommodationId,
+        excludeReservationId,
+      }),
+      select: {
+        id: true,
+        checkInDate: true,
+        checkOutDate: true,
+      },
+    });
+
+    return !candidateReservations.some((reservation) =>
+      this.doesReservationOverlapRange(reservation, rangeStart, rangeEndExclusive)
+    );
+  }
+
+  async getScheduleStats(startDate: string, endDate: string) {
+    const rangeStart = this.toDateKey(startDate);
+    const rangeEndInclusive = this.toDateKey(endDate);
+    const rangeEndExclusive = this.addDays(rangeEndInclusive, 1);
+
+    const [accommodations, candidateReservations] = await Promise.all([
+      prisma.accommodation.findMany({
+        select: {
+          id: true,
+          isAvailable: true,
+        },
+      }),
+      prisma.reservation.findMany({
+        where: this.buildReservationCandidateWhere(rangeStart, rangeEndExclusive),
+        select: {
+          accommodationId: true,
+          checkInDate: true,
+          checkOutDate: true,
+          status: true,
+        },
+      }),
+    ]);
+
+    const reservations = candidateReservations.filter((reservation) =>
+      this.doesReservationOverlapRange(reservation, rangeStart, rangeEndExclusive)
+    );
+
+    const totalAccommodations = accommodations.length;
+    const activeReservations = reservations.filter(
+      (reservation) => reservation.status === ReservationStatus.CHECKED_IN
+    ).length;
+    const availableAccommodations = accommodations.filter(
+      (accommodation) =>
+        accommodation.isAvailable &&
+        !reservations.some(
+          (reservation) => reservation.accommodationId === accommodation.id
+        )
+    ).length;
+
+    const totalDays = this.getDateRangeLength(rangeStart, rangeEndExclusive);
+    const availableInventory = accommodations.filter((accommodation) => accommodation.isAvailable)
+      .length;
+
+    const totalOccupiedNights = reservations.reduce((occupiedNights, reservation) => {
+      const effectiveStart = this.maxDateKey(
+        rangeStart,
+        this.toDateKey(reservation.checkInDate)
+      );
+      const effectiveEnd = this.minDateKey(
+        rangeEndExclusive,
+        this.toDateKey(reservation.checkOutDate)
+      );
+
+      return occupiedNights + this.getDateRangeLength(effectiveStart, effectiveEnd);
+    }, 0);
+
+    const totalPossibleRoomNights = availableInventory * totalDays;
+    const occupancyRate =
+      totalPossibleRoomNights > 0
+        ? (totalOccupiedNights / totalPossibleRoomNights) * 100
+        : 0;
+
+    return {
+      totalAccommodations,
+      totalReservations: reservations.length,
+      activeReservations,
+      occupancyRate: Math.round(occupancyRate * 100) / 100,
+      availableAccommodations,
+    };
+  }
+
+  private buildReservationCandidateWhere(
+    rangeStart: string,
+    rangeEndExclusive: string,
+    options: {
+      accommodationId?: string;
+      excludeReservationId?: string;
+    } = {}
+  ): Prisma.ReservationWhereInput {
+    return {
+      ...(options.accommodationId ? { accommodationId: options.accommodationId } : {}),
+      ...(options.excludeReservationId
+        ? { id: { not: options.excludeReservationId } }
+        : {}),
+      status: {
+        notIn: NON_BLOCKING_STATUSES,
+      },
+      checkInDate: {
+        lt: this.toDateBoundary(rangeEndExclusive),
+      },
+      checkOutDate: {
+        gt: this.toDateBoundary(rangeStart),
+      },
+    };
+  }
+
   private generateAvailabilityCalendar(
-    startDate: Date,
-    endDate: Date,
-    reservations: any[]
+    rangeStart: string,
+    rangeEndInclusive: string,
+    reservations: Array<{ id: string; checkInDate: string; checkOutDate: string }>,
+    accommodationIsAvailable: boolean
   ): Array<{ date: string; isAvailable: boolean; reservationId?: string }> {
-    const calendar: Array<{
+    const availability: Array<{
       date: string;
       isAvailable: boolean;
       reservationId?: string;
     }> = [];
 
-    // Create date array
-    const currentDate = new Date(startDate);
-    while (currentDate <= endDate) {
-      const dateStr = currentDate.toISOString().split('T')[0];
+    let currentDate = rangeStart;
+    const rangeEndExclusive = this.addDays(rangeEndInclusive, 1);
 
-      // Check if this date is occupied by any reservation
-      const occupyingReservation = reservations.find((reservation) => {
-        const checkIn = new Date(reservation.checkInDate);
-        const checkOut = new Date(reservation.checkOutDate);
-        const current = new Date(dateStr);
+    while (currentDate < rangeEndExclusive) {
+      const occupyingReservation = reservations.find((reservation) =>
+        this.doesReservationOccupyDate(reservation, currentDate)
+      );
 
-        // Date is occupied if it's between check-in (inclusive) and check-out (exclusive)
-        return current >= checkIn && current < checkOut;
-      });
-
-      calendar.push({
-        date: dateStr,
-        isAvailable: !occupyingReservation,
+      availability.push({
+        date: currentDate,
+        isAvailable: accommodationIsAvailable && !occupyingReservation,
         reservationId: occupyingReservation?.id,
       });
 
-      currentDate.setDate(currentDate.getDate() + 1);
+      currentDate = this.addDays(currentDate, 1);
     }
 
-    return calendar;
+    return availability;
   }
 
-  /**
-   * Get accommodation availability for specific date range
-   */
-  async checkAvailability(
-    accommodationId: string,
-    startDate: string,
-    endDate: string
-  ): Promise<boolean> {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+  private doesReservationOccupyDate(
+    reservation: ReservationDateRange,
+    dateKey: string
+  ) {
+    const checkInDate = this.toDateKey(reservation.checkInDate);
+    const checkOutDate = this.toDateKey(reservation.checkOutDate);
 
-    const conflictingReservations = await prisma.reservation.count({
-      where: {
-        accommodationId,
-        status: {
-          notIn: [ReservationStatus.CANCELLED, ReservationStatus.NO_SHOW],
-        },
-        OR: [
-          {
-            // New reservation starts during existing reservation
-            AND: [
-              { checkInDate: { lte: start } },
-              { checkOutDate: { gt: start } },
-            ],
-          },
-          {
-            // New reservation ends during existing reservation
-            AND: [
-              { checkInDate: { lt: end } },
-              { checkOutDate: { gte: end } },
-            ],
-          },
-          {
-            // New reservation completely contains existing reservation
-            AND: [
-              { checkInDate: { gte: start } },
-              { checkOutDate: { lte: end } },
-            ],
-          },
-        ],
-      },
-    });
-
-    return conflictingReservations === 0;
+    return checkInDate <= dateKey && checkOutDate > dateKey;
   }
 
-  /**
-   * Get statistics for dashboard
-   */
-  async getScheduleStats(startDate: string, endDate: string) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+  private doesReservationOverlapRange(
+    reservation: ReservationDateRange,
+    rangeStart: string,
+    rangeEndExclusive: string
+  ) {
+    const checkInDate = this.toDateKey(reservation.checkInDate);
+    const checkOutDate = this.toDateKey(reservation.checkOutDate);
 
-    const [
-      totalAccommodations,
-      totalReservations,
-      activeReservations,
-      occupancyData,
-    ] = await Promise.all([
-      // Total accommodations
-      prisma.accommodation.count({
-        where: { isAvailable: true },
-      }),
+    return checkInDate < rangeEndExclusive && checkOutDate > rangeStart;
+  }
 
-      // Total reservations in period
-      prisma.reservation.count({
-        where: {
-          checkInDate: { gte: start, lte: end },
-          status: {
-            notIn: [ReservationStatus.CANCELLED, ReservationStatus.NO_SHOW],
-          },
-        },
-      }),
+  private toDateKey(value: string | Date) {
+    if (typeof value === 'string') {
+      return value.slice(0, 10);
+    }
 
-      // Active reservations (currently checked in)
-      prisma.reservation.count({
-        where: {
-          status: ReservationStatus.CHECKED_IN,
-        },
-      }),
+    return value.toISOString().slice(0, 10);
+  }
 
-      // Get all reservations for occupancy calculation
-      prisma.reservation.findMany({
-        where: {
-          OR: [
-            {
-              checkInDate: { gte: start, lte: end },
-            },
-            {
-              checkOutDate: { gte: start, lte: end },
-            },
-            {
-              AND: [
-                { checkInDate: { lte: start } },
-                { checkOutDate: { gte: end } },
-              ],
-            },
-          ],
-          status: {
-            notIn: [ReservationStatus.CANCELLED, ReservationStatus.NO_SHOW],
-          },
-        },
-        select: {
-          checkInDate: true,
-          checkOutDate: true,
-        },
-      }),
-    ]);
+  private toDateBoundary(dateKey: string) {
+    return new Date(`${dateKey}T00:00:00.000Z`);
+  }
 
-    // Calculate occupancy rate
-    const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    const totalPossibleRoomNights = totalAccommodations * totalDays;
+  private addDays(dateKey: string, days: number) {
+    const date = this.toDateBoundary(dateKey);
+    date.setUTCDate(date.getUTCDate() + days);
+    return date.toISOString().slice(0, 10);
+  }
 
-    let totalOccupiedNights = 0;
-    occupancyData.forEach((reservation) => {
-      const checkIn = new Date(reservation.checkInDate);
-      const checkOut = new Date(reservation.checkOutDate);
+  private getDateRangeLength(startDateKey: string, endDateKey: string) {
+    const start = this.toDateBoundary(startDateKey);
+    const end = this.toDateBoundary(endDateKey);
 
-      const effectiveStart = checkIn > start ? checkIn : start;
-      const effectiveEnd = checkOut < end ? checkOut : end;
+    return Math.max(
+      0,
+      Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+    );
+  }
 
-      const nights = Math.ceil((effectiveEnd.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60 * 24));
-      totalOccupiedNights += Math.max(0, nights);
-    });
+  private minDateKey(firstDateKey: string, secondDateKey: string) {
+    return firstDateKey <= secondDateKey ? firstDateKey : secondDateKey;
+  }
 
-    const occupancyRate = totalPossibleRoomNights > 0
-      ? (totalOccupiedNights / totalPossibleRoomNights) * 100
-      : 0;
-
-    return {
-      totalAccommodations,
-      totalReservations,
-      activeReservations,
-      occupancyRate: Math.round(occupancyRate * 100) / 100,
-      availableAccommodations: totalAccommodations - activeReservations,
-    };
+  private maxDateKey(firstDateKey: string, secondDateKey: string) {
+    return firstDateKey >= secondDateKey ? firstDateKey : secondDateKey;
   }
 }
 

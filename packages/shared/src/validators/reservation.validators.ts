@@ -26,6 +26,7 @@ export const createReservationSchema = z
     guestNationality: z.string().max(50).optional(),
     guestDocumentNumber: z.string().max(50).optional(),
     specialRequests: z.string().max(500).optional(),
+    promotionId: uuidSchema.optional(),
     promotionCode: z.string().max(50).optional(),
   })
   .refine(

@@ -29,6 +29,9 @@ export function useUpdateReservationStatus() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-reservations'] });
       queryClient.invalidateQueries({ queryKey: ['my-reservations'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['availability'] });
       toast.success('Status da reserva atualizado com sucesso!');
     },
     onError: (error: any) => {
@@ -49,6 +52,9 @@ export function useUpdateReservation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-reservations'] });
       queryClient.invalidateQueries({ queryKey: ['my-reservations'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['availability'] });
       toast.success('Reserva atualizada com sucesso!');
     },
     onError: (error: any) => {
@@ -63,12 +69,18 @@ export function useAdminCancelReservation() {
 
   return useMutation({
     mutationFn: async ({ id, reason }: { id: string; reason: string }) => {
-      const { data } = await apiClient.post(`/reservations/${id}/cancel`, { reason });
+      const { data } = await apiClient.post(`/reservations/${id}/cancel`, {
+        reason,
+        requestRefund: false,
+      });
       return data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-reservations'] });
       queryClient.invalidateQueries({ queryKey: ['my-reservations'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['availability'] });
       toast.success('Reserva cancelada com sucesso!');
     },
     onError: (error: any) => {

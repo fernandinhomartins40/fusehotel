@@ -3,16 +3,22 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ImageCropUpload } from './ImageCropUpload';
-import { Plus, X, MoveUp, MoveDown } from 'lucide-react';
+import { X, MoveUp, MoveDown } from 'lucide-react';
 import { AccommodationImage } from '@/types/accommodation';
 
 interface MultiImageUploadProps {
   value: AccommodationImage[];
   onChange: (images: AccommodationImage[]) => void;
   maxImages?: number;
+  uploadCategory?: string;
 }
 
-export function MultiImageUpload({ value, onChange, maxImages = 10 }: MultiImageUploadProps) {
+export function MultiImageUpload({
+  value,
+  onChange,
+  maxImages = 10,
+  uploadCategory = 'GENERAL',
+}: MultiImageUploadProps) {
   const handleImageAdd = (newImageUrl: string) => {
     if (value.length < maxImages) {
       const newImage: AccommodationImage = {
@@ -128,6 +134,7 @@ export function MultiImageUpload({ value, onChange, maxImages = 10 }: MultiImage
               aspectRatio={16/9}
               cropWidth={800}
               cropHeight={450}
+              uploadCategory={uploadCategory}
             />
 
             <div className="pt-2">
@@ -156,6 +163,7 @@ export function MultiImageUpload({ value, onChange, maxImages = 10 }: MultiImage
             cropWidth={800}
             cropHeight={450}
             cropDescription="Adicione mais imagens para criar uma galeria completa"
+            uploadCategory={uploadCategory}
           />
         </div>
       )}

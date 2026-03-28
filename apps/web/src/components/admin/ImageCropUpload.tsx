@@ -1,12 +1,13 @@
-
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { Image, Crop, UploadCloud } from 'lucide-react';
+import { Loader2, UploadCloud } from 'lucide-react';
 import ReactCrop, { Crop as CropType } from 'react-image-crop';
+import { apiClient } from '@/lib/api-client';
+import { toast } from 'sonner';
 import 'react-image-crop/dist/ReactCrop.css';
 
 interface ImageCropUploadProps {
@@ -18,7 +19,16 @@ interface ImageCropUploadProps {
   cropWidth?: number;
   cropHeight?: number;
   cropDescription?: string;
+  uploadCategory?: string;
 }
+
+const getInitialCrop = (aspectRatio?: number): CropType => ({
+  unit: '%',
+  width: 90,
+  height: aspectRatio ? 90 / aspectRatio : 90,
+  x: 5,
+  y: 5,
+});
 
 export function ImageCropUpload({
   value,
@@ -29,44 +39,46 @@ export function ImageCropUpload({
   cropWidth,
   cropHeight,
   cropDescription,
+  uploadCategory = 'GENERAL',
 }: ImageCropUploadProps) {
   const [preview, setPreview] = useState<string | null>(value || null);
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
-  const [crop, setCrop] = useState<CropType>({
-    unit: '%',
-    width: 90,
-    height: aspectRatio ? 90 / aspectRatio : 90,
-    x: 5,
-    y: 5
-  });
+  const [crop, setCrop] = useState<CropType>(getInitialCrop(aspectRatio));
   const [completedCrop, setCompletedCrop] = useState<CropType | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const imageRef = React.useRef<HTMLImageElement | null>(null);
 
-  // Check if the value is a lovable-uploads path
-  const isLovableUploadsPath = (path: string | null): boolean => {
-    return !!path && path.startsWith('/lovable-uploads/');
-  };
+  useEffect(() => {
+    setPreview(value || null);
+  }, [value]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setCurrentImage(result);
-        setCropDialogOpen(true);
-      };
-      reader.readAsDataURL(file);
+    if (!file) {
+      return;
     }
-  }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      setCurrentImage(result);
+      setCrop(getInitialCrop(aspectRatio));
+      setCompletedCrop(null);
+      setCropDialogOpen(true);
+    };
+    reader.readAsDataURL(file);
+  }, [aspectRatio]);
+
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     accept: {
       'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
     },
     maxFiles: 1,
+    disabled: isUploading,
+    noClick: true,
+    noKeyboard: true,
   });
 
   const removeImage = () => {
@@ -74,21 +86,23 @@ export function ImageCropUpload({
     onChange('');
   };
 
-  // Generate crop preview
-  const getCroppedImg = useCallback(async () => {
-    if (!imageRef.current || !completedCrop) return;
+  const getCroppedBlob = useCallback(async (): Promise<Blob> => {
+    if (!imageRef.current || !completedCrop) {
+      throw new Error('Selecione uma area valida para recorte.');
+    }
 
     const image = imageRef.current;
     const canvas = document.createElement('canvas');
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
-    
-    // Set output canvas dimensions to match desired crop size if specified
+
     canvas.width = cropWidth || completedCrop.width * scaleX;
     canvas.height = cropHeight || completedCrop.height * scaleY;
-    
+
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      throw new Error('Nao foi possivel processar a imagem.');
+    }
 
     ctx.drawImage(
       image,
@@ -102,77 +116,64 @@ export function ImageCropUpload({
       canvas.height
     );
 
-    // Apply compression - quality factor of 0.85 gives good balance
-    return new Promise<string>((resolve) => {
+    return await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob((blob) => {
         if (!blob) {
-          console.error('Canvas is empty');
+          reject(new Error('Nao foi possivel gerar a imagem recortada.'));
           return;
         }
-        const croppedImageUrl = URL.createObjectURL(blob);
-        resolve(croppedImageUrl);
-      }, 'image/jpeg', 0.85); // Compression quality
+
+        resolve(blob);
+      }, 'image/jpeg', 0.85);
     });
-  }, [completedCrop, cropWidth, cropHeight]);
+  }, [completedCrop, cropHeight, cropWidth]);
+
+  const uploadCroppedImage = useCallback(async (blob: Blob) => {
+    const formData = new FormData();
+    formData.append(
+      'file',
+      new File([blob], `${uploadCategory.toLowerCase()}-${Date.now()}.jpg`, { type: 'image/jpeg' })
+    );
+    formData.append('category', uploadCategory);
+
+    const response = await apiClient.post(`/upload/single/${uploadCategory}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data.data as { url: string };
+  }, [uploadCategory]);
 
   const applyImageCrop = async () => {
     try {
-      const croppedImage = await getCroppedImg();
-      if (croppedImage) {
-        setPreview(croppedImage);
-        onChange(croppedImage);
-      }
-    } catch (e) {
-      console.error('Error applying crop:', e);
+      setIsUploading(true);
+      const croppedBlob = await getCroppedBlob();
+      const uploadedFile = await uploadCroppedImage(croppedBlob);
+
+      setPreview(uploadedFile.url);
+      onChange(uploadedFile.url);
+      toast.success('Imagem enviada com sucesso!');
+      setCropDialogOpen(false);
+      setCurrentImage(null);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || error?.message || 'Erro ao processar imagem');
+    } finally {
+      setIsUploading(false);
     }
-    setCropDialogOpen(false);
   };
 
-  const dimensionsText = cropWidth && cropHeight 
-    ? `Dimensões recomendadas: ${cropWidth}x${cropHeight}px` 
-    : aspectRatio 
-      ? `Proporção: ${aspectRatio}:1` 
-      : 'Sem restrições de dimensão';
+  const dimensionsText = cropWidth && cropHeight
+    ? `Dimensoes recomendadas: ${cropWidth}x${cropHeight}px`
+    : aspectRatio
+      ? `Proporcao: ${aspectRatio}:1`
+      : 'Sem restricoes de dimensao';
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn('space-y-2', className)}>
       {label && <Label className="text-sm font-medium">{label}</Label>}
-      
-      {/* If the value is a lovable-uploads path, show it directly without using preview state */}
-      {isLovableUploadsPath(value) && !preview ? (
-        <div className="relative">
-          <img
-            src={value}
-            alt="Preview"
-            className="max-h-40 mx-auto object-contain p-2 border-2 border-dashed rounded-md"
-          />
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black bg-opacity-50 rounded">
-            <div className="flex space-x-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // For lovable paths, just open the dropzone to allow replacing it
-                  getRootProps().onClick?.(e);
-                }}
-                className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
-              >
-                Substituir
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeImage();
-                }}
-                className="bg-destructive text-destructive-foreground px-2 py-1 rounded text-xs"
-              >
-                Remover
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : preview ? (
+
+      {preview ? (
         <div className="relative">
           <img
             src={preview}
@@ -183,48 +184,82 @@ export function ImageCropUpload({
             <div className="flex space-x-2">
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCropDialogOpen(true);
+                onClick={(event) => {
+                  event.stopPropagation();
                   setCurrentImage(preview);
+                  setCrop(getInitialCrop(aspectRatio));
+                  setCompletedCrop(null);
+                  setCropDialogOpen(true);
                 }}
                 className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
+                disabled={isUploading}
               >
                 Recortar
               </button>
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
+                onClick={(event) => {
+                  event.stopPropagation();
+                  open();
+                }}
+                className="bg-slate-700 text-white px-2 py-1 rounded text-xs"
+                disabled={isUploading}
+              >
+                Substituir
+              </button>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
                   removeImage();
                 }}
                 className="bg-destructive text-destructive-foreground px-2 py-1 rounded text-xs"
+                disabled={isUploading}
               >
                 Remover
               </button>
             </div>
           </div>
+          <input {...getInputProps()} />
         </div>
       ) : (
         <div
           {...getRootProps()}
+          onClick={open}
           className={cn(
-            "border-2 border-dashed rounded-md transition-colors cursor-pointer",
-            isDragActive ? "border-primary bg-muted" : "border-muted-foreground/25 hover:border-muted-foreground/50",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            'border-2 border-dashed rounded-md transition-colors cursor-pointer',
+            isDragActive ? 'border-primary bg-muted' : 'border-muted-foreground/25 hover:border-muted-foreground/50',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            isUploading && 'cursor-wait opacity-70'
           )}
         >
           <input {...getInputProps()} />
           <div className="flex flex-col items-center justify-center p-4 text-muted-foreground text-sm">
-            <UploadCloud className="h-10 w-10 mb-2" />
-            <p className="font-medium">Arraste uma imagem ou clique para selecionar</p>
-            <p className="text-xs">{dimensionsText}</p>
-            {cropDescription && <p className="text-xs text-muted-foreground mt-1">{cropDescription}</p>}
+            {isUploading ? (
+              <>
+                <Loader2 className="h-10 w-10 mb-2 animate-spin" />
+                <p className="font-medium">Enviando imagem...</p>
+              </>
+            ) : (
+              <>
+                <UploadCloud className="h-10 w-10 mb-2" />
+                <p className="font-medium">Arraste uma imagem ou clique para selecionar</p>
+                <p className="text-xs">{dimensionsText}</p>
+                {cropDescription && <p className="text-xs text-muted-foreground mt-1">{cropDescription}</p>}
+              </>
+            )}
           </div>
         </div>
       )}
 
-      <Dialog open={cropDialogOpen} onOpenChange={setCropDialogOpen}>
+      <Dialog
+        open={cropDialogOpen}
+        onOpenChange={(openState) => {
+          if (!isUploading) {
+            setCropDialogOpen(openState);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Recortar Imagem</DialogTitle>
@@ -232,25 +267,36 @@ export function ImageCropUpload({
           <div className="flex flex-col items-center space-y-4">
             <p className="text-sm text-muted-foreground">{dimensionsText}</p>
             {currentImage && (
-              <ReactCrop 
-                crop={crop} 
-                onChange={(c) => setCrop(c)} 
-                onComplete={(c) => setCompletedCrop(c)}
+              <ReactCrop
+                crop={crop}
+                onChange={(nextCrop) => setCrop(nextCrop)}
+                onComplete={(nextCrop) => setCompletedCrop(nextCrop)}
                 aspect={aspectRatio}
                 className="max-h-[60vh] overflow-auto"
               >
-                <img 
-                  ref={imageRef} 
-                  src={currentImage} 
-                  alt="Imagem para recorte" 
+                <img
+                  ref={imageRef}
+                  src={currentImage}
+                  alt="Imagem para recorte"
                   className="max-w-full"
                 />
               </ReactCrop>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCropDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={applyImageCrop}>Aplicar</Button>
+            <Button variant="outline" onClick={() => setCropDialogOpen(false)} disabled={isUploading}>
+              Cancelar
+            </Button>
+            <Button onClick={applyImageCrop} disabled={isUploading}>
+              {isUploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                'Aplicar'
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

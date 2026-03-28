@@ -1,9 +1,26 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/auth.service';
 import { sendSuccess } from '../utils/response';
-import { loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema, changePasswordSchema, refreshTokenSchema } from '@fusehotel/shared';
+import {
+  loginSchema,
+  registerSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  changePasswordSchema,
+  customerStatusSchema,
+} from '@fusehotel/shared';
 
 export class AuthController {
+  static async customerStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = customerStatusSchema.parse(req.body);
+      const result = await AuthService.getCustomerStatus(data);
+      return sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async register(req: Request, res: Response, next: NextFunction) {
     try {
       const data = registerSchema.parse(req.body);

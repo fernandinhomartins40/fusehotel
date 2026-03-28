@@ -29,6 +29,14 @@ export interface CreateAccommodationData {
 
 export interface UpdateAccommodationData extends Partial<CreateAccommodationData> {}
 
+function getAccommodationErrorMessage(error: any, fallback: string) {
+  return (
+    error?.response?.data?.errors?.[0]?.message ||
+    error?.response?.data?.message ||
+    fallback
+  );
+}
+
 export function useCreateAccommodation() {
   const queryClient = useQueryClient();
 
@@ -39,11 +47,13 @@ export function useCreateAccommodation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accommodations'] });
-      toast.success('Acomodação criada com sucesso!');
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['availability'] });
+      toast.success('Acomodacao criada com sucesso!');
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Erro ao criar acomodação';
-      toast.error(message);
+      toast.error(getAccommodationErrorMessage(error, 'Erro ao criar acomodacao'));
     },
   });
 }
@@ -58,11 +68,13 @@ export function useUpdateAccommodation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accommodations'] });
-      toast.success('Acomodação atualizada com sucesso!');
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['availability'] });
+      toast.success('Acomodacao atualizada com sucesso!');
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Erro ao atualizar acomodação';
-      toast.error(message);
+      toast.error(getAccommodationErrorMessage(error, 'Erro ao atualizar acomodacao'));
     },
   });
 }
@@ -76,11 +88,13 @@ export function useDeleteAccommodation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accommodations'] });
-      toast.success('Acomodação removida com sucesso!');
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['availability'] });
+      toast.success('Acomodacao removida com sucesso!');
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Erro ao remover acomodação';
-      toast.error(message);
+      toast.error(getAccommodationErrorMessage(error, 'Erro ao remover acomodacao'));
     },
   });
 }

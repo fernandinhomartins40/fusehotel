@@ -33,10 +33,13 @@ export const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({
     const accommodation = schedule.find(a => a.id === accommodationId);
     if (!accommodation) return [];
 
+    const dateKey = format(date, 'yyyy-MM-dd');
+
     return accommodation.reservations.filter(reservation => {
-      const checkIn = new Date(reservation.checkInDate);
-      const checkOut = new Date(reservation.checkOutDate);
-      return date >= checkIn && date < checkOut;
+      const checkInDate = reservation.checkInDate.slice(0, 10);
+      const checkOutDate = reservation.checkOutDate.slice(0, 10);
+
+      return checkInDate <= dateKey && checkOutDate > dateKey;
     });
   };
 
@@ -60,11 +63,19 @@ export const ScheduleCalendar: React.FC<ScheduleCalendarProps> = ({
       {/* Calendar Grid for each accommodation */}
       {schedule.map(accommodation => (
         <Card key={accommodation.id} className="p-4">
-          <div className="mb-4">
-            <h3 className="font-semibold text-lg">{accommodation.name}</h3>
-            <p className="text-sm text-gray-500">
-              Capacidade: {accommodation.capacity} pessoa{accommodation.capacity !== 1 ? 's' : ''}
-            </p>
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <h3 className="font-semibold text-lg">{accommodation.name}</h3>
+              <p className="text-sm text-gray-500">
+                Capacidade: {accommodation.capacity} pessoa{accommodation.capacity !== 1 ? 's' : ''}
+              </p>
+            </div>
+            <Badge
+              variant={accommodation.isAvailable ? 'outline' : 'secondary'}
+              className={accommodation.isAvailable ? 'border-green-600 text-green-700' : ''}
+            >
+              {accommodation.isAvailable ? 'Disponivel para reserva' : 'Bloqueada na agenda'}
+            </Badge>
           </div>
 
           <div className="grid grid-cols-7 gap-2">

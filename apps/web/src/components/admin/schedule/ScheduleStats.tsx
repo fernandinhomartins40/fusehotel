@@ -53,7 +53,7 @@ export const ScheduleStatsCard: React.FC<ScheduleStatsProps> = ({ stats, isLoadi
       bgColor: 'bg-amber-100',
     },
     {
-      label: 'Acomodações Disponíveis',
+      label: 'Livres no Período',
       value: stats.availableAccommodations,
       icon: DoorOpen,
       color: 'text-teal-600',

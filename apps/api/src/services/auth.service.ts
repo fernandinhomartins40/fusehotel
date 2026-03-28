@@ -7,6 +7,33 @@ import { EmailService } from './email.service';
 import { PasswordResetService } from './password-reset.service';
 
 export class AuthService {
+  static async getCustomerStatus(data: { email?: string; whatsapp?: string }) {
+    const normalizedEmail = data.email?.trim().toLowerCase();
+    const normalizedWhatsApp = data.whatsapp?.replace(/\D/g, '');
+    const orConditions = [
+      normalizedEmail ? { email: normalizedEmail } : null,
+      normalizedWhatsApp ? { whatsapp: normalizedWhatsApp } : null,
+    ].filter(Boolean) as Array<{ email?: string; whatsapp?: string }>;
+
+    const user = orConditions.length
+      ? await prisma.user.findFirst({
+          where: {
+            isActive: true,
+            OR: orConditions,
+          },
+          select: {
+            id: true,
+            isProvisional: true,
+          },
+        })
+      : null;
+
+    return {
+      exists: Boolean(user),
+      isProvisional: user?.isProvisional ?? false,
+    };
+  }
+
   static async register(data: RegisterData): Promise<AuthResponse> {
     const existingUser = await prisma.user.findFirst({
       where: {

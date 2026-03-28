@@ -30,6 +30,7 @@ export interface ScheduleReservation {
   numberOfNights: number;
   numberOfGuests: number;
   guestName: string;
+  guestEmail: string | null;
   guestPhone: string | null;
   guestWhatsApp: string;
   status: ReservationStatus;
@@ -47,6 +48,7 @@ export interface AccommodationSchedule {
   name: string;
   type: AccommodationType;
   capacity: number;
+  isAvailable: boolean;
   reservations: ScheduleReservation[];
   availability: DayAvailability[];
 }

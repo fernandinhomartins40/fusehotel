@@ -58,7 +58,7 @@ export function useUpdateCustomer() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...customerData }: Partial<Customer> & { id: string }) => {
+    mutationFn: async ({ id, ...customerData }: UpdateCustomerData) => {
       const { data } = await apiClient.put(`/users/${id}`, customerData);
       return data.data;
     },
@@ -126,6 +126,10 @@ export interface CreateCustomerData {
   cpf?: string;
   password?: string;
   role?: 'CUSTOMER' | 'ADMIN' | 'MANAGER';
+}
+
+export interface UpdateCustomerData extends CreateCustomerData {
+  id: string;
 }
 
 export function useCreateCustomer() {

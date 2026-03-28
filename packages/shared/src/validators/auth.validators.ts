@@ -27,6 +27,16 @@ export const loginSchema = z.object({
   rememberMe: z.boolean().optional(),
 });
 
+export const customerStatusSchema = z
+  .object({
+    email: emailSchema.optional(),
+    whatsapp: phoneSchema.optional(),
+  })
+  .refine((data) => Boolean(data.email || data.whatsapp), {
+    message: 'Informe email ou WhatsApp para consultar o cadastro',
+    path: ['email'],
+  });
+
 /**
  * Schema de registro
  */

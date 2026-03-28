@@ -8,6 +8,7 @@ export interface BaseSectionConfig {
 // Header Section Configuration
 export interface HeaderConfig extends BaseSectionConfig {
   logo?: string;
+  browserTitle?: string;
   textColor?: string;
   hoverColor?: string;
   buttonText?: string;
@@ -126,6 +127,7 @@ export interface FooterConfig extends BaseSectionConfig {
 // Default configurations for each section
 export const defaultHeaderConfig: HeaderConfig = {
   backgroundColor: '#FFFFFF',
+  browserTitle: 'Águas Claras',
   textColor: '#000000',
   hoverColor: '#0466C8',
   buttonText: 'Reservar Agora',

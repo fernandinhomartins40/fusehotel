@@ -7,6 +7,22 @@ export type ReservationStatus =
   | 'COMPLETED'
   | 'NO_SHOW';
 
+export type PaymentStatus =
+  | 'PENDING'
+  | 'PROCESSING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'REFUNDED'
+  | 'PARTIALLY_REFUNDED';
+
+export type PaymentMethod =
+  | 'CREDIT_CARD'
+  | 'DEBIT_CARD'
+  | 'PIX'
+  | 'BANK_TRANSFER'
+  | 'CASH'
+  | 'VOUCHER';
+
 export interface AccommodationImage {
   id: string;
   url: string;
@@ -32,8 +48,8 @@ export interface ReservationUser {
 export interface Payment {
   id: string;
   amount: number;
-  status: string;
-  method: string;
+  status: PaymentStatus;
+  method: PaymentMethod;
   createdAt: string;
 }
 
@@ -48,9 +64,10 @@ export interface Reservation {
   numberOfGuests: number;
   numberOfExtraBeds: number;
   guestName: string;
-  guestEmail: string;
-  guestPhone: string;
-  guestCpf: string;
+  guestEmail: string | null;
+  guestPhone: string | null;
+  guestWhatsApp: string;
+  guestCpf: string | null;
   pricePerNight: number;
   subtotal: number;
   extraBedsCost: number;
@@ -59,6 +76,8 @@ export interface Reservation {
   discount: number;
   totalAmount: number;
   status: ReservationStatus;
+  paymentStatus: PaymentStatus;
+  paymentMethod: PaymentMethod | null;
   specialRequests: string | null;
   checkedInAt: string | null;
   checkedOutAt: string | null;

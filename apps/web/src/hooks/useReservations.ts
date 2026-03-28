@@ -50,9 +50,13 @@ export function useCreateReservation() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['my-reservations'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-reservations'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['availability'] });
       toast({
         title: 'Reserva criada!',
-        description: `Código: ${data.data.reservationCode}`,
+        description: `Codigo: ${data.data.reservationCode}`,
       });
     },
     onError: (error: any) => {
@@ -76,6 +80,10 @@ export function useCancelReservation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-reservations'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-reservations'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['availability'] });
       toast({
         title: 'Reserva cancelada',
         description: 'Sua reserva foi cancelada com sucesso',

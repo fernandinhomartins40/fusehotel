@@ -1,15 +1,25 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { format, differenceInDays } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Calendar, Loader2, Mail, MessageCircle, Ticket, Users } from 'lucide-react';
+import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { useCreateReservation } from '@/hooks/useReservations';
+import { useSettings } from '@/hooks/useSettings';
+import { apiClient } from '@/lib/api-client';
+import {
+  clearCheckoutDraft,
+  getMatchingCheckoutDraft,
+  saveCheckoutDraft,
+  type CheckoutDraftContext,
+} from '@/lib/checkout-draft';
+import { buildWhatsAppUrl, formatWhatsAppInput } from '@/lib/whatsapp';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { MessageCircle, Calendar, Users, Loader2, Mail } from 'lucide-react';
-import { useCreateReservation } from '@/hooks/useReservations';
-import { useSettings } from '@/hooks/useSettings';
-import { format, differenceInDays } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { toast } from 'sonner';
 
 interface SimpleCheckoutProps {
   accommodationId: string;
@@ -21,6 +31,35 @@ interface SimpleCheckoutProps {
   numberOfGuests: number;
   numberOfExtraBeds: number;
   extraBedPrice: number;
+  context?: CheckoutDraftContext;
+  promotionId?: string;
+  promotionCode?: string | null;
+  promotionTitle?: string;
+  promotionDiscountPercent?: number | null;
+  promotionOriginalPrice?: number | null;
+  promotionDiscountedPrice?: number | null;
+}
+
+function getPromotionDiscountRate(props: Pick<
+  SimpleCheckoutProps,
+  'promotionDiscountPercent' | 'promotionOriginalPrice' | 'promotionDiscountedPrice'
+>) {
+  if (props.promotionDiscountPercent && props.promotionDiscountPercent > 0) {
+    return props.promotionDiscountPercent / 100;
+  }
+
+  if (
+    props.promotionOriginalPrice &&
+    props.promotionDiscountedPrice &&
+    props.promotionOriginalPrice > props.promotionDiscountedPrice
+  ) {
+    return (
+      (props.promotionOriginalPrice - props.promotionDiscountedPrice) /
+      props.promotionOriginalPrice
+    );
+  }
+
+  return 0;
 }
 
 export function SimpleCheckout({
@@ -33,10 +72,21 @@ export function SimpleCheckout({
   numberOfGuests,
   numberOfExtraBeds,
   extraBedPrice,
+  context = 'accommodation',
+  promotionId,
+  promotionCode,
+  promotionTitle,
+  promotionDiscountPercent,
+  promotionOriginalPrice,
+  promotionDiscountedPrice,
 }: SimpleCheckoutProps) {
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
   const [guestWhatsApp, setGuestWhatsApp] = useState('');
+  const [isCheckingCustomer, setIsCheckingCustomer] = useState(false);
+  const hydratedFromDraftRef = useRef(false);
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const createReservation = useCreateReservation();
   const { data: settings } = useSettings();
 
@@ -45,60 +95,133 @@ export function SimpleCheckout({
   const extraBedsCost = numberOfExtraBeds * extraBedPrice * numberOfNights;
   const serviceFee = subtotal * 0.05;
   const taxes = subtotal * 0.02;
-  const totalAmount = subtotal + extraBedsCost + serviceFee + taxes;
+  const promotionDiscount = subtotal * getPromotionDiscountRate({
+    promotionDiscountPercent,
+    promotionOriginalPrice,
+    promotionDiscountedPrice,
+  });
+  const totalAmount = Math.max(subtotal + extraBedsCost + serviceFee + taxes - promotionDiscount, 0);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
+  useEffect(() => {
+    if (hydratedFromDraftRef.current) {
+      return;
+    }
+
+    const draft = getMatchingCheckoutDraft(location.pathname);
+
+    if (!draft) {
+      return;
+    }
+
+    const sameAccommodation = draft.accommodationId === accommodationId;
+    const samePromotion = !promotionId || draft.promotionId === promotionId;
+
+    if (!sameAccommodation || !samePromotion) {
+      return;
+    }
+
+    setGuestName(draft.guestName);
+    setGuestEmail(draft.guestEmail);
+    setGuestWhatsApp(draft.guestWhatsApp);
+    hydratedFromDraftRef.current = true;
+
+    if (location.search.includes('resumeCheckout=1')) {
+      toast.success('Checkout retomado', {
+        description: 'Seus dados foram restaurados. Agora finalize a solicitacao da reserva.',
+      });
+    }
+  }, [accommodationId, location.pathname, location.search, promotionId]);
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
     }).format(value);
-  };
-
-  const formatWhatsApp = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length <= 11) {
-      return numbers
-        .replace(/(\d{2})(\d)/, '($1) $2')
-        .replace(/(\d{5})(\d)/, '$1-$2')
-        .substring(0, 15);
-    }
-    return value.substring(0, 15);
-  };
 
   const handleWhatsAppChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatWhatsApp(e.target.value);
-    setGuestWhatsApp(formatted);
+    setGuestWhatsApp(formatWhatsAppInput(e.target.value));
+  };
+
+  const redirectToLogin = (isProvisional: boolean) => {
+    saveCheckoutDraft({
+      context,
+      routePath: location.pathname,
+      accommodationId,
+      accommodationName,
+      accommodationType,
+      pricePerNight,
+      checkInDate: checkInDate.toISOString(),
+      checkOutDate: checkOutDate.toISOString(),
+      numberOfGuests,
+      numberOfExtraBeds,
+      extraBedPrice,
+      guestName,
+      guestEmail,
+      guestWhatsApp,
+      promotionId,
+      promotionCode: promotionCode || undefined,
+      promotionTitle,
+      promotionDiscountPercent,
+      promotionOriginalPrice,
+      promotionDiscountedPrice,
+    });
+
+    const checkoutRedirect = `${location.pathname}?resumeCheckout=1`;
+
+    toast('Cliente ja cadastrado', {
+      description: isProvisional
+        ? 'Faca login com o WhatsApp e use as 3 primeiras letras do nome como senha inicial.'
+        : 'Faca login para concluir o checkout sem perder os dados informados.',
+    });
+
+    window.location.href = `/area-do-cliente?redirectTo=${encodeURIComponent(checkoutRedirect)}`;
   };
 
   const handleCheckout = async () => {
-    if (!guestName || guestName.length < 3) {
-      toast.error('Por favor, preencha seu nome completo');
+    if (!guestName || guestName.trim().length < 3) {
+      toast.error('Preencha seu nome completo');
       return;
     }
 
     if (!guestEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
-      toast.error('Por favor, preencha um email válido');
+      toast.error('Preencha um email valido');
       return;
     }
 
     if (!guestWhatsApp || guestWhatsApp.replace(/\D/g, '').length < 10) {
-      toast.error('Por favor, preencha um WhatsApp válido');
+      toast.error('Preencha um WhatsApp valido');
       return;
     }
 
     try {
+      if (!isAuthenticated) {
+        setIsCheckingCustomer(true);
+
+        const { data } = await apiClient.post('/auth/customer-status', {
+          email: guestEmail.trim().toLowerCase(),
+          whatsapp: guestWhatsApp,
+        });
+
+        if (data.data?.exists) {
+          redirectToLogin(Boolean(data.data?.isProvisional));
+          return;
+        }
+      }
+
       const reservation = await createReservation.mutateAsync({
         accommodationId,
         checkInDate: checkInDate.toISOString(),
         checkOutDate: checkOutDate.toISOString(),
         numberOfGuests,
         numberOfExtraBeds,
-        guestName,
-        guestEmail,
+        guestName: guestName.trim(),
+        guestEmail: guestEmail.trim().toLowerCase(),
         guestWhatsApp: guestWhatsApp.replace(/\D/g, ''),
+        promotionId,
+        promotionCode: promotionCode || undefined,
       });
 
-      const message = `*NOVA RESERVA - FUSEHOTEL*
+      const message = `*NOVA SOLICITACAO DE RESERVA*
 
 *Codigo:* ${reservation.data.reservationCode}
 
@@ -110,34 +233,36 @@ WhatsApp: ${guestWhatsApp}
 *DETALHES DA ACOMODACAO*
 Acomodacao: ${accommodationName}
 Tipo: ${accommodationType}
-
+${promotionTitle ? `Promocao/Pacote: ${promotionTitle}\n` : ''}${promotionCode ? `Codigo promocional: ${promotionCode}\n` : ''}
 *PERIODO DA ESTADIA*
 Check-in: ${format(checkInDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
 Check-out: ${format(checkOutDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
 Diarias: ${numberOfNights} ${numberOfNights === 1 ? 'noite' : 'noites'}
 Hospedes: ${numberOfGuests} ${numberOfGuests === 1 ? 'pessoa' : 'pessoas'}
-${numberOfExtraBeds > 0 ? `Camas extras: ${numberOfExtraBeds}\n` : ''}*VALOR TOTAL: ${formatCurrency(totalAmount)}*
+${numberOfExtraBeds > 0 ? `Camas extras: ${numberOfExtraBeds}\n` : ''}${promotionDiscount > 0 ? `Desconto aplicado: ${formatCurrency(promotionDiscount)}\n` : ''}*VALOR TOTAL: ${formatCurrency(totalAmount)}*
 
-Gostaria de confirmar esta reserva!
-      `.trim();
+Solicitacao enviada. Aguardo o aceite do hotel.`.trim();
 
-      const hotelWhatsApp = settings?.hotelWhatsApp?.replace(/\D/g, '') || '5511999999999';
-      const whatsappUrl = `https://wa.me/${hotelWhatsApp}?text=${encodeURIComponent(message)}`;
+      const hotelWhatsApp = settings?.hotelWhatsApp || '5511999999999';
+      window.open(buildWhatsAppUrl(hotelWhatsApp, message), '_blank');
 
-      window.open(whatsappUrl, '_blank');
-
-      toast.success('Reserva criada! Você será redirecionado para o WhatsApp.', {
-        description: `Código da reserva: ${reservation.data.reservationCode}. O acesso à área do cliente será preparado para ${guestEmail}.`,
-        duration: 5000,
-      });
-
+      clearCheckoutDraft();
       setGuestName('');
       setGuestEmail('');
       setGuestWhatsApp('');
+
+      toast.success('Reserva criada com sucesso', {
+        description: isAuthenticated
+          ? `Codigo da reserva: ${reservation.data.reservationCode}. O resumo foi aberto no WhatsApp do hotel.`
+          : 'Cadastro provisiorio criado. Para acessar depois, use o WhatsApp como usuario e as 3 primeiras letras do nome como senha inicial.',
+        duration: 6000,
+      });
     } catch (error: any) {
       toast.error('Erro ao criar reserva', {
         description: error.response?.data?.message || 'Tente novamente mais tarde',
       });
+    } finally {
+      setIsCheckingCustomer(false);
     }
   };
 
@@ -146,7 +271,7 @@ Gostaria de confirmar esta reserva!
       <CardHeader>
         <CardTitle className="text-2xl">Finalizar Reserva</CardTitle>
         <p className="text-sm text-gray-600">
-          Preencha seus dados e confirme via WhatsApp
+          Preencha seus dados. Se ja existir cadastro, o checkout sera retomado apos o login.
         </p>
       </CardHeader>
 
@@ -155,19 +280,27 @@ Gostaria de confirmar esta reserva!
           <h3 className="font-semibold text-lg mb-3">Resumo da Reserva</h3>
 
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Acomodação:</span>
-              <span className="font-medium">{accommodationName}</span>
+            <div className="flex justify-between gap-4">
+              <span className="text-gray-600">Acomodacao:</span>
+              <span className="font-medium text-right">{accommodationName}</span>
             </div>
+
+            {promotionTitle && (
+              <div className="flex justify-between gap-4">
+                <span className="text-gray-600 flex items-center gap-1">
+                  <Ticket size={14} />
+                  Pacote/Promocao:
+                </span>
+                <span className="font-medium text-right">{promotionTitle}</span>
+              </div>
+            )}
 
             <div className="flex justify-between">
               <span className="text-gray-600 flex items-center gap-1">
                 <Calendar size={14} />
                 Check-in:
               </span>
-              <span className="font-medium">
-                {format(checkInDate, 'dd/MM/yyyy')}
-              </span>
+              <span className="font-medium">{format(checkInDate, 'dd/MM/yyyy')}</span>
             </div>
 
             <div className="flex justify-between">
@@ -175,15 +308,13 @@ Gostaria de confirmar esta reserva!
                 <Calendar size={14} />
                 Check-out:
               </span>
-              <span className="font-medium">
-                {format(checkOutDate, 'dd/MM/yyyy')}
-              </span>
+              <span className="font-medium">{format(checkOutDate, 'dd/MM/yyyy')}</span>
             </div>
 
             <div className="flex justify-between">
               <span className="text-gray-600 flex items-center gap-1">
                 <Users size={14} />
-                Hóspedes:
+                Hospedes:
               </span>
               <span className="font-medium">{numberOfGuests}</span>
             </div>
@@ -200,7 +331,10 @@ Gostaria de confirmar esta reserva!
 
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span>{numberOfNights} {numberOfNights === 1 ? 'diária' : 'diárias'} × {formatCurrency(pricePerNight)}</span>
+              <span>
+                {numberOfNights} {numberOfNights === 1 ? 'diaria' : 'diarias'} x{' '}
+                {formatCurrency(pricePerNight)}
+              </span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
 
@@ -212,7 +346,7 @@ Gostaria de confirmar esta reserva!
             )}
 
             <div className="flex justify-between text-gray-600">
-              <span>Taxa de serviço (5%)</span>
+              <span>Taxa de servico (5%)</span>
               <span>{formatCurrency(serviceFee)}</span>
             </div>
 
@@ -220,6 +354,13 @@ Gostaria de confirmar esta reserva!
               <span>Impostos (2%)</span>
               <span>{formatCurrency(taxes)}</span>
             </div>
+
+            {promotionDiscount > 0 && (
+              <div className="flex justify-between text-green-700">
+                <span>Desconto promocional</span>
+                <span>- {formatCurrency(promotionDiscount)}</span>
+              </div>
+            )}
           </div>
 
           <Separator />
@@ -237,7 +378,7 @@ Gostaria de confirmar esta reserva!
               id="guestName"
               value={guestName}
               onChange={(e) => setGuestName(e.target.value)}
-              placeholder="João da Silva"
+              placeholder="Joao da Silva"
               className="mt-1"
             />
           </div>
@@ -256,7 +397,7 @@ Gostaria de confirmar esta reserva!
               className="mt-1"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Usaremos este email para preparar seu acesso à área do cliente.
+              Se este email ou WhatsApp ja possuir cadastro, voce sera direcionado para login.
             </p>
           </div>
 
@@ -271,7 +412,7 @@ Gostaria de confirmar esta reserva!
               className="mt-1"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Usaremos este número para enviar a confirmação
+              O resumo da solicitacao sera enviado para o WhatsApp do hotel e o aceite sera retornado para este numero.
             </p>
           </div>
         </div>
@@ -279,12 +420,18 @@ Gostaria de confirmar esta reserva!
         <Button
           onClick={handleCheckout}
           className="w-full bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2 h-12"
-          disabled={createReservation.isPending || !guestName || !guestEmail || !guestWhatsApp}
+          disabled={
+            createReservation.isPending ||
+            isCheckingCustomer ||
+            !guestName ||
+            !guestEmail ||
+            !guestWhatsApp
+          }
         >
-          {createReservation.isPending ? (
+          {createReservation.isPending || isCheckingCustomer ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin" />
-              Processando...
+              {isCheckingCustomer ? 'Validando cadastro...' : 'Processando...'}
             </>
           ) : (
             <>
@@ -295,8 +442,7 @@ Gostaria de confirmar esta reserva!
         </Button>
 
         <p className="text-xs text-gray-500 text-center">
-          Ao clicar, você será redirecionado para o WhatsApp para confirmar sua reserva com o hotel.
-          A reserva será criada com status pendente até a confirmação.
+          Ao concluir, a reserva sera criada com status pendente e a acomodacao ficara bloqueada na agenda ate o aceite do hotel.
         </p>
       </CardContent>
     </Card>

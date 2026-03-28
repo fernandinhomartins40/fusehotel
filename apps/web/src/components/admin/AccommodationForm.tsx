@@ -21,7 +21,7 @@ import { accommodationSchema, AccommodationFormData } from '@/lib/validations/ac
 import { AmenitiesSelector } from './AmenitiesSelector';
 import { MultiImageUpload } from './MultiImageUpload';
 import { Accommodation } from '@/types/accommodation';
-import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 interface AccommodationFormProps {
   accommodation?: Accommodation | null;
@@ -37,34 +37,59 @@ const accommodationTypes = [
   { value: 'APARTMENT', label: 'Apartamento' },
 ] as const;
 
+const getDefaultValues = (accommodation?: Accommodation | null): AccommodationFormData => ({
+  name: accommodation?.name || '',
+  type: accommodation?.type || 'SUITE',
+  capacity: accommodation?.capacity || 2,
+  pricePerNight: accommodation?.pricePerNight || 0,
+  description: accommodation?.description || '',
+  shortDescription: accommodation?.shortDescription || '',
+  images: accommodation?.images || [],
+  amenityIds: accommodation?.amenities?.map((item) => item.amenity.id) || [],
+  floor: accommodation?.floor || undefined,
+  view: accommodation?.view || '',
+  area: accommodation?.area || undefined,
+  checkInTime: accommodation?.checkInTime || '15:00',
+  checkOutTime: accommodation?.checkOutTime || '11:00',
+  extraBeds: accommodation?.extraBeds || 0,
+  maxExtraBeds: accommodation?.maxExtraBeds || 0,
+  extraBedPrice: accommodation?.extraBedPrice || 0,
+  cancellationPolicy: accommodation?.cancellationPolicy || '',
+  metaTitle: accommodation?.metaTitle || '',
+  metaDescription: accommodation?.metaDescription || '',
+  keywords: accommodation?.keywords || [],
+  isAvailable: accommodation?.isAvailable !== undefined ? accommodation.isAvailable : true,
+  isFeatured: accommodation?.isFeatured || false,
+});
+
+const getFirstErrorMessage = (value: unknown): string | undefined => {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  if ('message' in value && typeof value.message === 'string') {
+    return value.message;
+  }
+
+  for (const nestedValue of Object.values(value)) {
+    const message = getFirstErrorMessage(nestedValue);
+    if (message) {
+      return message;
+    }
+  }
+
+  return undefined;
+};
+
 export function AccommodationForm({ accommodation, onSubmit, isLoading }: AccommodationFormProps) {
   const form = useForm<AccommodationFormData>({
     resolver: zodResolver(accommodationSchema),
-    defaultValues: {
-      name: accommodation?.name || '',
-      type: accommodation?.type || 'SUITE',
-      capacity: accommodation?.capacity || 2,
-      pricePerNight: accommodation?.pricePerNight || 0,
-      description: accommodation?.description || '',
-      shortDescription: accommodation?.shortDescription || '',
-      images: accommodation?.images || [],
-      amenityIds: accommodation?.amenities?.map(a => a.amenity.id) || [],
-      floor: accommodation?.floor || undefined,
-      view: accommodation?.view || '',
-      area: accommodation?.area || undefined,
-      checkInTime: accommodation?.checkInTime || '15:00',
-      checkOutTime: accommodation?.checkOutTime || '11:00',
-      extraBeds: accommodation?.extraBeds || 0,
-      maxExtraBeds: accommodation?.maxExtraBeds || 0,
-      extraBedPrice: accommodation?.extraBedPrice || 0,
-      cancellationPolicy: accommodation?.cancellationPolicy || '',
-      metaTitle: accommodation?.metaTitle || '',
-      metaDescription: accommodation?.metaDescription || '',
-      keywords: accommodation?.keywords || [],
-      isAvailable: accommodation?.isAvailable !== undefined ? accommodation.isAvailable : true,
-      isFeatured: accommodation?.isFeatured || false,
-    }
+    defaultValues: getDefaultValues(accommodation),
   });
+
+  React.useEffect(() => {
+    form.reset(getDefaultValues(accommodation));
+  }, [accommodation, form]);
 
   const watchedImages = form.watch('images');
   const watchedAmenityIds = form.watch('amenityIds');
@@ -73,9 +98,17 @@ export function AccommodationForm({ accommodation, onSubmit, isLoading }: Accomm
     onSubmit(data);
   };
 
+  const handleFormError = () => {
+    const message =
+      getFirstErrorMessage(form.formState.errors) ||
+      'Revise os campos obrigatorios antes de salvar.';
+
+    toast.error(message);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleFormSubmit, handleFormError)} className="space-y-6">
         <Tabs defaultValue="basic" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="basic">Básico</TabsTrigger>
@@ -473,6 +506,7 @@ export function AccommodationForm({ accommodation, onSubmit, isLoading }: Accomm
                           value={field.value}
                           onChange={field.onChange}
                           maxImages={10}
+                          uploadCategory="ACCOMMODATION"
                         />
                       </FormControl>
                       <FormMessage />

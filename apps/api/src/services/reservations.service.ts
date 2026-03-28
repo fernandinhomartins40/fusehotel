@@ -1,18 +1,29 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, ReservationStatus } from '@prisma/client';
 import { differenceInDays } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
+import { CreateReservationDto, ReservationFilters } from '@fusehotel/shared';
 import { prisma } from '../config/database';
-import { generateSecurePassword, hashPassword } from '../utils/crypto';
+import { hashPassword } from '../utils/crypto';
 import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors';
 import { logger } from '../utils/logger';
-import { CreateReservationDto, ReservationFilters } from '@fusehotel/shared';
 import { EmailService } from './email.service';
 import { PasswordResetService } from './password-reset.service';
+import { scheduleService } from './schedule.service';
 
 interface RequestUser {
   id: string;
   role: string;
 }
+
+const RESERVATION_STATUS_TRANSITIONS: Record<ReservationStatus, ReservationStatus[]> = {
+  PENDING: ['CONFIRMED'],
+  CONFIRMED: ['CHECKED_IN', 'NO_SHOW'],
+  CHECKED_IN: ['CHECKED_OUT'],
+  CHECKED_OUT: ['COMPLETED'],
+  CANCELLED: [],
+  COMPLETED: [],
+  NO_SHOW: [],
+};
 
 export class ReservationService {
   static async list(filters: ReservationFilters) {
@@ -63,7 +74,7 @@ export class ReservationService {
     });
 
     if (!reservation) {
-      throw new NotFoundError('Reserva não encontrada');
+      throw new NotFoundError('Reserva nao encontrada');
     }
 
     return reservation;
@@ -85,7 +96,7 @@ export class ReservationService {
     });
 
     if (!reservation) {
-      throw new NotFoundError('Reserva não encontrada');
+      throw new NotFoundError('Reserva nao encontrada');
     }
 
     return reservation;
@@ -97,41 +108,57 @@ export class ReservationService {
     });
 
     if (!accommodation || !accommodation.isAvailable) {
-      throw new BadRequestError('Acomodação não disponível');
+      throw new BadRequestError('Acomodacao nao disponivel');
     }
 
-    const numberOfNights = differenceInDays(
-      new Date(data.checkOutDate),
-      new Date(data.checkInDate)
-    );
+    const checkInDate = new Date(data.checkInDate);
+    const checkOutDate = new Date(data.checkOutDate);
+    const numberOfNights = differenceInDays(checkOutDate, checkInDate);
 
     if (numberOfNights <= 0) {
       throw new BadRequestError('Data de check-out deve ser posterior ao check-in');
     }
 
+    const isAvailableForStay = await scheduleService.checkAvailability(
+      data.accommodationId,
+      data.checkInDate,
+      data.checkOutDate
+    );
+
+    if (!isAvailableForStay) {
+      throw new BadRequestError('Ja existe uma reserva para esta acomodacao no periodo selecionado');
+    }
+
+    const promotion = await this.resolvePromotionForReservation(data, {
+      checkInDate,
+      checkOutDate,
+    });
+
     const subtotal = Number(accommodation.pricePerNight) * numberOfNights;
-    const extraBedsCost = (data.numberOfExtraBeds || 0) * Number(accommodation.extraBedPrice) * numberOfNights;
+    const extraBedsCost =
+      (data.numberOfExtraBeds || 0) * Number(accommodation.extraBedPrice) * numberOfNights;
     const serviceFee = subtotal * 0.05;
     const taxes = subtotal * 0.02;
-    const totalAmount = subtotal + extraBedsCost + serviceFee + taxes;
+    const discount = promotion ? this.calculatePromotionDiscount(promotion, subtotal) : 0;
+    const totalAmount = Math.max(subtotal + extraBedsCost + serviceFee + taxes - discount, 0);
 
     let finalUserId = userId;
+    const guestWhatsApp = data.guestWhatsApp.replace(/\D/g, '');
+    const guestEmail = data.guestEmail?.trim().toLowerCase();
 
-    if (!userId && data.guestWhatsApp) {
-      const whatsapp = data.guestWhatsApp.replace(/\D/g, '');
-
+    if (!userId) {
       let user = await prisma.user.findUnique({
-        where: { whatsapp },
+        where: { whatsapp: guestWhatsApp },
       });
 
       if (!user) {
-        const hashedPassword = await hashPassword(generateSecurePassword());
+        const hashedPassword = await hashPassword(this.buildProvisionalPassword(data.guestName));
 
         user = await prisma.user.create({
           data: {
             name: data.guestName,
-            whatsapp,
-            email: data.guestEmail || `${whatsapp}@provisional.fusehotel.com`,
+            whatsapp: guestWhatsApp,
+            email: guestEmail || `${guestWhatsApp}@provisional.fusehotel.com`,
             password: hashedPassword,
             phone: data.guestPhone,
             cpf: data.guestCpf,
@@ -141,16 +168,16 @@ export class ReservationService {
           },
         });
 
-        if (data.guestEmail && EmailService.isConfigured()) {
+        if (guestEmail && EmailService.isConfigured()) {
           try {
             const token = await PasswordResetService.issueToken(user.id);
             await EmailService.sendPortalAccessEmail({
-              to: data.guestEmail,
+              to: guestEmail,
               name: data.guestName,
               token,
             });
           } catch (error) {
-            logger.warn(`Falha ao enviar acesso inicial para ${data.guestEmail}: ${String(error)}`);
+            logger.warn(`Falha ao enviar acesso inicial para ${guestEmail}: ${String(error)}`);
           }
         }
       }
@@ -163,14 +190,14 @@ export class ReservationService {
         reservationCode: `FH-${Date.now()}-${uuidv4().substring(0, 8).toUpperCase()}`,
         accommodationId: data.accommodationId,
         userId: finalUserId,
-        checkInDate: new Date(data.checkInDate),
-        checkOutDate: new Date(data.checkOutDate),
+        checkInDate,
+        checkOutDate,
         numberOfNights,
         numberOfGuests: data.numberOfGuests,
         numberOfExtraBeds: data.numberOfExtraBeds || 0,
         guestName: data.guestName,
-        guestWhatsApp: data.guestWhatsApp,
-        guestEmail: data.guestEmail,
+        guestWhatsApp,
+        guestEmail,
         guestPhone: data.guestPhone,
         guestCpf: data.guestCpf,
         pricePerNight: accommodation.pricePerNight,
@@ -178,9 +205,9 @@ export class ReservationService {
         extraBedsCost,
         serviceFee,
         taxes,
-        discount: 0,
+        discount,
         totalAmount,
-        specialRequests: data.specialRequests,
+        specialRequests: this.buildReservationSpecialRequests(data.specialRequests, promotion),
       },
       include: {
         accommodation: true,
@@ -193,7 +220,11 @@ export class ReservationService {
     this.ensureReservationAccess(reservation.userId, requester);
 
     if (reservation.status === 'CANCELLED') {
-      throw new BadRequestError('Reserva já cancelada');
+      throw new BadRequestError('Reserva ja cancelada');
+    }
+
+    if (reservation.status !== 'PENDING' && reservation.status !== 'CONFIRMED') {
+      throw new BadRequestError('Somente reservas pendentes ou confirmadas podem ser rejeitadas');
     }
 
     return prisma.reservation.update({
@@ -208,16 +239,17 @@ export class ReservationService {
 
   static async updateStatus(id: string, status: string) {
     const reservation = await this.getById(id);
-    const updateData: Record<string, unknown> = { status };
+    const nextStatus = status as ReservationStatus;
 
-    if (status === 'CHECKED_IN' && !reservation.checkedInAt) {
+    this.assertValidStatusTransition(reservation.status as ReservationStatus, nextStatus);
+
+    const updateData: Record<string, unknown> = { status: nextStatus };
+
+    if (nextStatus === 'CHECKED_IN' && !reservation.checkedInAt) {
       updateData.checkedInAt = new Date();
     }
-    if (status === 'CHECKED_OUT' && !reservation.checkedOutAt) {
+    if (nextStatus === 'CHECKED_OUT' && !reservation.checkedOutAt) {
       updateData.checkedOutAt = new Date();
-    }
-    if (status === 'CANCELLED' && !reservation.cancelledAt) {
-      updateData.cancelledAt = new Date();
     }
 
     return prisma.reservation.update({
@@ -240,7 +272,7 @@ export class ReservationService {
     const reservation = await this.getById(id);
 
     if (reservation.status === 'CANCELLED' || reservation.status === 'CHECKED_OUT') {
-      throw new BadRequestError('Não é possível editar uma reserva cancelada ou finalizada');
+      throw new BadRequestError('Nao e possivel editar uma reserva cancelada ou finalizada');
     }
 
     const updateData: Record<string, unknown> = {};
@@ -265,8 +297,26 @@ export class ReservationService {
       });
 
       if (accommodation) {
+        if (!accommodation.isAvailable) {
+          throw new BadRequestError('Acomodacao nao disponivel para alteracao de agenda');
+        }
+
+        const isAvailableForUpdate = await scheduleService.checkAvailability(
+          reservation.accommodationId,
+          checkIn,
+          checkOut,
+          reservation.id
+        );
+
+        if (!isAvailableForUpdate) {
+          throw new BadRequestError('Ja existe uma reserva para esta acomodacao no periodo selecionado');
+        }
+
         const subtotal = Number(accommodation.pricePerNight) * numberOfNights;
-        const extraBedsCost = (Number(updateData.numberOfExtraBeds) || reservation.numberOfExtraBeds) * Number(accommodation.extraBedPrice) * numberOfNights;
+        const extraBedsCost =
+          (Number(updateData.numberOfExtraBeds) || reservation.numberOfExtraBeds) *
+          Number(accommodation.extraBedPrice) *
+          numberOfNights;
         const serviceFee = subtotal * 0.05;
         const taxes = subtotal * 0.02;
         const totalAmount = subtotal + extraBedsCost + serviceFee + taxes;
@@ -295,7 +345,127 @@ export class ReservationService {
     }
 
     if (!reservationUserId || reservationUserId !== requester.id) {
-      throw new ForbiddenError('Você não tem permissão para acessar esta reserva');
+      throw new ForbiddenError('Voce nao tem permissao para acessar esta reserva');
+    }
+  }
+
+  private static async resolvePromotionForReservation(
+    data: CreateReservationDto,
+    stay: { checkInDate: Date; checkOutDate: Date }
+  ) {
+    if (!data.promotionId && !data.promotionCode) {
+      return null;
+    }
+
+    const promotion = await prisma.promotion.findFirst({
+      where: {
+        OR: [
+          data.promotionId ? { id: data.promotionId } : null,
+          data.promotionCode ? { promotionCode: data.promotionCode } : null,
+        ].filter(Boolean) as Prisma.PromotionWhereInput[],
+      },
+    });
+
+    if (!promotion) {
+      throw new BadRequestError('Promocao ou pacote promocional nao encontrado');
+    }
+
+    if (!promotion.isActive) {
+      throw new BadRequestError('Esta promocao nao esta ativa para reservas');
+    }
+
+    const promotionStart = promotion.startDate.toISOString().slice(0, 10);
+    const promotionEnd = promotion.endDate.toISOString().slice(0, 10);
+    const stayCheckIn = stay.checkInDate.toISOString().slice(0, 10);
+    const stayCheckOut = stay.checkOutDate.toISOString().slice(0, 10);
+
+    if (stayCheckIn < promotionStart || stayCheckOut > promotionEnd) {
+      throw new BadRequestError('As datas selecionadas estao fora da vigencia da promocao');
+    }
+
+    if (
+      promotion.maxRedemptions !== null &&
+      promotion.currentRedemptions >= promotion.maxRedemptions
+    ) {
+      throw new BadRequestError('Esta promocao atingiu o limite de utilizacoes');
+    }
+
+    return promotion;
+  }
+
+  private static calculatePromotionDiscount(
+    promotion: {
+      discountPercent: Prisma.Decimal | null;
+      originalPrice: Prisma.Decimal | null;
+      discountedPrice: Prisma.Decimal | null;
+    },
+    subtotal: number
+  ) {
+    const explicitPercent = promotion.discountPercent ? Number(promotion.discountPercent) / 100 : 0;
+
+    if (explicitPercent > 0) {
+      return subtotal * explicitPercent;
+    }
+
+    if (promotion.originalPrice && promotion.discountedPrice) {
+      const original = Number(promotion.originalPrice);
+      const discounted = Number(promotion.discountedPrice);
+
+      if (original > discounted && original > 0) {
+        return subtotal * ((original - discounted) / original);
+      }
+    }
+
+    return 0;
+  }
+
+  private static buildReservationSpecialRequests(
+    originalSpecialRequests: string | undefined,
+    promotion: {
+      title: string;
+      promotionCode: string | null;
+      type: string;
+    } | null
+  ) {
+    const notes: string[] = [];
+
+    if (promotion) {
+      notes.push(
+        `Origem do checkout: ${promotion.type === 'PACKAGE' ? 'Pacote' : 'Promocao'} "${promotion.title}"${promotion.promotionCode ? ` (codigo: ${promotion.promotionCode})` : ''}.`
+      );
+    }
+
+    if (originalSpecialRequests?.trim()) {
+      notes.push(originalSpecialRequests.trim());
+    }
+
+    return notes.length ? notes.join('\n\n') : undefined;
+  }
+
+  private static buildProvisionalPassword(name: string) {
+    const normalized = name
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .toLowerCase();
+
+    return normalized.slice(0, 3) || 'fus';
+  }
+
+  private static assertValidStatusTransition(
+    currentStatus: ReservationStatus,
+    nextStatus: ReservationStatus
+  ) {
+    if (currentStatus === nextStatus) {
+      return;
+    }
+
+    const allowedTransitions = RESERVATION_STATUS_TRANSITIONS[currentStatus] || [];
+
+    if (!allowedTransitions.includes(nextStatus)) {
+      throw new BadRequestError(
+        `Nao e possivel alterar a reserva de ${currentStatus} para ${nextStatus}`
+      );
     }
   }
 }
