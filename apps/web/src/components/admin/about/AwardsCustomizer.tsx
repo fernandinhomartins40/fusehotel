@@ -1,14 +1,40 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
+
+import { ColorPickerField } from '@/components/admin/ColorPickerField';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+import {
+  AwardIcon,
+  awardIconOptions,
+  DEFAULT_AWARD_ICON,
+  resolveAwardIconValue,
+} from '@/lib/award-icons';
+import {
+  useLandingSettings,
+  useUpdateLandingSettings,
+  useAwardsAdmin,
+  useCreateAward,
+  useUpdateAward,
+  useDeleteAward,
+} from '@/hooks/useLanding';
+import {
+  AwardsSectionConfig,
+  defaultAwardsSectionConfig,
+  Award,
+} from '@/types/about-config';
 import { toast } from 'sonner';
-import { useLandingSettings, useUpdateLandingSettings, useAwardsAdmin, useCreateAward, useUpdateAward, useDeleteAward } from '@/hooks/useLanding';
-import { AwardsSectionConfig, defaultAwardsSectionConfig, Award } from '@/types/about-config';
-import { ColorPickerField } from '@/components/admin/ColorPickerField';
-import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
+
+const emptyAwardForm = {
+  title: '',
+  description: '',
+  icon: DEFAULT_AWARD_ICON,
+  isActive: true,
+};
 
 export const AwardsCustomizer = () => {
   const { data: settingsData, isLoading } = useLandingSettings('about-awards');
@@ -29,25 +55,24 @@ export const AwardsCustomizer = () => {
   });
 
   const awardForm = useForm<Partial<Award>>({
-    defaultValues: {
-      title: '',
-      description: '',
-      icon: '🏆',
-      isActive: true,
-    },
+    defaultValues: emptyAwardForm,
   });
 
   const watchedValues = form.watch();
+  const selectedIconValue = resolveAwardIconValue(awardForm.watch('icon')) ?? DEFAULT_AWARD_ICON;
+  const selectedIconOption =
+    awardIconOptions.find((option) => option.value === selectedIconValue) ?? awardIconOptions[0];
+  const SelectedIcon = selectedIconOption.icon;
 
   const onSubmit = (data: AwardsSectionConfig) => {
     updateSettings.mutate(
       { section: 'about-awards', config: data },
       {
         onSuccess: () => {
-          toast.success('Configurações de Prêmios salvas com sucesso!');
+          toast.success('Configuracoes de premios salvas com sucesso!');
         },
         onError: (error: any) => {
-          toast.error(error?.response?.data?.message || 'Erro ao salvar configurações');
+          toast.error(error?.response?.data?.message || 'Erro ao salvar configuracoes');
         },
       }
     );
@@ -55,49 +80,56 @@ export const AwardsCustomizer = () => {
 
   const handleReset = () => {
     form.reset(defaultAwardsSectionConfig);
-    toast.success('Configurações resetadas para o padrão');
+    toast.success('Configuracoes resetadas para o padrao');
   };
 
   const handleAddAward = () => {
     setIsAddingNew(true);
     setEditingAward(null);
-    awardForm.reset({
-      title: '',
-      description: '',
-      icon: '🏆',
-      isActive: true,
-    });
+    awardForm.reset(emptyAwardForm);
   };
 
   const handleEditAward = (award: Award) => {
     setEditingAward(award);
     setIsAddingNew(false);
-    awardForm.reset(award);
+    awardForm.reset({
+      ...award,
+      icon: resolveAwardIconValue(award.icon) ?? DEFAULT_AWARD_ICON,
+    });
   };
 
   const handleSaveAward = async (data: Partial<Award>) => {
+    const payload = {
+      ...data,
+      icon: resolveAwardIconValue(data.icon) ?? DEFAULT_AWARD_ICON,
+    };
+
     if (editingAward) {
-      updateAward.mutate({
-        id: editingAward.id,
-        data,
-      }, {
-        onSuccess: () => {
-          setEditingAward(null);
-          awardForm.reset();
+      updateAward.mutate(
+        {
+          id: editingAward.id,
+          data: payload,
+        },
+        {
+          onSuccess: () => {
+            setEditingAward(null);
+            awardForm.reset(emptyAwardForm);
+          },
         }
-      });
-    } else {
-      createAward.mutate(data, {
-        onSuccess: () => {
-          setIsAddingNew(false);
-          awardForm.reset();
-        }
-      });
+      );
+      return;
     }
+
+    createAward.mutate(payload, {
+      onSuccess: () => {
+        setIsAddingNew(false);
+        awardForm.reset(emptyAwardForm);
+      },
+    });
   };
 
   const handleDeleteAward = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este prêmio?')) {
+    if (confirm('Tem certeza que deseja excluir este premio?')) {
       deleteAward.mutate(id);
     }
   };
@@ -105,37 +137,36 @@ export const AwardsCustomizer = () => {
   const handleCancelEdit = () => {
     setEditingAward(null);
     setIsAddingNew(false);
-    awardForm.reset();
+    awardForm.reset(emptyAwardForm);
   };
 
   if (isLoading || isLoadingAwards) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-muted-foreground">Carregando configurações...</div>
+        <div className="text-muted-foreground">Carregando configuracoes...</div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Section Config */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Seção Reconhecimentos e Prêmios</CardTitle>
+            <CardTitle>Secao Reconhecimentos e Premios</CardTitle>
             <Button variant="outline" size="sm" onClick={handleReset} type="button">
-              Resetar para Padrão
+              Resetar para Padrao
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Título da Seção</Label>
+              <Label htmlFor="title">Titulo da Secao</Label>
               <Input
                 id="title"
                 {...form.register('title')}
-                placeholder="Reconhecimentos e Prêmios"
+                placeholder="Reconhecimentos e Premios"
               />
             </div>
 
@@ -151,7 +182,7 @@ export const AwardsCustomizer = () => {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <ColorPickerField
                 label="Cor de Fundo"
                 value={form.watch('backgroundColor') || '#F9F9F9'}
@@ -159,7 +190,7 @@ export const AwardsCustomizer = () => {
               />
 
               <ColorPickerField
-                label="Cor do Título"
+                label="Cor do Titulo"
                 value={form.watch('titleColor') || '#0466C8'}
                 onChange={(color) => form.setValue('titleColor', color)}
               />
@@ -167,60 +198,96 @@ export const AwardsCustomizer = () => {
 
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={updateSettings.isPending}>
-                {updateSettings.isPending ? 'Salvando...' : 'Salvar Configurações'}
+                {updateSettings.isPending ? 'Salvando...' : 'Salvar Configuracoes'}
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
 
-      {/* Awards Management */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Prêmios e Reconhecimentos</CardTitle>
+            <CardTitle>Premios e Reconhecimentos</CardTitle>
             <Button onClick={handleAddAward} size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              Adicionar Prêmio
+              <Plus className="mr-1 h-4 w-4" />
+              Adicionar Premio
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           {(isAddingNew || editingAward) && (
-            <form onSubmit={awardForm.handleSubmit(handleSaveAward)} className="space-y-4 mb-6 p-4 border rounded-lg">
+            <form
+              onSubmit={awardForm.handleSubmit(handleSaveAward)}
+              className="mb-6 space-y-4 rounded-lg border p-4"
+            >
               <div className="space-y-2">
-                <Label htmlFor="title">Título</Label>
+                <Label htmlFor="title">Titulo</Label>
                 <Input id="title" {...awardForm.register('title', { required: true })} />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Descrição</Label>
+                <Label htmlFor="description">Descricao</Label>
                 <Input id="description" {...awardForm.register('description', { required: true })} />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="icon">Ícone (Emoji)</Label>
-                <Input id="icon" {...awardForm.register('icon', { required: true })} placeholder="🏆" />
-                <p className="text-sm text-muted-foreground">Use emojis como: 🏆 🌟 🍽️ 💼 ⭐</p>
+                <Label htmlFor="icon">Icone</Label>
+                <Select
+                  value={selectedIconValue}
+                  onValueChange={(value) =>
+                    awardForm.setValue('icon', value, { shouldDirty: true, shouldValidate: true })
+                  }
+                >
+                  <SelectTrigger id="icon" className="justify-start">
+                    <div className="flex items-center gap-2">
+                      <SelectedIcon className="h-4 w-4 text-primary" />
+                      <span>{selectedIconOption.label}</span>
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {awardIconOptions.map((option) => {
+                      const Icon = option.icon;
+
+                      return (
+                        <SelectItem key={option.value} value={option.value}>
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-4 w-4 text-primary" />
+                            <span>{option.label}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  Selecione um icone da biblioteca usada pelo projeto.
+                </p>
               </div>
 
               <div className="flex gap-2">
                 <Button type="submit" disabled={createAward.isPending || updateAward.isPending}>
-                  <Save className="h-4 w-4 mr-1" />
+                  <Save className="mr-1 h-4 w-4" />
                   {editingAward ? 'Atualizar' : 'Criar'}
                 </Button>
                 <Button type="button" variant="outline" onClick={handleCancelEdit}>
-                  <X className="h-4 w-4 mr-1" />
+                  <X className="mr-1 h-4 w-4" />
                   Cancelar
                 </Button>
               </div>
             </form>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {awards.map((award: Award) => (
-              <div key={award.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                <div className="text-4xl">{award.icon}</div>
+              <div key={award.id} className="flex items-center gap-4 rounded-lg border p-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <AwardIcon
+                    value={award.icon}
+                    className="h-6 w-6"
+                    fallbackClassName="text-3xl leading-none"
+                  />
+                </div>
                 <div className="flex-1">
                   <h4 className="font-bold">{award.title}</h4>
                   <p className="text-sm text-muted-foreground">{award.description}</p>
@@ -239,37 +306,47 @@ export const AwardsCustomizer = () => {
         </CardContent>
       </Card>
 
-      {/* Preview */}
       <Card>
         <CardHeader>
           <CardTitle>Preview</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="border rounded-lg overflow-hidden">
+          <div className="overflow-hidden rounded-lg border">
             <section
               className="py-16"
               style={{ backgroundColor: watchedValues.backgroundColor || '#F9F9F9' }}
             >
               <div className="container mx-auto px-4">
                 <h2
-                  className="text-3xl font-bold mb-12 text-center"
+                  className="mb-12 text-center text-3xl font-bold"
                   style={{ color: watchedValues.titleColor || '#0466C8' }}
                 >
-                  {watchedValues.title || 'Reconhecimentos e Prêmios'}
+                  {watchedValues.title || 'Reconhecimentos e Premios'}
                 </h2>
-                <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${watchedValues.gridColumns || 4} gap-6`}>
-                  {awards.filter((a: Award) => a.isActive).map((award: Award) => (
-                    <div key={award.id} className="bg-white p-6 rounded-lg shadow-md flex flex-col items-center text-center">
+                <div
+                  className={`grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-${watchedValues.gridColumns || 4}`}
+                >
+                  {awards
+                    .filter((award: Award) => award.isActive)
+                    .map((award: Award) => (
                       <div
-                        className="text-5xl mb-4"
-                        style={{ color: watchedValues.titleColor || '#0466C8' }}
+                        key={award.id}
+                        className="flex flex-col items-center rounded-lg bg-white p-6 text-center shadow-md"
                       >
-                        {award.icon}
+                        <div
+                          className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+                          style={{ color: watchedValues.titleColor || '#0466C8' }}
+                        >
+                          <AwardIcon
+                            value={award.icon}
+                            className="h-8 w-8"
+                            fallbackClassName="text-4xl leading-none"
+                          />
+                        </div>
+                        <h3 className="mb-2 text-lg font-bold">{award.title}</h3>
+                        <p className="text-gray-700">{award.description}</p>
                       </div>
-                      <h3 className="text-lg font-bold mb-2">{award.title}</h3>
-                      <p className="text-gray-700">{award.description}</p>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
             </section>

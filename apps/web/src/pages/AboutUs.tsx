@@ -1,6 +1,7 @@
 import React from 'react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { AwardIcon } from '@/lib/award-icons';
 import { useLandingSettings, useTeamMembers, useAwards } from '@/hooks/useLanding';
 import {
   defaultAboutHeroConfig,
@@ -207,10 +208,14 @@ const AboutUs: React.FC = () => {
                   className="bg-white p-6 rounded-lg shadow-md flex flex-col items-center text-center"
                 >
                   <div
-                    className="text-5xl mb-4"
+                    className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
                     style={{ color: awardsConfig.titleColor || '#0466C8' }}
                   >
-                    {award.icon}
+                    <AwardIcon
+                      value={award.icon}
+                      className="h-8 w-8"
+                      fallbackClassName="text-4xl leading-none"
+                    />
                   </div>
                   <h3 className="text-lg font-bold mb-2">{award.title}</h3>
                   <p className="text-gray-700">{award.description}</p>
