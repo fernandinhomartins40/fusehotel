@@ -1,6 +1,71 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
+import { mergeLandingSettingsConfig } from '@/lib/landing-settings-defaults';
 import { toast } from 'sonner';
+
+const LANDING_SETTINGS_CACHE_PREFIX = 'fusehotel:landing-settings:';
+const LANDING_SETTINGS_CACHE_TTL = 24 * 60 * 60 * 1000;
+
+function getLandingSettingsCacheKey(section: string) {
+  return `${LANDING_SETTINGS_CACHE_PREFIX}${section}`;
+}
+
+function normalizeLandingSettings(section: string, data: any) {
+  if (!data) {
+    return data;
+  }
+
+  return {
+    ...data,
+    config: mergeLandingSettingsConfig(section, data.config),
+  };
+}
+
+function readLandingSettingsCache(section: string) {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(getLandingSettingsCacheKey(section));
+
+    if (!rawValue) {
+      return undefined;
+    }
+
+    const cached = JSON.parse(rawValue) as { savedAt?: number; data?: unknown };
+
+    if (
+      typeof cached?.savedAt !== 'number' ||
+      Date.now() - cached.savedAt > LANDING_SETTINGS_CACHE_TTL
+    ) {
+      window.localStorage.removeItem(getLandingSettingsCacheKey(section));
+      return undefined;
+    }
+
+    return normalizeLandingSettings(section, cached.data);
+  } catch {
+    return undefined;
+  }
+}
+
+function writeLandingSettingsCache(section: string, data: unknown) {
+  if (typeof window === 'undefined' || !data) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      getLandingSettingsCacheKey(section),
+      JSON.stringify({
+        savedAt: Date.now(),
+        data,
+      })
+    );
+  } catch {
+    // Ignore localStorage write failures and keep network as source of truth.
+  }
+}
 
 export const useHeroSlides = () => {
   return useQuery({
@@ -65,11 +130,32 @@ export const useDeleteHeroSlide = () => {
 };
 
 export const useLandingSettings = (section: string) => {
+  const cachedSettings = readLandingSettingsCache(section);
+
   return useQuery({
     queryKey: ['landing-settings', section],
+    initialData: cachedSettings,
+    placeholderData: (previousData) => previousData ?? cachedSettings,
+    staleTime: Infinity,
+    gcTime: LANDING_SETTINGS_CACHE_TTL,
+    retry: 3,
     queryFn: async () => {
-      const response = await apiClient.get(`/landing/settings/${section}`);
-      return response.data.data;
+      try {
+        const response = await apiClient.get(`/landing/settings/${section}`);
+        const normalizedData = normalizeLandingSettings(section, response.data.data);
+
+        writeLandingSettingsCache(section, normalizedData);
+
+        return normalizedData;
+      } catch (error) {
+        const fallbackData = readLandingSettingsCache(section);
+
+        if (fallbackData) {
+          return fallbackData;
+        }
+
+        throw error;
+      }
     }
   });
 };
@@ -78,11 +164,14 @@ export const useUpdateLandingSettings = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ section, config }: { section: string; config: any }) => {
-      const response = await apiClient.post(`/landing/admin/settings/${section}`, { config });
-      return response.data.data;
+      const response = await apiClient.post(`/landing/admin/settings/${section}`, {
+        config: mergeLandingSettingsConfig(section, config),
+      });
+      return normalizeLandingSettings(section, response.data.data);
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['landing-settings', variables.section] });
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(['landing-settings', variables.section], data);
+      writeLandingSettingsCache(variables.section, data);
       toast.success('Configurações salvas!');
     }
   });

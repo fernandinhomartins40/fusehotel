@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { NotFoundError } from '../utils/errors';
 
@@ -21,15 +22,39 @@ export class LandingSettingsService {
   }
 
   static async upsert(section: string, config: any) {
+    const existingSettings = await prisma.landingPageSettings.findUnique({
+      where: { section },
+      select: { config: true }
+    });
+
+    const currentConfig =
+      existingSettings?.config &&
+      typeof existingSettings.config === 'object' &&
+      !Array.isArray(existingSettings.config)
+        ? (existingSettings.config as Prisma.JsonObject)
+        : {};
+
+    const nextConfig =
+      config &&
+      typeof config === 'object' &&
+      !Array.isArray(config)
+        ? (config as Prisma.InputJsonObject)
+        : {};
+
+    const mergedConfig: Prisma.InputJsonObject = {
+      ...currentConfig,
+      ...nextConfig
+    };
+
     return await prisma.landingPageSettings.upsert({
       where: { section },
       create: {
         section,
-        config,
+        config: mergedConfig,
         isActive: true
       },
       update: {
-        config
+        config: mergedConfig
       }
     });
   }

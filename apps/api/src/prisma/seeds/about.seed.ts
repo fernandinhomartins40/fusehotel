@@ -89,7 +89,7 @@ export async function seedAboutPage() {
   for (const section of sectionsConfig) {
     await prisma.landingPageSettings.upsert({
       where: { section: section.section },
-      update: { config: section.config },
+      update: {},
       create: section,
     });
   }
