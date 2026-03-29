@@ -88,6 +88,16 @@ function getDefaultFormValues(): PromotionFormData {
   };
 }
 
+function getOptionalNumber(value: unknown): number | undefined {
+  if (value === null || value === undefined || value === '') {
+    return undefined;
+  }
+
+  const parsed = typeof value === 'number' ? value : Number(value);
+
+  return Number.isNaN(parsed) ? undefined : parsed;
+}
+
 function getPromotionFormValues(promotion: Promotion): PromotionFormData {
   return {
     title: promotion.title,
@@ -96,14 +106,14 @@ function getPromotionFormValues(promotion: Promotion): PromotionFormData {
     image: promotion.image || '',
     startDate: promotion.startDate.split('T')[0],
     endDate: promotion.endDate.split('T')[0],
-    originalPrice: promotion.originalPrice ?? undefined,
-    discountedPrice: promotion.discountedPrice ?? undefined,
-    discountPercent: promotion.discountPercent ?? undefined,
+    originalPrice: getOptionalNumber(promotion.originalPrice),
+    discountedPrice: getOptionalNumber(promotion.discountedPrice),
+    discountPercent: getOptionalNumber(promotion.discountPercent),
     type: promotion.type,
     isActive: promotion.isActive,
     isFeatured: promotion.isFeatured,
     termsAndConditions: promotion.termsAndConditions || '',
-    maxRedemptions: promotion.maxRedemptions ?? undefined,
+    maxRedemptions: getOptionalNumber(promotion.maxRedemptions),
     promotionCode: promotion.promotionCode || '',
     features: promotion.features?.map((feature) => feature.feature) || []
   };

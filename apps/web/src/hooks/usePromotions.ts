@@ -3,6 +3,22 @@ import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
 import type { Promotion, PromotionFilters, CreatePromotionData } from '@/types/promotion';
 
+const normalizePromotion = (promotion: any): Promotion => ({
+  ...promotion,
+  originalPrice:
+    promotion?.originalPrice !== undefined && promotion?.originalPrice !== null
+      ? Number(promotion.originalPrice)
+      : null,
+  discountedPrice:
+    promotion?.discountedPrice !== undefined && promotion?.discountedPrice !== null
+      ? Number(promotion.discountedPrice)
+      : null,
+  discountPercent:
+    promotion?.discountPercent !== undefined && promotion?.discountPercent !== null
+      ? Number(promotion.discountPercent)
+      : null,
+});
+
 function getPromotionErrorMessage(error: any, fallback: string) {
   return (
     error?.response?.data?.errors?.[0]?.message ||
@@ -16,7 +32,7 @@ export function usePromotions(filters?: PromotionFilters) {
     queryKey: ['promotions', filters],
     queryFn: async () => {
       const { data } = await apiClient.get('/promotions', { params: filters });
-      return data.data as Promotion[];
+      return (data.data || []).map(normalizePromotion);
     },
   });
 }
@@ -26,7 +42,7 @@ export function usePromotion(id: string) {
     queryKey: ['promotion', id],
     queryFn: async () => {
       const { data } = await apiClient.get(`/promotions/${id}`);
-      return data.data as Promotion;
+      return normalizePromotion(data.data);
     },
     enabled: !!id,
   });
@@ -37,7 +53,7 @@ export function usePromotionBySlug(slug: string) {
     queryKey: ['promotion', 'slug', slug],
     queryFn: async () => {
       const { data } = await apiClient.get(`/promotions/slug/${slug}`);
-      return data.data as Promotion;
+      return normalizePromotion(data.data);
     },
     enabled: !!slug,
   });

@@ -22,6 +22,18 @@ const optionalNumber = z.preprocess((value) => {
     return undefined;
   }
 
+  if (typeof value === 'string') {
+    const normalized = value.replace(',', '.').trim();
+
+    if (!normalized) {
+      return undefined;
+    }
+
+    const parsed = Number(normalized);
+
+    return Number.isNaN(parsed) ? value : parsed;
+  }
+
   if (typeof value === 'number' && Number.isNaN(value)) {
     return undefined;
   }
