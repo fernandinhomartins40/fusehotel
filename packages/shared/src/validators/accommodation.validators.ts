@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { timeSchema, uuidSchema } from './common.validators';
+import { timeSchema } from './common.validators';
 import { AccommodationType } from '../types';
 
 const imageUrlSchema = z.string().refine((value) => {
@@ -45,7 +45,7 @@ export const createAccommodationSchema = z.object({
       })
     )
     .min(1, 'Pelo menos uma imagem e obrigatoria'),
-  amenityIds: z.array(uuidSchema).min(1, 'Selecione pelo menos uma amenidade'),
+  amenityIds: z.array(z.string().min(1, 'ID invalido')).default([]),
   floor: z.number().int().optional(),
   view: z.string().max(100).optional(),
   area: z.number().positive().optional(),
@@ -75,7 +75,7 @@ export const accommodationFiltersSchema = z.object({
   minPrice: z.number().positive().optional(),
   maxPrice: z.number().positive().optional(),
   minCapacity: z.number().int().positive().optional(),
-  amenityIds: z.array(uuidSchema).optional(),
+  amenityIds: z.array(z.string().min(1, 'ID invalido')).optional(),
   isAvailable: z.boolean().optional(),
   isFeatured: z.boolean().optional(),
   checkInDate: z.string().datetime().optional(),

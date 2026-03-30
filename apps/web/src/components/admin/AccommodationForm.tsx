@@ -41,19 +41,28 @@ const getDefaultValues = (accommodation?: Accommodation | null): AccommodationFo
   name: accommodation?.name || '',
   type: accommodation?.type || 'SUITE',
   capacity: accommodation?.capacity || 2,
-  pricePerNight: accommodation?.pricePerNight || 0,
+  pricePerNight:
+    accommodation?.pricePerNight !== undefined && accommodation?.pricePerNight !== null
+      ? Number(accommodation.pricePerNight)
+      : 0,
   description: accommodation?.description || '',
   shortDescription: accommodation?.shortDescription || '',
   images: accommodation?.images || [],
   amenityIds: accommodation?.amenities?.map((item) => item.amenity.id) || [],
-  floor: accommodation?.floor || undefined,
+  floor: accommodation?.floor ?? undefined,
   view: accommodation?.view || '',
-  area: accommodation?.area || undefined,
+  area:
+    accommodation?.area !== undefined && accommodation?.area !== null
+      ? Number(accommodation.area)
+      : undefined,
   checkInTime: accommodation?.checkInTime || '15:00',
   checkOutTime: accommodation?.checkOutTime || '11:00',
   extraBeds: accommodation?.extraBeds || 0,
   maxExtraBeds: accommodation?.maxExtraBeds || 0,
-  extraBedPrice: accommodation?.extraBedPrice || 0,
+  extraBedPrice:
+    accommodation?.extraBedPrice !== undefined && accommodation?.extraBedPrice !== null
+      ? Number(accommodation.extraBedPrice)
+      : 0,
   cancellationPolicy: accommodation?.cancellationPolicy || '',
   metaTitle: accommodation?.metaTitle || '',
   metaDescription: accommodation?.metaDescription || '',
@@ -82,6 +91,8 @@ const getFirstErrorMessage = (value: unknown): string | undefined => {
 };
 
 export function AccommodationForm({ accommodation, onSubmit, isLoading }: AccommodationFormProps) {
+  const [activeTab, setActiveTab] = React.useState('basic');
+
   const form = useForm<AccommodationFormData>({
     resolver: zodResolver(accommodationSchema),
     defaultValues: getDefaultValues(accommodation),
@@ -98,7 +109,69 @@ export function AccommodationForm({ accommodation, onSubmit, isLoading }: Accomm
     onSubmit(data);
   };
 
+  const getTabForField = (fieldName?: string) => {
+    if (!fieldName) {
+      return 'basic';
+    }
+
+    if (fieldName === 'amenityIds') {
+      return 'amenities';
+    }
+
+    if (fieldName.startsWith('images')) {
+      return 'gallery';
+    }
+
+    if (['metaTitle', 'metaDescription', 'keywords'].includes(fieldName)) {
+      return 'seo';
+    }
+
+    if (
+      [
+        'description',
+        'floor',
+        'view',
+        'area',
+        'checkInTime',
+        'checkOutTime',
+        'extraBeds',
+        'maxExtraBeds',
+        'extraBedPrice',
+        'cancellationPolicy',
+      ].includes(fieldName)
+    ) {
+      return 'details';
+    }
+
+    return 'basic';
+  };
+
+  const getFirstErrorFieldName = (value: unknown, currentPath = ''): string | undefined => {
+    if (!value || typeof value !== 'object') {
+      return undefined;
+    }
+
+    if ('message' in value && typeof value.message === 'string') {
+      return currentPath || undefined;
+    }
+
+    for (const [key, nestedValue] of Object.entries(value)) {
+      const nextPath = currentPath ? `${currentPath}.${key}` : key;
+      const fieldName = getFirstErrorFieldName(nestedValue, nextPath);
+
+      if (fieldName) {
+        return fieldName;
+      }
+    }
+
+    return undefined;
+  };
+
   const handleFormError = () => {
+    const firstErrorFieldName = getFirstErrorFieldName(form.formState.errors);
+
+    setActiveTab(getTabForField(firstErrorFieldName));
+
     const message =
       getFirstErrorMessage(form.formState.errors) ||
       'Revise os campos obrigatorios antes de salvar.';
@@ -109,7 +182,7 @@ export function AccommodationForm({ accommodation, onSubmit, isLoading }: Accomm
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit, handleFormError)} className="space-y-6">
-        <Tabs defaultValue="basic" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="basic">Básico</TabsTrigger>
             <TabsTrigger value="details">Detalhes</TabsTrigger>
@@ -475,7 +548,7 @@ export function AccommodationForm({ accommodation, onSubmit, isLoading }: Accomm
                     <FormItem>
                       <FormControl>
                         <AmenitiesSelector
-                          value={field.value}
+                          value={field.value || []}
                           onChange={field.onChange}
                         />
                       </FormControl>

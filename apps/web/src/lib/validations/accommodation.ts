@@ -34,7 +34,7 @@ export const accommodationSchema = z.object({
       isPrimary: z.boolean(),
     })
   ).min(1, 'Pelo menos uma imagem e obrigatoria'),
-  amenityIds: z.array(z.string()).min(1, 'Selecione pelo menos uma amenidade'),
+  amenityIds: z.array(z.string()).default([]),
   floor: z.number().int().optional(),
   view: z.string().max(100).optional(),
   area: z.number().positive('Area deve ser positiva').optional(),

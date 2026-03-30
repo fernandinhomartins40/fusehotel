@@ -8,8 +8,8 @@ import { createAccommodationSchema, updateAccommodationSchema } from '@fusehotel
 const router = Router();
 
 router.get('/', AccommodationController.list);
-router.get('/:id', AccommodationController.getById);
 router.get('/slug/:slug', AccommodationController.getBySlug);
+router.get('/:id', AccommodationController.getById);
 router.post(
   '/',
   authenticate,
