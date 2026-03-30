@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { BrowserBranding } from "@/components/layout/BrowserBranding";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import RoomDetail from "./pages/RoomDetail";
@@ -51,6 +52,7 @@ const App = () => {
         <AuthProvider>
           <Toaster />
           <Sonner />
+          <BrowserBranding />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
