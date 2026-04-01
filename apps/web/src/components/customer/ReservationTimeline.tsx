@@ -24,9 +24,9 @@ export const ReservationTimeline: React.FC<ReservationTimelineProps> = ({ reserv
         return 'bg-red-100 text-red-800';
       case 'COMPLETED':
       case 'CHECKED_OUT':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary/10 text-primary';
       case 'CHECKED_IN':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-secondary/10 text-secondary-foreground';
       case 'NO_SHOW':
         return 'bg-orange-100 text-orange-800';
       default:
@@ -64,7 +64,7 @@ export const ReservationTimeline: React.FC<ReservationTimelineProps> = ({ reserv
           )}
           
           {/* Timeline dot */}
-          <div className="absolute left-4 top-6 w-4 h-4 bg-[#0466C8] rounded-full z-10 border-2 border-white shadow-sm" />
+          <div className="absolute left-4 top-6 w-4 h-4 bg-primary rounded-full z-10 border-2 border-white shadow-sm" />
           
           {/* Content */}
           <Card className="ml-12 hover:shadow-md transition-shadow">
@@ -86,7 +86,7 @@ export const ReservationTimeline: React.FC<ReservationTimelineProps> = ({ reserv
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
                 <div className="flex items-center gap-2">
-                  <Calendar size={16} className="text-[#0466C8]" />
+                  <Calendar size={16} className="text-primary" />
                   <div>
                     <div className="font-medium">Check-in</div>
                     <div>{new Date(reservation.checkInDate).toLocaleDateString('pt-BR')}</div>
@@ -94,7 +94,7 @@ export const ReservationTimeline: React.FC<ReservationTimelineProps> = ({ reserv
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Clock size={16} className="text-[#0466C8]" />
+                  <Clock size={16} className="text-primary" />
                   <div>
                     <div className="font-medium">Check-out</div>
                     <div>{new Date(reservation.checkOutDate).toLocaleDateString('pt-BR')}</div>
@@ -102,7 +102,7 @@ export const ReservationTimeline: React.FC<ReservationTimelineProps> = ({ reserv
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <MapPin size={16} className="text-[#0466C8]" />
+                  <MapPin size={16} className="text-primary" />
                   <div>
                     <div className="font-medium">Detalhes</div>
                     <div>{reservation.numberOfGuests} hóspedes • {reservation.numberOfNights} diárias</div>
@@ -112,7 +112,7 @@ export const ReservationTimeline: React.FC<ReservationTimelineProps> = ({ reserv
 
               <div className="flex justify-between items-center mt-4 pt-4 border-t">
                 <span className="text-sm text-gray-600">Total da Reserva</span>
-                <span className="text-lg font-bold text-[#0466C8]">
+                <span className="text-lg font-bold text-primary">
                   {formatCurrency(Number(reservation.totalAmount))}
                 </span>
               </div>

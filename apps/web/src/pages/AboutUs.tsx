@@ -3,6 +3,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { AwardIcon } from '@/lib/award-icons';
 import { useLandingSettings, useTeamMembers, useAwards } from '@/hooks/useLanding';
+import { hydrateBrandColors } from '@/lib/brand-theme';
 import {
   defaultAboutHeroConfig,
   defaultHistorySectionConfig,
@@ -23,11 +24,11 @@ const AboutUs: React.FC = () => {
   const { data: teamMembers = [] } = useTeamMembers();
   const { data: awards = [] } = useAwards();
 
-  const heroConfig = heroData?.config || defaultAboutHeroConfig;
-  const historyConfig = historyData?.config || defaultHistorySectionConfig;
-  const mvvConfig = mvvData?.config || defaultMissionVisionValuesConfig;
-  const teamConfig = teamData?.config || defaultTeamSectionConfig;
-  const awardsConfig = awardsData?.config || defaultAwardsSectionConfig;
+  const heroConfig = hydrateBrandColors(heroData?.config || defaultAboutHeroConfig);
+  const historyConfig = hydrateBrandColors(historyData?.config || defaultHistorySectionConfig);
+  const mvvConfig = hydrateBrandColors(mvvData?.config || defaultMissionVisionValuesConfig);
+  const teamConfig = hydrateBrandColors(teamData?.config || defaultTeamSectionConfig);
+  const awardsConfig = hydrateBrandColors(awardsData?.config || defaultAwardsSectionConfig);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -38,7 +39,7 @@ const AboutUs: React.FC = () => {
         <div
           className="text-white py-16"
           style={{
-            backgroundColor: heroConfig.backgroundColor || '#0466C8',
+            backgroundColor: heroConfig.backgroundColor || 'hsl(var(--primary))',
             height: heroConfig.height || '400px',
             display: 'flex',
             alignItems: 'center',
@@ -69,7 +70,7 @@ const AboutUs: React.FC = () => {
             <div>
               <h2
                 className="text-3xl font-bold mb-6"
-                style={{ color: historyConfig.titleColor || '#0466C8' }}
+                style={{ color: historyConfig.titleColor || 'hsl(var(--primary))' }}
               >
                 {historyConfig.title || 'Nossa História'}
               </h2>
@@ -107,7 +108,7 @@ const AboutUs: React.FC = () => {
           <div className="container mx-auto px-4">
             <h2
               className="text-3xl font-bold mb-12 text-center"
-              style={{ color: mvvConfig.titleColor || '#0466C8' }}
+              style={{ color: mvvConfig.titleColor || 'hsl(var(--primary))' }}
             >
               {mvvConfig.title || 'Missão, Visão e Valores'}
             </h2>
@@ -115,7 +116,7 @@ const AboutUs: React.FC = () => {
               <div className="bg-white p-8 rounded-lg shadow-md">
                 <h3
                   className="text-xl font-bold mb-4"
-                  style={{ color: mvvConfig.subtitleColor || '#0466C8' }}
+                  style={{ color: mvvConfig.subtitleColor || 'hsl(var(--primary))' }}
                 >
                   {mvvConfig.missionTitle || 'Missão'}
                 </h3>
@@ -125,7 +126,7 @@ const AboutUs: React.FC = () => {
               <div className="bg-white p-8 rounded-lg shadow-md">
                 <h3
                   className="text-xl font-bold mb-4"
-                  style={{ color: mvvConfig.subtitleColor || '#0466C8' }}
+                  style={{ color: mvvConfig.subtitleColor || 'hsl(var(--primary))' }}
                 >
                   {mvvConfig.visionTitle || 'Visão'}
                 </h3>
@@ -135,7 +136,7 @@ const AboutUs: React.FC = () => {
               <div className="bg-white p-8 rounded-lg shadow-md">
                 <h3
                   className="text-xl font-bold mb-4"
-                  style={{ color: mvvConfig.subtitleColor || '#0466C8' }}
+                  style={{ color: mvvConfig.subtitleColor || 'hsl(var(--primary))' }}
                 >
                   {mvvConfig.valuesTitle || 'Valores'}
                 </h3>
@@ -156,7 +157,7 @@ const AboutUs: React.FC = () => {
         >
           <h2
             className="text-3xl font-bold mb-12 text-center"
-            style={{ color: teamConfig.titleColor || '#0466C8' }}
+            style={{ color: teamConfig.titleColor || 'hsl(var(--primary))' }}
           >
             {teamConfig.title || 'Nossa Equipe'}
           </h2>
@@ -175,7 +176,7 @@ const AboutUs: React.FC = () => {
                 <h3 className="text-xl font-bold mb-1">{member.name}</h3>
                 <p
                   className="mb-3"
-                  style={{ color: teamConfig.subtitleColor || '#0466C8' }}
+                  style={{ color: teamConfig.subtitleColor || 'hsl(var(--primary))' }}
                 >
                   {member.role}
                 </p>
@@ -195,7 +196,7 @@ const AboutUs: React.FC = () => {
           <div className="container mx-auto px-4">
             <h2
               className="text-3xl font-bold mb-12 text-center"
-              style={{ color: awardsConfig.titleColor || '#0466C8' }}
+              style={{ color: awardsConfig.titleColor || 'hsl(var(--primary))' }}
             >
               {awardsConfig.title || 'Reconhecimentos e Prêmios'}
             </h2>
@@ -209,7 +210,7 @@ const AboutUs: React.FC = () => {
                 >
                   <div
                     className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
-                    style={{ color: awardsConfig.titleColor || '#0466C8' }}
+                    style={{ color: awardsConfig.titleColor || 'hsl(var(--primary))' }}
                   >
                     <AwardIcon
                       value={award.icon}

@@ -47,7 +47,7 @@ export const ReservationFilters: React.FC<ReservationFiltersProps> = ({ onFilter
         <Filter size={16} />
         Filtros
         {hasActiveFilters && (
-          <span className="bg-[#0466C8] text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">
+          <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
             !
           </span>
         )}
@@ -130,7 +130,7 @@ export const ReservationFilters: React.FC<ReservationFiltersProps> = ({ onFilter
                 <Button
                   size="sm"
                   onClick={() => setIsOpen(false)}
-                  className="flex-1 bg-[#0466C8] hover:bg-[#0355A6]"
+                  className="flex-1 bg-primary hover:bg-primary/90"
                 >
                   Aplicar
                 </Button>

@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { MapEmbed } from '@/components/ui/MapEmbed';
 import { useLandingSettings } from '@/hooks/useLanding';
 import { defaultFooterConfig } from '@/types/landing-config';
+import { hydrateBrandColors } from '@/lib/brand-theme';
 
 export const Footer: React.FC = () => {
   const { data: footerConfig } = useLandingSettings('footer');
-  const config = footerConfig?.config || defaultFooterConfig;
+  const config = hydrateBrandColors(footerConfig?.config || defaultFooterConfig);
 
   return (
     <footer

@@ -329,7 +329,7 @@ export function ReservationForm({
               <div className="border-t pt-2 mt-2">
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span className="text-[#0466C8]">{formatCurrency(calculatedPrice)}</span>
+                  <span className="text-primary">{formatCurrency(calculatedPrice)}</span>
                 </div>
               </div>
             </div>
@@ -338,7 +338,7 @@ export function ReservationForm({
           {/* Botão de Envio */}
           <Button
             type="submit"
-            className="w-full bg-[#0466C8] hover:bg-[#0355A6] flex items-center justify-center gap-2"
+            className="w-full bg-primary hover:bg-primary/90 flex items-center justify-center gap-2"
             disabled={createReservation.isPending}
           >
             {createReservation.isPending ? (

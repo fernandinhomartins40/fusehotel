@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { useHeroSlides, useLandingSettings } from '@/hooks/useLanding';
 import { defaultHeroConfig } from '@/types/landing-config';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, CarouselApi } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
+import { hydrateBrandColors } from '@/lib/brand-theme';
 
 export const HeroSection: React.FC = () => {
   const { data: slides, isLoading } = useHeroSlides();
   const { data: settingsData } = useLandingSettings('hero');
-  const config = settingsData?.config || defaultHeroConfig;
-  const [api, setApi] = useState<CarouselApi>();
+  const config = hydrateBrandColors(settingsData?.config || defaultHeroConfig);
+  const [, setApi] = useState<CarouselApi>();
+  const themedSlides = (slides || []).map((slide: any) => hydrateBrandColors(slide));
 
   const plugin = React.useRef(
     Autoplay({ delay: (config.autoplaySpeed || 5) * 1000, stopOnInteraction: true })
@@ -42,7 +44,7 @@ export const HeroSection: React.FC = () => {
               com acomodações de luxo e paisagens deslumbrantes.
             </p>
 
-            <button className="flex items-center gap-2.5 text-white font-medium text-sm bg-[#0466C8] mb-8 px-8 py-4 rounded-full">
+            <button className="flex items-center gap-2.5 text-primary-foreground font-medium text-sm bg-primary mb-8 px-8 py-4 rounded-full">
               <Calendar size={18} />
               AGENDAMENTO ONLINE
             </button>
@@ -71,7 +73,7 @@ export const HeroSection: React.FC = () => {
       opts={{ loop: true }}
     >
       <CarouselContent>
-        {slides.map((slide: any) => {
+        {themedSlides.map((slide: any) => {
           const overlayColor = slide.overlayColor || '#042241';
           const overlayOpacity = slide.overlayOpacity ?? 0.6;
           const slideHeight = config.height || '700px';
@@ -126,8 +128,8 @@ export const HeroSection: React.FC = () => {
 
                   {slide.showButton && slide.buttonText && (
                     <button
-                      className="flex items-center gap-2.5 text-white font-medium text-sm mb-8 px-8 py-4 rounded-full"
-                      style={{ backgroundColor: slide.buttonColor || '#0466C8' }}
+                      className="flex items-center gap-2.5 text-primary-foreground font-medium text-sm mb-8 px-8 py-4 rounded-full"
+                      style={{ backgroundColor: slide.buttonColor || 'hsl(var(--primary))' }}
                     >
                       <Calendar size={18} />
                       {slide.buttonText}

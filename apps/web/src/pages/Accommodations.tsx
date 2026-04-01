@@ -23,7 +23,7 @@ const Accommodations = () => {
       <Header />
       <main>
         {/* Hero Section */}
-        <section className="bg-gradient-to-r from-[#0466C8] to-[#0355A6] text-white py-20">
+        <section className="bg-gradient-to-r from-primary to-secondary text-white py-20">
           <div className="container mx-auto px-4 md:px-12 lg:px-24">
             <h1 className="text-5xl md:text-6xl font-bold mb-6 uppercase">
               Acomodações
@@ -40,7 +40,7 @@ const Accommodations = () => {
           <div className="container mx-auto px-4 md:px-12 lg:px-24">
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <span className="ml-3 text-lg">Carregando acomodações...</span>
               </div>
             ) : error ? (

@@ -4,6 +4,8 @@ import { User } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { MobileMenu } from './MobileMenu';
 import { useLandingSettings } from '@/hooks/useLanding';
+import { hydrateBrandColors } from '@/lib/brand-theme';
+import { defaultHeaderConfig } from '@/types/landing-config';
 
 export const Header: React.FC = () => {
   const { data: headerConfig } = useLandingSettings('header');
@@ -26,15 +28,17 @@ export const Header: React.FC = () => {
     navigate('/acomodacoes');
   };
 
+  const headerTheme = hydrateBrandColors(headerConfig?.config || defaultHeaderConfig);
+
   // Default values
-  const logo = headerConfig?.config?.logo || '/lovable-uploads/91e13e81-bbd9-4aab-b810-d81bb336ecb8.png';
-  const backgroundColor = headerConfig?.config?.backgroundColor || '#FFFFFF';
-  const textColor = headerConfig?.config?.textColor || '#000000';
-  const hoverColor = headerConfig?.config?.hoverColor || '#0466C8';
+  const logo = headerTheme.logo || '/lovable-uploads/91e13e81-bbd9-4aab-b810-d81bb336ecb8.png';
+  const backgroundColor = headerTheme.backgroundColor || '#FFFFFF';
+  const textColor = headerTheme.textColor || '#000000';
+  const hoverColor = headerTheme.hoverColor || 'hsl(var(--primary))';
   const buttonText = headerConfig?.config?.buttonText || 'Área do cliente';
-  const buttonBackground = headerConfig?.config?.buttonBackground || '#0466C8';
-  const buttonHover = headerConfig?.config?.buttonHover || '#0354A8';
-  const buttonTextColor = headerConfig?.config?.buttonTextColor || '#FFFFFF';
+  const buttonBackground = headerTheme.buttonBackground || 'hsl(var(--primary))';
+  const buttonHover = headerTheme.buttonHover || 'hsl(var(--primary-hover))';
+  const buttonTextColor = headerTheme.buttonTextColor || 'hsl(var(--primary-foreground))';
 
   return (
     <header

@@ -367,7 +367,7 @@ Solicitacao enviada. Aguardo o aceite do hotel.`.trim();
 
           <div className="flex justify-between font-bold text-lg">
             <span>Total</span>
-            <span className="text-[#0466C8]">{formatCurrency(totalAmount)}</span>
+            <span className="text-primary">{formatCurrency(totalAmount)}</span>
           </div>
         </div>
 
@@ -419,7 +419,7 @@ Solicitacao enviada. Aguardo o aceite do hotel.`.trim();
 
         <Button
           onClick={handleCheckout}
-          className="w-full bg-green-600 hover:bg-green-700 flex items-center justify-center gap-2 h-12"
+          className="w-full bg-primary hover:bg-primary/90 flex items-center justify-center gap-2 h-12"
           disabled={
             createReservation.isPending ||
             isCheckingCustomer ||

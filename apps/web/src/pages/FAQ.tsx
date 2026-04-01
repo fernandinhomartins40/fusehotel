@@ -9,6 +9,7 @@ import {
   AccordionTrigger
 } from '@/components/ui/accordion';
 import { useLandingSettings, useFAQCategories } from '@/hooks/useLanding';
+import { hydrateBrandColors } from '@/lib/brand-theme';
 import {
   defaultFAQHeroConfig,
   defaultFAQContentConfig,
@@ -22,9 +23,9 @@ const FAQ: React.FC = () => {
   const { data: contactData } = useLandingSettings('faq-contact');
   const { data: categories = [] } = useFAQCategories();
 
-  const heroConfig = heroData?.config || defaultFAQHeroConfig;
-  const contentConfig = contentData?.config || defaultFAQContentConfig;
-  const contactConfig = contactData?.config || defaultFAQContactConfig;
+  const heroConfig = hydrateBrandColors(heroData?.config || defaultFAQHeroConfig);
+  const contentConfig = hydrateBrandColors(contentData?.config || defaultFAQContentConfig);
+  const contactConfig = hydrateBrandColors(contactData?.config || defaultFAQContactConfig);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -35,7 +36,7 @@ const FAQ: React.FC = () => {
         <div
           className="text-white py-12"
           style={{
-            backgroundColor: heroConfig.backgroundColor || '#0466C8',
+            backgroundColor: heroConfig.backgroundColor || 'hsl(var(--primary))',
             height: heroConfig.height || 'auto',
           }}
         >
@@ -69,7 +70,7 @@ const FAQ: React.FC = () => {
                   <div key={category.id} className="border-b border-gray-200 pb-8 last:border-b-0">
                     <h2
                       className="text-2xl font-bold mb-6"
-                      style={{ color: contentConfig.categoryTitleColor || '#0466C8' }}
+                      style={{ color: contentConfig.categoryTitleColor || 'hsl(var(--primary))' }}
                     >
                       {category.name}
                     </h2>
@@ -118,7 +119,7 @@ const FAQ: React.FC = () => {
                   href={contactConfig.buttonUrl || '/contato'}
                   className="px-8 py-3 font-medium rounded-full transition-colors"
                   style={{
-                    backgroundColor: contactConfig.buttonColor || '#0466C8',
+                    backgroundColor: contactConfig.buttonColor || 'hsl(var(--primary))',
                     color: contactConfig.buttonTextColor || '#FFFFFF',
                   }}
                 >

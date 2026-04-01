@@ -24,11 +24,11 @@ const AdminLogin: React.FC = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <main className="flex-grow bg-gradient-to-br from-blue-50 to-blue-100">
+      <main className="flex-grow bg-gradient-to-br from-primary/5 via-background to-secondary/10">
         <div className="container mx-auto px-4 py-20">
           <div className="max-w-md mx-auto">
             <div className="text-center mb-8">
-              <div className="inline-block p-3 bg-blue-600 rounded-full mb-4">
+              <div className="inline-block p-3 bg-primary rounded-full mb-4">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-8 w-8 text-white"
@@ -65,7 +65,7 @@ const AdminLogin: React.FC = () => {
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
                 Você é um hóspede?{' '}
-                <a href="/area-do-cliente" className="text-blue-600 hover:text-blue-700 font-medium">
+                <a href="/area-do-cliente" className="text-primary hover:underline font-medium">
                   Acesse a Área do Cliente
                 </a>
               </p>

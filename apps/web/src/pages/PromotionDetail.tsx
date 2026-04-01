@@ -149,7 +149,7 @@ const PromotionDetail: React.FC = () => {
         <main className="flex-grow flex items-center justify-center">
           <Card>
             <CardContent className="flex items-center justify-center p-12">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <span className="ml-3 text-lg">Carregando promocao...</span>
             </CardContent>
           </Card>
@@ -170,7 +170,7 @@ const PromotionDetail: React.FC = () => {
               {(error as any)?.response?.data?.message ||
                 'A promocao que voce esta procurando nao esta disponivel.'}
             </p>
-            <Button className="bg-[#0466C8] hover:bg-[#0355A6]" asChild>
+            <Button className="bg-primary hover:bg-primary/90" asChild>
               <Link to="/promocoes">Ver todas promocoes</Link>
             </Button>
           </div>
@@ -215,7 +215,7 @@ const PromotionDetail: React.FC = () => {
           />
           <div className="absolute inset-0 bg-black/30" />
           <div className="absolute bottom-8 left-8 text-white">
-            <Badge className="mb-4 bg-[#0466C8] hover:bg-[#0355A6] text-white">
+            <Badge className="mb-4 bg-primary hover:bg-primary/90 text-primary-foreground">
               {promotion.type === 'PACKAGE' ? 'Pacote' : 'Promocao'}
             </Badge>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">{promotion.title}</h1>
@@ -270,14 +270,14 @@ const PromotionDetail: React.FC = () => {
 
                   <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-6">
                     <div className="flex items-center gap-2">
-                      <Calendar size={18} className="text-[#0466C8]" />
+                      <Calendar size={18} className="text-primary" />
                       <span>
                         Valido de {format(new Date(promotion.startDate), 'dd/MM/yyyy')} ate{' '}
                         {format(new Date(promotion.endDate), 'dd/MM/yyyy')}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <MapPin size={18} className="text-[#0466C8]" />
+                      <MapPin size={18} className="text-primary" />
                       <span>Av Paulista, 900 - Sao Paulo</span>
                     </div>
                   </div>
@@ -312,7 +312,7 @@ const PromotionDetail: React.FC = () => {
                             key={feature.id}
                             className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
                           >
-                            <Tag size={18} className="text-[#0466C8] flex-shrink-0" />
+                            <Tag size={18} className="text-primary flex-shrink-0" />
                             <span className="text-gray-700">{feature.feature}</span>
                           </div>
                         ))}
@@ -349,7 +349,7 @@ const PromotionDetail: React.FC = () => {
                         </Badge>
                       )}
                     </div>
-                    <div className="text-3xl font-bold text-[#0466C8]">
+                    <div className="text-3xl font-bold text-primary">
                       {formatCurrency(
                         Number(promotion.discountedPrice ?? promotion.originalPrice ?? 0)
                       )}
@@ -457,7 +457,7 @@ const PromotionDetail: React.FC = () => {
                   </div>
 
                   <Button
-                    className="w-full bg-[#0466C8] hover:bg-[#0355A6] text-white"
+                    className="w-full bg-primary hover:bg-primary/90 text-white"
                     onClick={handleProceedToCheckout}
                     disabled={
                       !selectedAccommodation ||
@@ -505,7 +505,7 @@ const PromotionDetail: React.FC = () => {
             <Button
               variant="outline"
               asChild
-              className="border-[#0466C8] text-[#0466C8] hover:bg-[#0466C8] hover:text-white"
+              className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
             >
               <Link to="/promocoes" className="flex items-center gap-2">
                 <ArrowLeft size={18} />

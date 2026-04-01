@@ -48,7 +48,7 @@ export function ProfileForm() {
     return (
       <Card>
         <CardContent className="flex items-center justify-center p-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <span className="ml-3">Carregando perfil...</span>
         </CardContent>
       </Card>
@@ -165,7 +165,7 @@ export function ProfileForm() {
             <Button
               type="submit"
               disabled={updateProfile.isPending}
-              className="bg-[#0466C8] hover:bg-[#0355A6]"
+              className="bg-primary hover:bg-primary/90"
             >
               {updateProfile.isPending ? (
                 <>

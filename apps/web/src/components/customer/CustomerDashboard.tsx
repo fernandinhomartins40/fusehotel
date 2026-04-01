@@ -137,7 +137,7 @@ export const CustomerDashboard: React.FC = () => {
                 variant={viewMode === 'cards' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('cards')}
-                className="bg-[#0466C8] hover:bg-[#0355A6]"
+                className="gap-2"
               >
                 <Filter size={16} />
                 Cards
@@ -146,7 +146,7 @@ export const CustomerDashboard: React.FC = () => {
                 variant={viewMode === 'timeline' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setViewMode('timeline')}
-                className="bg-[#0466C8] hover:bg-[#0355A6]"
+                className="gap-2"
               >
                 <Calendar size={16} />
                 Timeline
@@ -158,7 +158,7 @@ export const CustomerDashboard: React.FC = () => {
           {isLoading ? (
             <Card>
               <CardContent className="flex items-center justify-center p-12">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <span className="ml-3 text-lg">Carregando reservas...</span>
               </CardContent>
             </Card>

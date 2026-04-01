@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useLandingSettings } from '@/hooks/useLanding';
 import { apiClient } from '@/lib/api-client';
+import { colorWithAlpha, hydrateBrandColors } from '@/lib/brand-theme';
 import {
   defaultContactCardsConfig,
   defaultContactFAQCTAConfig,
@@ -45,10 +46,10 @@ const Contact: React.FC = () => {
   const { data: formData } = useLandingSettings('contact-form');
   const { data: faqCtaData } = useLandingSettings('contact-faq-cta');
 
-  const heroConfig = heroData?.config || defaultContactHeroConfig;
-  const cardsConfig = cardsData?.config || defaultContactCardsConfig;
-  const formConfig = formData?.config || defaultContactFormConfig;
-  const faqCtaConfig = faqCtaData?.config || defaultContactFAQCTAConfig;
+  const heroConfig = hydrateBrandColors(heroData?.config || defaultContactHeroConfig);
+  const cardsConfig = hydrateBrandColors(cardsData?.config || defaultContactCardsConfig);
+  const formConfig = hydrateBrandColors(formData?.config || defaultContactFormConfig);
+  const faqCtaConfig = hydrateBrandColors(faqCtaData?.config || defaultContactFAQCTAConfig);
 
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -95,7 +96,7 @@ const Contact: React.FC = () => {
         <div
           className="py-12 text-white"
           style={{
-            backgroundColor: heroConfig.backgroundColor || '#0466C8',
+            backgroundColor: heroConfig.backgroundColor || 'hsl(var(--primary))',
             height: heroConfig.height || 'auto',
           }}
         >
@@ -127,12 +128,12 @@ const Contact: React.FC = () => {
                   <div
                     className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
                     style={{
-                      backgroundColor: `${cardsConfig.cardIconColor || '#0466C8'}20`,
+                      backgroundColor: colorWithAlpha(cardsConfig.cardIconColor, 0.12),
                     }}
                   >
                     <Phone
                       className="h-8 w-8"
-                      style={{ color: cardsConfig.cardIconColor || '#0466C8' }}
+                      style={{ color: cardsConfig.cardIconColor || 'hsl(var(--primary))' }}
                     />
                   </div>
                   <h3 className="mb-2 text-xl font-bold">
@@ -144,7 +145,7 @@ const Contact: React.FC = () => {
                   <a
                     href={`tel:+55${cardsConfig.phoneNumber?.replace(/\D/g, '')}`}
                     className="font-medium hover:underline"
-                    style={{ color: cardsConfig.cardLinkColor || '#0466C8' }}
+                    style={{ color: cardsConfig.cardLinkColor || 'hsl(var(--primary))' }}
                   >
                     {cardsConfig.phoneNumber || '(11) 5555-5555'}
                   </a>
@@ -156,12 +157,12 @@ const Contact: React.FC = () => {
                   <div
                     className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
                     style={{
-                      backgroundColor: `${cardsConfig.cardIconColor || '#0466C8'}20`,
+                      backgroundColor: colorWithAlpha(cardsConfig.cardIconColor, 0.12),
                     }}
                   >
                     <MessageSquare
                       className="h-8 w-8"
-                      style={{ color: cardsConfig.cardIconColor || '#0466C8' }}
+                      style={{ color: cardsConfig.cardIconColor || 'hsl(var(--primary))' }}
                     />
                   </div>
                   <h3 className="mb-2 text-xl font-bold">
@@ -173,7 +174,7 @@ const Contact: React.FC = () => {
                   <a
                     href={`https://wa.me/55${cardsConfig.whatsappNumber?.replace(/\D/g, '')}`}
                     className="font-medium hover:underline"
-                    style={{ color: cardsConfig.cardLinkColor || '#0466C8' }}
+                    style={{ color: cardsConfig.cardLinkColor || 'hsl(var(--primary))' }}
                   >
                     {cardsConfig.whatsappNumber || '(11) 99999-9999'}
                   </a>
@@ -185,12 +186,12 @@ const Contact: React.FC = () => {
                   <div
                     className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
                     style={{
-                      backgroundColor: `${cardsConfig.cardIconColor || '#0466C8'}20`,
+                      backgroundColor: colorWithAlpha(cardsConfig.cardIconColor, 0.12),
                     }}
                   >
                     <Mail
                       className="h-8 w-8"
-                      style={{ color: cardsConfig.cardIconColor || '#0466C8' }}
+                      style={{ color: cardsConfig.cardIconColor || 'hsl(var(--primary))' }}
                     />
                   </div>
                   <h3 className="mb-2 text-xl font-bold">
@@ -202,7 +203,7 @@ const Contact: React.FC = () => {
                   <a
                     href={`mailto:${cardsConfig.emailAddress}`}
                     className="font-medium hover:underline"
-                    style={{ color: cardsConfig.cardLinkColor || '#0466C8' }}
+                    style={{ color: cardsConfig.cardLinkColor || 'hsl(var(--primary))' }}
                   >
                     {cardsConfig.emailAddress || 'contato@hotel.com'}
                   </a>
@@ -221,7 +222,7 @@ const Contact: React.FC = () => {
               <div>
                 <h2
                   className="mb-6 text-3xl font-bold"
-                  style={{ color: formConfig.titleColor || '#0466C8' }}
+                  style={{ color: formConfig.titleColor || 'hsl(var(--primary))' }}
                 >
                   {formConfig.formTitle || 'Envie uma Mensagem'}
                 </h2>
@@ -313,7 +314,7 @@ const Contact: React.FC = () => {
                       Concordo com a{' '}
                       <a
                         href="/politicas-de-privacidade"
-                        className="text-[#0466C8] hover:underline"
+                        className="text-primary hover:underline"
                       >
                         Politica de Privacidade
                       </a>
@@ -325,7 +326,7 @@ const Contact: React.FC = () => {
                     className="w-full rounded-full py-3"
                     disabled={isSubmitting}
                     style={{
-                      backgroundColor: formConfig.buttonColor || '#0466C8',
+                      backgroundColor: formConfig.buttonColor || 'hsl(var(--primary))',
                       color: formConfig.buttonTextColor || '#FFFFFF',
                     }}
                   >
@@ -340,7 +341,7 @@ const Contact: React.FC = () => {
                 <div>
                   <h2
                     className="mb-6 text-3xl font-bold"
-                    style={{ color: formConfig.titleColor || '#0466C8' }}
+                    style={{ color: formConfig.titleColor || 'hsl(var(--primary))' }}
                   >
                     {formConfig.mapTitle || 'Nossa Localizacao'}
                   </h2>
@@ -364,7 +365,7 @@ const Contact: React.FC = () => {
                     <div className="flex items-start">
                       <MapPin
                         className="mr-3 mt-0.5 h-6 w-6"
-                        style={{ color: formConfig.titleColor || '#0466C8' }}
+                        style={{ color: formConfig.titleColor || 'hsl(var(--primary))' }}
                       />
                       <div>
                         <p className="font-medium">
@@ -378,7 +379,7 @@ const Contact: React.FC = () => {
                     <div className="flex items-center">
                       <Clock
                         className="mr-3 h-6 w-6"
-                        style={{ color: formConfig.titleColor || '#0466C8' }}
+                        style={{ color: formConfig.titleColor || 'hsl(var(--primary))' }}
                       />
                       <div>
                         <p className="font-medium">
@@ -416,7 +417,7 @@ const Contact: React.FC = () => {
             <Button
               className="rounded-full px-8 py-3"
               style={{
-                backgroundColor: faqCtaConfig.buttonColor || '#0466C8',
+                backgroundColor: faqCtaConfig.buttonColor || 'hsl(var(--primary))',
                 color: faqCtaConfig.buttonTextColor || '#FFFFFF',
               }}
               asChild

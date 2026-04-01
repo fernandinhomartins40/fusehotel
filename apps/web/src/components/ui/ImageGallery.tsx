@@ -75,7 +75,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({ images, title }) => 
               className={cn(
                 "flex-shrink-0 w-20 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200",
                 current === index 
-                  ? "border-[#0466C8] scale-105 shadow-md" 
+                  ? "border-primary scale-105 shadow-md" 
                   : "border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100"
               )}
             >

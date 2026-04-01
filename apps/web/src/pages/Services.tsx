@@ -7,6 +7,7 @@ import {
   useLandingSettings,
   useServiceItemsByCategory
 } from '@/hooks/useLanding';
+import { hydrateBrandColors } from '@/lib/brand-theme';
 import {
   defaultServicesHeroConfig,
   defaultAccommodationSectionConfig,
@@ -42,13 +43,13 @@ const Services: React.FC = () => {
   const { data: specialItems = [] } = useServiceItemsByCategory('SPECIAL');
 
   // Apply configs with defaults
-  const heroConfig = (heroData?.config as ServicesHeroConfig) || defaultServicesHeroConfig;
-  const accommodationConfig = (accommodationData?.config as AccommodationSectionConfig) || defaultAccommodationSectionConfig;
-  const gastronomyConfig = (gastronomyData?.config as GastronomySectionConfig) || defaultGastronomySectionConfig;
-  const recreationConfig = (recreationData?.config as RecreationSectionConfig) || defaultRecreationSectionConfig;
-  const businessConfig = (businessData?.config as BusinessSectionConfig) || defaultBusinessSectionConfig;
-  const specialConfig = (specialData?.config as SpecialSectionConfig) || defaultSpecialSectionConfig;
-  const ctaConfig = (ctaData?.config as CTASectionConfig) || defaultCTASectionConfig;
+  const heroConfig = hydrateBrandColors((heroData?.config as ServicesHeroConfig) || defaultServicesHeroConfig);
+  const accommodationConfig = hydrateBrandColors((accommodationData?.config as AccommodationSectionConfig) || defaultAccommodationSectionConfig);
+  const gastronomyConfig = hydrateBrandColors((gastronomyData?.config as GastronomySectionConfig) || defaultGastronomySectionConfig);
+  const recreationConfig = hydrateBrandColors((recreationData?.config as RecreationSectionConfig) || defaultRecreationSectionConfig);
+  const businessConfig = hydrateBrandColors((businessData?.config as BusinessSectionConfig) || defaultBusinessSectionConfig);
+  const specialConfig = hydrateBrandColors((specialData?.config as SpecialSectionConfig) || defaultSpecialSectionConfig);
+  const ctaConfig = hydrateBrandColors((ctaData?.config as CTASectionConfig) || defaultCTASectionConfig);
 
   return (
     <div className="flex flex-col min-h-screen">

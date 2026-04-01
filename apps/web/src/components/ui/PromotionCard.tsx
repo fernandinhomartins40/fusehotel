@@ -6,7 +6,8 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button';
 import { Calendar, Tag } from 'lucide-react';
 import { format } from 'date-fns';
-import { PromotionsConfig } from '@/types/landing-config';
+import { PromotionsConfig, defaultPromotionsConfig } from '@/types/landing-config';
+import { hydrateBrandColors } from '@/lib/brand-theme';
 
 interface PromotionCardProps {
   promotion: Promotion;
@@ -23,21 +24,22 @@ export const PromotionCard: React.FC<PromotionCardProps> = ({ promotion, config 
 
   const linkPath = `/promocoes/${promotion.slug}`;
 
-  // Valores padrão das cores
-  const borderColor = config?.cardBorderColor || '#E5E5E5';
-  const cardBackground = config?.cardBackground || '#FFFFFF';
-  const badgeBackground = config?.cardBadgeBackground || '#0466C8';
-  const badgeText = config?.cardBadgeText || '#FFFFFF';
-  const titleColor = config?.cardTitleColor || '#000000';
-  const dateColor = config?.cardDateColor || '#6B7280';
-  const descriptionColor = config?.cardDescriptionColor || '#6B7280';
-  const featureBadgeBackground = config?.cardFeatureBadgeBackground || '#F3F4F6';
-  const featureBadgeText = config?.cardFeatureBadgeText || '#374151';
-  const originalPriceColor = config?.cardOriginalPriceColor || '#9CA3AF';
-  const discountedPriceColor = config?.cardDiscountedPriceColor || '#0466C8';
-  const buttonBackground = config?.cardButtonBackground || '#0466C8';
-  const buttonTextColor = config?.cardButtonTextColor || '#FFFFFF';
-  const borderRadius = config?.cardBorderRadius || '8px';
+  const themedConfig = hydrateBrandColors(config || defaultPromotionsConfig);
+
+  const borderColor = themedConfig.cardBorderColor || '#E5E5E5';
+  const cardBackground = themedConfig.cardBackground || '#FFFFFF';
+  const badgeBackground = themedConfig.cardBadgeBackground || 'hsl(var(--primary))';
+  const badgeText = themedConfig.cardBadgeText || '#FFFFFF';
+  const titleColor = themedConfig.cardTitleColor || '#000000';
+  const dateColor = themedConfig.cardDateColor || '#6B7280';
+  const descriptionColor = themedConfig.cardDescriptionColor || '#6B7280';
+  const featureBadgeBackground = themedConfig.cardFeatureBadgeBackground || '#F3F4F6';
+  const featureBadgeText = themedConfig.cardFeatureBadgeText || '#374151';
+  const originalPriceColor = themedConfig.cardOriginalPriceColor || '#9CA3AF';
+  const discountedPriceColor = themedConfig.cardDiscountedPriceColor || 'hsl(var(--primary))';
+  const buttonBackground = themedConfig.cardButtonBackground || 'hsl(var(--primary))';
+  const buttonTextColor = themedConfig.cardButtonTextColor || '#FFFFFF';
+  const borderRadius = themedConfig.cardBorderRadius || '8px';
 
   return (
     <Card

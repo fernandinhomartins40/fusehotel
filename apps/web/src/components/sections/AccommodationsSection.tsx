@@ -6,6 +6,7 @@ import { useAccommodations } from '@/hooks/useAccommodations';
 import { useLandingSettings } from '@/hooks/useLanding';
 import { defaultAccommodationsConfig } from '@/types/landing-config';
 import { Loader2, ArrowRight } from 'lucide-react';
+import { hydrateBrandColors } from '@/lib/brand-theme';
 
 const FALLBACK_ACCOMMODATION_IMAGE =
   '/lovable-uploads/2b637749-b3cc-4943-8c7b-195634e4be2d.png';
@@ -17,7 +18,7 @@ export const AccommodationsSection: React.FC = () => {
   });
 
   const { data: settingsData } = useLandingSettings('accommodations');
-  const config = settingsData?.config || defaultAccommodationsConfig;
+  const config = hydrateBrandColors(settingsData?.config || defaultAccommodationsConfig);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -62,9 +63,9 @@ export const AccommodationsSection: React.FC = () => {
             <Link to="/acomodacoes">
               <button
                 className="flex items-center gap-2.5 text-white font-medium text-sm px-8 py-4 rounded-full transition-colors duration-300 uppercase tracking-wide"
-                style={{ backgroundColor: config.buttonColor || '#0466C8' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = config.buttonHoverColor || '#0355A6'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = config.buttonColor || '#0466C8'}
+                style={{ backgroundColor: config.buttonColor || 'hsl(var(--primary))' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = config.buttonHoverColor || 'hsl(var(--primary-hover))'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = config.buttonColor || 'hsl(var(--primary))'}
               >
                 {config.buttonText || 'VER MAIS'}
                 <ArrowRight className="h-4 w-4" />
@@ -75,7 +76,7 @@ export const AccommodationsSection: React.FC = () => {
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-3 text-lg">Carregando acomodações...</span>
           </div>
         ) : error ? (

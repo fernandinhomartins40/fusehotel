@@ -81,7 +81,7 @@ const RoomDetail: React.FC = () => {
         <main className="flex-grow flex items-center justify-center">
           <Card>
             <CardContent className="flex items-center justify-center p-12">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <span className="ml-3 text-lg">Carregando acomodação...</span>
             </CardContent>
           </Card>
@@ -102,7 +102,7 @@ const RoomDetail: React.FC = () => {
             <p className="text-lg text-gray-600 mb-6">
               {(error as any)?.response?.data?.message || 'A acomodação que você está procurando não está disponível.'}
             </p>
-            <Button className="bg-[#0466C8] hover:bg-[#0355A6]" asChild>
+            <Button className="bg-primary hover:bg-primary/90" asChild>
               <Link to="/acomodacoes">Ver todas acomodações</Link>
             </Button>
           </div>
@@ -201,7 +201,7 @@ const RoomDetail: React.FC = () => {
                 {/* Room Header */}
                 <div>
                   <div className="flex items-center gap-4 mb-4">
-                    <Badge className="bg-[#0466C8] hover:bg-[#0355A6] text-white">
+                    <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground">
                       {accommodationType}
                     </Badge>
                     {accommodation.isAvailable && (
@@ -215,11 +215,11 @@ const RoomDetail: React.FC = () => {
 
                   <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-6">
                     <div className="flex items-center gap-2">
-                      <MapPin size={18} className="text-[#0466C8]" />
+                      <MapPin size={18} className="text-primary" />
                       <span>{accommodation.size}m²</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Users size={18} className="text-[#0466C8]" />
+                      <Users size={18} className="text-primary" />
                       <span>Capacidade: {accommodation.capacity} pessoa{accommodation.capacity !== 1 ? 's' : ''}</span>
                     </div>
                   </div>
@@ -248,7 +248,7 @@ const RoomDetail: React.FC = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {amenities.map((amenity, idx) => (
                           <div key={idx} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                            <Check size={18} className="text-[#0466C8] flex-shrink-0" />
+                            <Check size={18} className="text-primary flex-shrink-0" />
                             <span className="text-gray-700">{amenity}</span>
                           </div>
                         ))}
@@ -264,7 +264,7 @@ const RoomDetail: React.FC = () => {
                     <h2 className="text-2xl font-semibold text-gray-900 mb-4">Informações Importantes</h2>
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                        <Clock size={18} className="text-[#0466C8]" />
+                        <Clock size={18} className="text-primary" />
                         <span className="text-gray-700">
                           Check-in: {accommodation.checkInTime} • Check-out: {accommodation.checkOutTime}
                         </span>
@@ -280,7 +280,7 @@ const RoomDetail: React.FC = () => {
                   <CardContent className="p-6 space-y-4">
                     <div>
                       <p className="text-sm text-gray-600">A partir de</p>
-                      <p className="text-3xl font-bold text-[#0466C8]">
+                      <p className="text-3xl font-bold text-primary">
                         {formatCurrency(Number(accommodation.pricePerNight))}
                       </p>
                       <p className="text-sm text-gray-600">por noite</p>
@@ -367,7 +367,7 @@ const RoomDetail: React.FC = () => {
                     <Separator />
 
                     <Button
-                      className="w-full bg-[#0466C8] hover:bg-[#0355A6] flex items-center justify-center gap-2"
+                      className="w-full bg-primary hover:bg-primary/90 flex items-center justify-center gap-2"
                       onClick={handleProceedToCheckout}
                       disabled={
                         !accommodation.isAvailable ||
@@ -421,7 +421,7 @@ const RoomDetail: React.FC = () => {
         {!showBookingForm && (
           <div className="bg-gray-50 py-8">
             <div className="max-w-7xl mx-auto px-4 text-center">
-              <Button variant="outline" asChild className="border-[#0466C8] text-[#0466C8] hover:bg-[#0466C8] hover:text-white">
+              <Button variant="outline" asChild className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
                 <Link to="/acomodacoes" className="flex items-center gap-2">
                   <ArrowLeft size={18} />
                   Ver todas as acomodações

@@ -22,9 +22,9 @@ export const ReservationCard: React.FC<ReservationCardProps> = ({ reservation })
         return 'bg-red-100 text-red-800';
       case 'COMPLETED':
       case 'CHECKED_OUT':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary/10 text-primary';
       case 'CHECKED_IN':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-secondary/10 text-secondary-foreground';
       case 'NO_SHOW':
         return 'bg-orange-100 text-orange-800';
       default:
@@ -114,7 +114,7 @@ export const ReservationCard: React.FC<ReservationCardProps> = ({ reservation })
         <div className="pt-2 border-t">
           <div className="flex justify-between items-center mb-3">
             <span className="text-sm text-gray-600">Total</span>
-            <span className="text-lg font-bold text-[#0466C8]">
+            <span className="text-lg font-bold text-primary">
               {formatCurrency(Number(reservation.totalAmount))}
             </span>
           </div>

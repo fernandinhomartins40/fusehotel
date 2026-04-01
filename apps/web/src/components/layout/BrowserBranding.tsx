@@ -1,21 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useLandingSettings } from '@/hooks/useLanding';
 import { usePublicSettings } from '@/hooks/useSystemSettings';
 import { defaultHeaderConfig } from '@/types/landing-config';
+import { applyBrandThemeVariables, buildBrandTheme } from '@/lib/brand-theme';
 
 const DEFAULT_BROWSER_TITLE = defaultHeaderConfig.browserTitle || 'Aguas Claras';
 const DEFAULT_FAVICON = '/favicon.ico';
-
-type PublicSetting = {
-  key?: string;
-  value?: unknown;
-};
-
-function getPublicSettingValue(settings: PublicSetting[] | undefined, key: string) {
-  const value = settings?.find((setting) => setting.key === key)?.value;
-
-  return typeof value === 'string' && value.trim() ? value : undefined;
-}
 
 function guessIconType(url: string) {
   if (url.endsWith('.svg')) {
@@ -54,10 +44,16 @@ export const BrowserBranding = () => {
   const { data: headerSettings } = useLandingSettings('header');
   const { data: publicSettings } = usePublicSettings();
 
-  const browserTitle = headerSettings?.config?.browserTitle || DEFAULT_BROWSER_TITLE;
-  const favicon =
-    getPublicSettingValue(publicSettings as PublicSetting[] | undefined, 'branding_favicon') ||
-    DEFAULT_FAVICON;
+  const brandTheme = useMemo(
+    () =>
+      buildBrandTheme(
+        publicSettings as { key?: string; value?: unknown }[] | undefined,
+        headerSettings?.config?.browserTitle || DEFAULT_BROWSER_TITLE
+      ),
+    [headerSettings?.config?.browserTitle, publicSettings]
+  );
+  const browserTitle = brandTheme.browserTitle;
+  const favicon = brandTheme.favicon || DEFAULT_FAVICON;
 
   useEffect(() => {
     document.title = browserTitle;
@@ -68,6 +64,10 @@ export const BrowserBranding = () => {
     upsertHeadLink('shortcut icon', favicon);
     upsertHeadLink('apple-touch-icon', favicon);
   }, [favicon]);
+
+  useEffect(() => {
+    applyBrandThemeVariables(brandTheme);
+  }, [brandTheme]);
 
   return null;
 };

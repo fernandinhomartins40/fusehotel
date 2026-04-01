@@ -83,7 +83,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ redirectTo }) => {
     <>
       <Card className="w-full max-w-md mx-auto">
         <CardHeader className="text-center">
-          <CardTitle className="flex items-center justify-center gap-2 text-[#0466C8]">
+          <CardTitle className="flex items-center justify-center gap-2 text-primary">
             <User size={24} />
             Entrar na Conta
           </CardTitle>
@@ -110,7 +110,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ redirectTo }) => {
                 <Label htmlFor="password">Senha</Label>
                 <button
                   type="button"
-                  className="text-sm text-[#0466C8] hover:underline"
+                  className="text-sm text-primary hover:underline"
                   onClick={() => setForgotPasswordOpen(true)}
                 >
                   Esqueci minha senha
@@ -168,7 +168,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ redirectTo }) => {
 
             <Button
               type="submit"
-              className="w-full bg-[#0466C8] hover:bg-[#0355A6]"
+              className="w-full"
               disabled={loginMutation.isPending}
             >
               {loginMutation.isPending ? (

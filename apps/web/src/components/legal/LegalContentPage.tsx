@@ -26,7 +26,7 @@ export const LegalContentPage: React.FC<LegalContentPageProps> = ({
       <Header />
 
       <main className="flex-1 py-12">
-        <div className="bg-[#0466C8] py-12 text-white">
+        <div className="bg-gradient-to-r from-primary to-secondary py-12 text-white">
           <div className="container mx-auto px-4">
             <h1 className="mb-4 text-3xl font-bold md:text-4xl">{title}</h1>
             <p className="max-w-3xl text-xl">{description}</p>

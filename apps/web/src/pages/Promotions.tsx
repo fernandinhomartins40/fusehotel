@@ -16,12 +16,12 @@ const Promotions: React.FC = () => {
 
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="bg-gradient-to-r from-[#0466C8] to-[#0355A6] text-white py-20">
+        <section className="bg-gradient-to-r from-primary to-secondary text-white py-20">
           <div className="container mx-auto px-4 text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               Pacotes e Promoções
             </h1>
-            <p className="text-xl md:text-2xl text-blue-100 max-w-3xl mx-auto">
+            <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto">
               Descubra nossas ofertas especiais e pacotes exclusivos para tornar sua estadia ainda mais memorável
             </p>
           </div>
@@ -33,7 +33,7 @@ const Promotions: React.FC = () => {
             {isLoading ? (
               <Card>
                 <CardContent className="flex items-center justify-center p-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   <span className="ml-3 text-lg">Carregando promoções...</span>
                 </CardContent>
               </Card>

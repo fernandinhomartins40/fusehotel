@@ -7,6 +7,7 @@ import { defaultPromotionsConfig } from '@/types/landing-config';
 import { PromotionCard } from '@/components/ui/PromotionCard';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { hydrateBrandColors } from '@/lib/brand-theme';
 import {
   Carousel,
   CarouselContent,
@@ -22,7 +23,7 @@ export const PromotionsSection = () => {
   });
 
   const { data: settingsData } = useLandingSettings('promotions');
-  const config = settingsData?.config || defaultPromotionsConfig;
+  const config = hydrateBrandColors(settingsData?.config || defaultPromotionsConfig);
 
   const featuredPromotions = promotions || [];
 
@@ -32,7 +33,7 @@ export const PromotionsSection = () => {
       <section className="py-16" style={{ backgroundColor: config.backgroundColor || '#F9F9F9' }}>
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-3 text-lg">Carregando promoções...</span>
           </div>
         </div>

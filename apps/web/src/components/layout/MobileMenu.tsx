@@ -42,7 +42,7 @@ export const MobileMenu: React.FC = () => {
         variant="ghost"
         size="icon"
         onClick={toggleMenu}
-        className="text-gray-600 hover:text-[#0466C8]"
+        className="text-gray-600 hover:text-primary"
       >
         {isOpen ? <X size={24} /> : <Menu size={24} />}
       </Button>
@@ -81,7 +81,7 @@ export const MobileMenu: React.FC = () => {
                       <button
                         type="button"
                         onClick={item.action}
-                        className="block w-full text-left text-lg text-gray-600 hover:text-[#0466C8] py-2 transition-colors"
+                        className="block w-full text-left text-lg text-gray-600 hover:text-primary py-2 transition-colors"
                       >
                         {item.label}
                       </button>
@@ -89,7 +89,7 @@ export const MobileMenu: React.FC = () => {
                       <Link
                         to={item.path}
                         onClick={toggleMenu}
-                        className="block text-lg text-gray-600 hover:text-[#0466C8] py-2 transition-colors"
+                        className="block text-lg text-gray-600 hover:text-primary py-2 transition-colors"
                       >
                         {item.label}
                       </Link>
@@ -101,7 +101,7 @@ export const MobileMenu: React.FC = () => {
               <div className="mt-8 pt-6 border-t">
                 <Link to="/area-do-cliente">
                   <Button
-                    className="w-full bg-[#0466C8] hover:bg-[#0355A6] text-white rounded-full py-3"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full py-3"
                     onClick={toggleMenu}
                   >
                     Área do Cliente

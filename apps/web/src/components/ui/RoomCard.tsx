@@ -3,7 +3,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from './button';
 import { AspectRatio } from './aspect-ratio';
-import { AccommodationsConfig } from '@/types/landing-config';
+import { AccommodationsConfig, defaultAccommodationsConfig } from '@/types/landing-config';
+import { hydrateBrandColors } from '@/lib/brand-theme';
 
 interface RoomCardProps {
   title: string;
@@ -36,20 +37,22 @@ export const RoomCard: React.FC<RoomCardProps> = ({
   const linkPath = `/acomodacoes/${slug}`;
 
   // Valores padrão das cores
-  const badgeBackground = config?.cardBadgeBackground || '#0466C8';
-  const badgeText = config?.cardBadgeText || '#FFFFFF';
-  const borderColor = config?.cardBorderColor || '#E5E5E5';
-  const cardBackground = config?.cardBackground || '#FFFFFF';
-  const titleColor = config?.cardTitleColor || '#1D1D1F';
-  const descriptionColor = config?.cardDescriptionColor || '#6B7280';
-  const iconColor = config?.cardIconColor || '#0466C8';
-  const priceLabelColor = config?.cardPriceLabelColor || '#6B7280';
-  const priceValueColor = config?.cardPriceValueColor || '#000000';
-  const buttonBorderColor = config?.cardButtonBorderColor || '#0466C8';
-  const buttonTextColor = config?.cardButtonTextColor || '#0466C8';
-  const buttonHoverBackground = config?.cardButtonHoverBackground || '#0466C8';
-  const buttonHoverText = config?.cardButtonHoverText || '#FFFFFF';
-  const borderRadius = config?.cardBorderRadius || '8px';
+  const themedConfig = hydrateBrandColors(config || defaultAccommodationsConfig);
+
+  const badgeBackground = themedConfig.cardBadgeBackground || 'hsl(var(--primary))';
+  const badgeText = themedConfig.cardBadgeText || '#FFFFFF';
+  const borderColor = themedConfig.cardBorderColor || '#E5E5E5';
+  const cardBackground = themedConfig.cardBackground || '#FFFFFF';
+  const titleColor = themedConfig.cardTitleColor || '#1D1D1F';
+  const descriptionColor = themedConfig.cardDescriptionColor || '#6B7280';
+  const iconColor = themedConfig.cardIconColor || 'hsl(var(--primary))';
+  const priceLabelColor = themedConfig.cardPriceLabelColor || '#6B7280';
+  const priceValueColor = themedConfig.cardPriceValueColor || '#000000';
+  const buttonBorderColor = themedConfig.cardButtonBorderColor || 'hsl(var(--primary))';
+  const buttonTextColor = themedConfig.cardButtonTextColor || 'hsl(var(--primary))';
+  const buttonHoverBackground = themedConfig.cardButtonHoverBackground || 'hsl(var(--primary-hover))';
+  const buttonHoverText = themedConfig.cardButtonHoverText || '#FFFFFF';
+  const borderRadius = themedConfig.cardBorderRadius || '8px';
 
   return (
     <div
