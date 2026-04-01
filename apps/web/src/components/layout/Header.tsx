@@ -1,19 +1,29 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { User } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { MobileMenu } from './MobileMenu';
 import { useLandingSettings } from '@/hooks/useLanding';
 
 export const Header: React.FC = () => {
   const { data: headerConfig } = useLandingSettings('header');
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  const handleAccommodationsClick = () => {
+    if (location.pathname === '/') {
+      scrollToSection('accommodations');
+      return;
+    }
+
+    navigate('/acomodacoes');
   };
 
   // Default values
@@ -43,7 +53,8 @@ export const Header: React.FC = () => {
 
       <nav className="hidden md:flex items-center gap-8">
         <button
-          onClick={() => scrollToSection('accommodations')}
+          type="button"
+          onClick={handleAccommodationsClick}
           className="text-base cursor-pointer transition-colors"
           style={{
             color: textColor,
