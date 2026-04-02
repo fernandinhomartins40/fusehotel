@@ -4,7 +4,7 @@ import { useHeroSlides, useLandingSettings } from '@/hooks/useLanding';
 import { defaultHeroConfig } from '@/types/landing-config';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, CarouselApi } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
-import { hydrateBrandColors } from '@/lib/brand-theme';
+import { hydrateBrandColors, resolveHeroColor } from '@/lib/brand-theme';
 
 export const HeroSection: React.FC = () => {
   const { data: slides, isLoading } = useHeroSlides();
@@ -27,10 +27,23 @@ export const HeroSection: React.FC = () => {
 
   if (!slides || slides.length === 0) {
     return (
-      <section className="page-section-hero h-[700px] bg-cover bg-center relative overflow-hidden"
-        style={{
-          backgroundImage: 'linear-gradient(90deg, rgba(4, 34, 65, 0.8) 0%, rgba(4, 34, 65, 0.5) 45%, rgba(4, 34, 65, 0) 100%), url("/lovable-uploads/c04646a7-93df-4e87-b81e-e131b503402c.png")'
-        }}>
+      <section
+        className="page-section-hero h-[700px] relative overflow-hidden"
+        style={{ backgroundColor: resolveHeroColor(undefined) }}
+      >
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: 'url("/lovable-uploads/c04646a7-93df-4e87-b81e-e131b503402c.png")',
+          }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundColor: resolveHeroColor(undefined),
+            opacity: 0.72,
+          }}
+        />
         <div className="absolute inset-0 flex flex-col justify-center px-4 md:px-12 lg:px-24">
           <div className="page-container flex flex-col items-start text-left">
             <h2 className="text-white text-[13px] tracking-[2.7px] font-medium mb-5 uppercase">
@@ -74,32 +87,49 @@ export const HeroSection: React.FC = () => {
     >
       <CarouselContent>
         {themedSlides.map((slide: any) => {
-          const overlayColor = slide.overlayColor || '#042241';
+          const slideBackgroundType = slide.backgroundType === 'image' ? 'image' : 'color';
+          const overlayColor = resolveHeroColor(slide.overlayColor);
           const overlayOpacity = slide.overlayOpacity ?? 0.6;
           const slideHeight = config.height || '700px';
-
-          // Converter cor hex para rgba
-          const hexToRgb = (hex: string) => {
-            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-            return result ? {
-              r: parseInt(result[1], 16),
-              g: parseInt(result[2], 16),
-              b: parseInt(result[3], 16)
-            } : { r: 4, g: 34, b: 65 };
-          };
-
-          const rgb = hexToRgb(overlayColor);
-          const overlayGradient = `linear-gradient(90deg, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${overlayOpacity}) 0%, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${overlayOpacity * 0.625}) 45%, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0) 100%)`;
+          const hasImageBackground =
+            slideBackgroundType === 'image' &&
+            typeof slide.backgroundValue === 'string' &&
+            !slide.backgroundValue.startsWith('#') &&
+            !slide.backgroundValue.startsWith('hsl(') &&
+            !slide.backgroundValue.includes('gradient');
+          const slideBackgroundColor = slideBackgroundType === 'color'
+            ? resolveHeroColor(
+                typeof slide.backgroundValue === 'string' && slide.backgroundValue.includes('gradient')
+                  ? undefined
+                  : slide.backgroundValue,
+                overlayColor
+              )
+            : overlayColor;
 
           return (
           <CarouselItem key={slide.id}>
             <section
-              className="bg-cover bg-center relative overflow-hidden"
+              className="relative overflow-hidden"
               style={{
                 height: slideHeight,
-                backgroundImage: `${overlayGradient}, url("${slide.backgroundValue}")`
+                backgroundColor: slideBackgroundColor,
               }}
             >
+              {hasImageBackground && (
+                <div
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{ backgroundImage: `url("${slide.backgroundValue}")` }}
+                />
+              )}
+              {slideBackgroundType === 'image' && (
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundColor: overlayColor,
+                    opacity: overlayOpacity,
+                  }}
+                />
+              )}
               <div className="absolute inset-0 flex flex-col justify-center px-4 md:px-12 lg:px-24">
                 <div className="page-container flex flex-col items-start text-left">
                   {slide.showSubtitle && slide.subtitle && (

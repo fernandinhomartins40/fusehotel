@@ -23,7 +23,7 @@ const Accommodations = () => {
       <Header />
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="bg-gradient-to-r from-primary to-secondary text-white page-section-hero">
+        <section className="bg-secondary text-secondary-foreground page-section-hero">
           <div className="page-container text-center">
             <h1 className="page-title mb-6 uppercase">
               Acomodações

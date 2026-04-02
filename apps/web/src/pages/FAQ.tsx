@@ -9,7 +9,7 @@ import {
   AccordionTrigger
 } from '@/components/ui/accordion';
 import { useLandingSettings, useFAQCategories } from '@/hooks/useLanding';
-import { hydrateBrandColors } from '@/lib/brand-theme';
+import { hydrateBrandColors, resolveHeroColor } from '@/lib/brand-theme';
 import {
   defaultFAQHeroConfig,
   defaultFAQContentConfig,
@@ -36,7 +36,7 @@ const FAQ: React.FC = () => {
         <div
           className="text-white page-section-hero"
           style={{
-            backgroundColor: heroConfig.backgroundColor || 'hsl(var(--primary))',
+            backgroundColor: resolveHeroColor(heroConfig.backgroundColor),
             height: heroConfig.height || 'auto',
           }}
         >

@@ -98,7 +98,7 @@ export interface ServicesPageConfig {
 
 // Default Configurations
 export const defaultServicesHeroConfig: ServicesHeroConfig = {
-  backgroundColor: '#0466C8',
+  backgroundColor: '#6E59A5',
   titleColor: '#FFFFFF',
   subtitleColor: '#FFFFFF',
   title: 'Nossos Serviços',

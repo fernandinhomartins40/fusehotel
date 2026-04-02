@@ -7,7 +7,7 @@ import {
   useLandingSettings,
   useServiceItemsByCategory
 } from '@/hooks/useLanding';
-import { hydrateBrandColors } from '@/lib/brand-theme';
+import { hydrateBrandColors, resolveHeroColor } from '@/lib/brand-theme';
 import {
   defaultServicesHeroConfig,
   defaultAccommodationSectionConfig,
@@ -60,7 +60,7 @@ const Services: React.FC = () => {
         <div
           className="text-white page-section-hero"
           style={{
-            backgroundColor: heroConfig.backgroundColor,
+            backgroundColor: resolveHeroColor(heroConfig.backgroundColor),
             height: heroConfig.height,
             display: 'flex',
             alignItems: 'center',

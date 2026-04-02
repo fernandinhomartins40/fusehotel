@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useLandingSettings } from '@/hooks/useLanding';
 import { apiClient } from '@/lib/api-client';
-import { colorWithAlpha, hydrateBrandColors } from '@/lib/brand-theme';
+import { colorWithAlpha, hydrateBrandColors, resolveHeroColor } from '@/lib/brand-theme';
 import {
   defaultContactCardsConfig,
   defaultContactFAQCTAConfig,
@@ -96,7 +96,7 @@ const Contact: React.FC = () => {
         <div
           className="page-section-hero text-white"
           style={{
-            backgroundColor: heroConfig.backgroundColor || 'hsl(var(--primary))',
+            backgroundColor: resolveHeroColor(heroConfig.backgroundColor),
             height: heroConfig.height || 'auto',
           }}
         >

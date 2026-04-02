@@ -15,7 +15,7 @@ export interface FAQHeroConfig extends BaseSectionConfig {
 export const defaultFAQHeroConfig: FAQHeroConfig = {
   title: 'Perguntas Frequentes',
   description: 'Encontre respostas para as dúvidas mais comuns sobre hospedagem, serviços e políticas do Hotel Águas Claras.',
-  backgroundColor: '#0466C8',
+  backgroundColor: '#6E59A5',
   titleColor: '#FFFFFF',
   subtitleColor: '#FFFFFF',
   height: 'auto',

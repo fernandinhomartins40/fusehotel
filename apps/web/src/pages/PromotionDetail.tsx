@@ -213,7 +213,7 @@ const PromotionDetail: React.FC = () => {
             alt={promotion.title}
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute inset-0 bg-secondary/60" />
           <div className="absolute bottom-8 left-8 text-white">
             <Badge className="mb-4 bg-primary hover:bg-primary/90 text-primary-foreground">
               {promotion.type === 'PACKAGE' ? 'Pacote' : 'Promocao'}

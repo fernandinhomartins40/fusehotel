@@ -3,7 +3,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { AwardIcon } from '@/lib/award-icons';
 import { useLandingSettings, useTeamMembers, useAwards } from '@/hooks/useLanding';
-import { hydrateBrandColors } from '@/lib/brand-theme';
+import { hydrateBrandColors, resolveHeroColor } from '@/lib/brand-theme';
 import {
   defaultAboutHeroConfig,
   defaultHistorySectionConfig,
@@ -39,7 +39,7 @@ const AboutUs: React.FC = () => {
         <div
           className="text-white page-section-hero"
           style={{
-            backgroundColor: heroConfig.backgroundColor || 'hsl(var(--primary))',
+            backgroundColor: resolveHeroColor(heroConfig.backgroundColor),
             height: heroConfig.height || '400px',
             display: 'flex',
             alignItems: 'center',

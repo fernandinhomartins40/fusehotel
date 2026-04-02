@@ -72,7 +72,7 @@ export interface AboutPageConfig {
 
 // Default Configurations
 export const defaultAboutHeroConfig: AboutHeroConfig = {
-  backgroundColor: '#0466C8',
+  backgroundColor: '#6E59A5',
   titleColor: '#FFFFFF',
   subtitleColor: '#FFFFFF',
   title: 'Sobre Nós',

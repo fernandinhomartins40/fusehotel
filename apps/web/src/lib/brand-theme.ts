@@ -211,6 +211,28 @@ export function hydrateBrandColors<T>(value: T): T {
   return value;
 }
 
+export function resolveHeroColor(
+  value: string | undefined,
+  fallback = BRAND_THEME_COLORS.secondary
+) {
+  if (!value) {
+    return fallback;
+  }
+
+  const normalized = normalizeLegacyBrandColor(value);
+  const lowered = normalized.trim().toLowerCase();
+
+  if (
+    lowered === BRAND_THEME_COLORS.primary.toLowerCase() ||
+    lowered.includes('gradient') ||
+    lowered.includes('url(')
+  ) {
+    return fallback;
+  }
+
+  return normalized;
+}
+
 export function colorWithAlpha(color: string | undefined, alpha: number, fallback = BRAND_THEME_COLORS.primary) {
   const resolvedColor = color || fallback;
 

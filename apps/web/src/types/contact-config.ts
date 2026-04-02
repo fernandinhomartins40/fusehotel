@@ -15,7 +15,7 @@ export interface ContactHeroConfig extends BaseSectionConfig {
 export const defaultContactHeroConfig: ContactHeroConfig = {
   title: 'Entre em Contato',
   description: 'Estamos à disposição para responder suas dúvidas, receber sugestões ou ajudar com sua reserva.',
-  backgroundColor: '#0466C8',
+  backgroundColor: '#6E59A5',
   titleColor: '#FFFFFF',
   subtitleColor: '#FFFFFF',
   height: 'auto',

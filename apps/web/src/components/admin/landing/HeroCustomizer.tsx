@@ -17,17 +17,18 @@ import {
 } from '@/hooks/useLanding';
 import { HeroConfig, defaultHeroConfig } from '@/types/landing-config';
 import { ColorPickerField } from '@/components/admin/ColorPickerField';
-import { GradientPicker } from '@/components/admin/GradientPicker';
 import { ImageUploader } from '@/components/admin/ImageUploader';
 import { HeroSection } from '@/components/sections/HeroSection';
 import { Plus, Trash2, GripVertical, ChevronDown, ChevronUp, Save, X } from 'lucide-react';
+
+const HERO_DEFAULT_COLOR = '#6E59A5';
 
 interface HeroSlide {
   id: string;
   title: string;
   subtitle?: string;
   description?: string;
-  backgroundType: 'image' | 'color' | 'gradient';
+  backgroundType: 'image' | 'color';
   backgroundValue: string;
   textColor: string;
   overlayColor: string;
@@ -48,7 +49,7 @@ interface SlideFormData {
   title: string;
   subtitle: string;
   description: string;
-  backgroundType: 'image' | 'color' | 'gradient';
+  backgroundType: 'image' | 'color';
   backgroundValue: string;
   textColor: string;
   overlayColor: string;
@@ -72,7 +73,7 @@ const defaultSlideData: SlideFormData = {
   backgroundType: 'image',
   backgroundValue: '',
   textColor: '#FFFFFF',
-  overlayColor: '#042241',
+  overlayColor: HERO_DEFAULT_COLOR,
   overlayOpacity: 0.6,
   buttonText: 'AGENDAMENTO ONLINE',
   buttonColor: '#0466C8',
@@ -148,10 +149,15 @@ export const HeroCustomizer = () => {
             title: slide.title || '',
             subtitle: slide.subtitle || '',
             description: slide.description || '',
-            backgroundType: slide.backgroundType,
-            backgroundValue: slide.backgroundValue || '',
+            backgroundType: slide.backgroundType === 'image' ? 'image' : 'color',
+            backgroundValue:
+              slide.backgroundType === 'image'
+                ? slide.backgroundValue || ''
+                : slide.backgroundType === 'color'
+                  ? slide.backgroundValue || HERO_DEFAULT_COLOR
+                  : slide.overlayColor || HERO_DEFAULT_COLOR,
             textColor: slide.textColor || '#FFFFFF',
-            overlayColor: slide.overlayColor || '#042241',
+            overlayColor: slide.overlayColor || HERO_DEFAULT_COLOR,
             overlayOpacity: slide.overlayOpacity ?? 0.6,
             buttonText: slide.buttonText || 'AGENDAMENTO ONLINE',
             buttonColor: slide.buttonColor || '#0466C8',
@@ -186,11 +192,10 @@ export const HeroCustomizer = () => {
     }));
   };
 
-  const changeBackgroundType = (slideId: string, newType: 'image' | 'color' | 'gradient') => {
+  const changeBackgroundType = (slideId: string, newType: 'image' | 'color') => {
     const defaultValues = {
       image: '',
-      color: '#0466C8',
-      gradient: 'linear-gradient(90deg, #0466C8 0%, #0355A6 100%)',
+      color: HERO_DEFAULT_COLOR,
     };
 
     setEditingForms(prev => ({
@@ -324,15 +329,6 @@ export const HeroCustomizer = () => {
             />
             Cor Sólida
           </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              value="gradient"
-              checked={formData.backgroundType === 'gradient'}
-              onChange={() => changeBackgroundType(slideId, 'gradient')}
-            />
-            Gradiente
-          </label>
         </div>
       </div>
 
@@ -349,16 +345,10 @@ export const HeroCustomizer = () => {
       ) : formData.backgroundType === 'color' ? (
         <ColorPickerField
           label="Cor de Fundo"
-          value={formData.backgroundValue || '#0466C8'}
+          value={formData.backgroundValue || HERO_DEFAULT_COLOR}
           onChange={(color) => updateFormField(slideId, 'backgroundValue', color)}
         />
-      ) : (
-        <GradientPicker
-          label="Gradiente de Fundo"
-          value={formData.backgroundValue || 'linear-gradient(90deg, #0466C8 0%, #0355A6 100%)'}
-          onChange={(gradient) => updateFormField(slideId, 'backgroundValue', gradient)}
-        />
-      )}
+      ) : null}
 
       {/* Cor do Texto */}
       <ColorPickerField
@@ -372,7 +362,7 @@ export const HeroCustomizer = () => {
         <Label>Overlay da Imagem</Label>
         <ColorPickerField
           label="Cor do Overlay"
-          value={formData.overlayColor || '#042241'}
+          value={formData.overlayColor || HERO_DEFAULT_COLOR}
           onChange={(color) => updateFormField(slideId, 'overlayColor', color)}
         />
         <div className="space-y-2">
@@ -603,15 +593,6 @@ export const HeroCustomizer = () => {
                 />
                 Cor Sólida
               </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  value="gradient"
-                  checked={formData.backgroundType === 'gradient'}
-                  onChange={() => changeBackgroundType('new', 'gradient')}
-                />
-                Gradiente
-              </label>
             </div>
           </div>
 
@@ -628,16 +609,10 @@ export const HeroCustomizer = () => {
           ) : formData.backgroundType === 'color' ? (
             <ColorPickerField
               label="Cor de Fundo"
-              value={formData.backgroundValue || '#0466C8'}
+              value={formData.backgroundValue || HERO_DEFAULT_COLOR}
               onChange={(color) => updateFormField('new', 'backgroundValue', color)}
             />
-          ) : (
-            <GradientPicker
-              label="Gradiente de Fundo"
-              value={formData.backgroundValue || 'linear-gradient(90deg, #0466C8 0%, #0355A6 100%)'}
-              onChange={(gradient) => updateFormField('new', 'backgroundValue', gradient)}
-            />
-          )}
+          ) : null}
 
           {/* Cor do Texto */}
           <ColorPickerField
@@ -651,7 +626,7 @@ export const HeroCustomizer = () => {
             <Label>Overlay da Imagem</Label>
             <ColorPickerField
               label="Cor do Overlay"
-              value={formData.overlayColor || '#042241'}
+              value={formData.overlayColor || HERO_DEFAULT_COLOR}
               onChange={(color) => updateFormField('new', 'overlayColor', color)}
             />
             <div className="space-y-2">

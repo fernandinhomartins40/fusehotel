@@ -16,12 +16,12 @@ const Promotions: React.FC = () => {
 
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="bg-gradient-to-r from-primary to-secondary text-white page-section-hero">
+        <section className="bg-secondary text-secondary-foreground page-section-hero">
           <div className="page-container text-center">
             <h1 className="page-title mb-4">
               Pacotes e Promoções
             </h1>
-            <p className="page-lead md:text-2xl text-white/90 max-w-3xl mx-auto">
+            <p className="page-lead md:text-2xl text-secondary-foreground/90 max-w-3xl mx-auto">
               Descubra nossas ofertas especiais e pacotes exclusivos para tornar sua estadia ainda mais memorável
             </p>
           </div>
