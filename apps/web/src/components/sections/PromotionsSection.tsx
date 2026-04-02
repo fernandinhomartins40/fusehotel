@@ -30,8 +30,8 @@ export const PromotionsSection = () => {
   // If loading, show loader
   if (isLoading) {
     return (
-      <section className="py-16" style={{ backgroundColor: config.backgroundColor || '#F9F9F9' }}>
-        <div className="container mx-auto px-4">
+      <section className="page-section" style={{ backgroundColor: config.backgroundColor || '#F9F9F9' }}>
+        <div className="page-container">
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-3 text-lg">Carregando promoções...</span>
@@ -44,8 +44,8 @@ export const PromotionsSection = () => {
   // If error, show error message
   if (error) {
     return (
-      <section className="py-16" style={{ backgroundColor: config.backgroundColor || '#F9F9F9' }}>
-        <div className="container mx-auto px-4">
+      <section className="page-section" style={{ backgroundColor: config.backgroundColor || '#F9F9F9' }}>
+        <div className="page-container">
           <div className="text-center py-12">
             <p className="text-red-600 text-lg">
               Erro ao carregar promoções. Por favor, tente novamente mais tarde.
@@ -62,8 +62,8 @@ export const PromotionsSection = () => {
   }
 
   return (
-    <section className="py-16" style={{ backgroundColor: config.backgroundColor || '#F9F9F9' }}>
-      <div className="container mx-auto px-4">
+    <section className="page-section" style={{ backgroundColor: config.backgroundColor || '#F9F9F9' }}>
+      <div className="page-container">
         <div className="text-center mb-12">
           {config.title && (
             <h2 className="text-3xl font-bold mb-2" style={{ color: config.titleColor || '#000000' }}>

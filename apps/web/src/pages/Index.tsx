@@ -10,9 +10,9 @@ import { NewsletterSection } from "@/components/sections/NewsletterSection";
 
 const Index = () => {
   return (
-    <div className="w-full">
+    <div className="flex min-h-screen flex-col">
       <Header />
-      <main>
+      <main className="flex-1">
         <HeroSection />
         <AccommodationsSection />
         <PromotionsSection />

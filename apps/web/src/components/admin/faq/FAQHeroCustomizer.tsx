@@ -130,13 +130,13 @@ export const FAQHeroCustomizer = () => {
         <CardContent>
           <div className="border rounded-lg overflow-hidden">
             <div
-              className="text-white py-12"
+              className="text-white page-section-hero"
               style={{
                 backgroundColor: watchedValues.backgroundColor || '#0466C8',
                 height: watchedValues.height || 'auto',
               }}
             >
-              <div className="container mx-auto px-4 text-center">
+              <div className="page-container text-center">
                 <h1
                   className="text-3xl md:text-4xl font-bold mb-4"
                   style={{ color: watchedValues.titleColor || '#FFFFFF' }}

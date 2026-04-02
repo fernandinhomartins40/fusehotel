@@ -55,7 +55,7 @@ export const CustomerDashboard: React.FC = () => {
   // Renderizar erro
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="page-container py-8 md:py-10">
         <Card>
           <CardContent className="flex flex-col items-center justify-center p-12 text-center">
             <div className="text-red-600 mb-4">
@@ -74,7 +74,7 @@ export const CustomerDashboard: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="page-container py-8 md:py-10">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>

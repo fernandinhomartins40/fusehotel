@@ -30,10 +30,10 @@ export const AccommodationsSection: React.FC = () => {
   return (
     <section
       id="accommodations"
-      className="px-4 md:px-12 lg:px-24 py-20"
+      className="page-section"
       style={{ backgroundColor: config.backgroundColor || '#F9F9F9' }}
     >
-      <div className="container mx-auto">
+      <div className="page-container">
         <div className="text-left mb-12">
           {config.subtitle && (
             <h2

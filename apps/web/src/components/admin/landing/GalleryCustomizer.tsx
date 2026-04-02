@@ -292,12 +292,12 @@ export const GalleryCustomizer = () => {
         <CardContent>
           <div className="border rounded-lg overflow-hidden">
             <section
-              className="py-16 px-4"
+              className="page-section"
               style={{
                 backgroundColor: watchedValues.backgroundColor || '#FFFFFF',
               }}
             >
-              <div className="container mx-auto">
+              <div className="page-container">
                 <div className="text-left mb-10">
                   {watchedValues.subtitle && (
                     <h2

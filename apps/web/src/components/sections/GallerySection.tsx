@@ -49,12 +49,12 @@ export const GallerySection = () => {
   return (
     <section
       id="gallery"
-      className="text-center px-4 md:px-12 lg:px-24 py-20"
+      className="page-section text-center"
       style={{
         backgroundColor: config.backgroundColor || '#FFFFFF'
       }}
     >
-      <div className="container mx-auto">
+      <div className="page-container">
         <div className="text-left mb-10">
           {config.subtitle && (
             <h2

@@ -25,7 +25,7 @@ const AdminLogin: React.FC = () => {
       <Header />
 
       <main className="flex-grow bg-gradient-to-br from-primary/5 via-background to-secondary/10">
-        <div className="container mx-auto px-4 py-20">
+        <div className="page-container page-section-hero">
           <div className="max-w-md mx-auto">
             <div className="text-center mb-8">
               <div className="inline-block p-3 bg-primary rounded-full mb-4">

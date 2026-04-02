@@ -94,13 +94,13 @@ const Contact: React.FC = () => {
 
       <main className="flex-1">
         <div
-          className="py-12 text-white"
+          className="page-section-hero text-white"
           style={{
             backgroundColor: heroConfig.backgroundColor || 'hsl(var(--primary))',
             height: heroConfig.height || 'auto',
           }}
         >
-          <div className="container mx-auto px-4">
+          <div className="page-container">
             <h1
               className="mb-4 text-3xl font-bold md:text-4xl"
               style={{ color: heroConfig.titleColor || '#FFFFFF' }}
@@ -118,10 +118,10 @@ const Contact: React.FC = () => {
         </div>
 
         <section
-          className="py-12"
+          className="page-section-tight"
           style={{ backgroundColor: cardsConfig.backgroundColor || '#F9FAFB' }}
         >
-          <div className="container mx-auto px-4">
+          <div className="page-container">
             <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
               <Card className="border-none shadow-md transition-shadow hover:shadow-lg">
                 <CardContent className="flex flex-col items-center p-8 text-center">
@@ -214,10 +214,10 @@ const Contact: React.FC = () => {
         </section>
 
         <section
-          className="py-16"
+          className="page-section"
           style={{ backgroundColor: formConfig.backgroundColor || '#FFFFFF' }}
         >
-          <div className="container mx-auto px-4">
+          <div className="page-container">
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
               <div>
                 <h2
@@ -397,10 +397,10 @@ const Contact: React.FC = () => {
         </section>
 
         <section
-          className="py-12"
+          className="page-section-tight"
           style={{ backgroundColor: faqCtaConfig.backgroundColor || '#F9FAFB' }}
         >
-          <div className="container mx-auto px-4 text-center">
+          <div className="page-container text-center">
             <h2
               className="mb-4 text-3xl font-bold"
               style={{ color: faqCtaConfig.titleColor || '#000000' }}

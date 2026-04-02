@@ -42,23 +42,24 @@ export const Header: React.FC = () => {
 
   return (
     <header
-      className="flex justify-between items-center px-4 md:px-12 lg:px-24 py-8 border-b border-gray-200"
+      className="border-b border-gray-200"
       style={{ backgroundColor }}
     >
-      <div className="w-[210px]">
-        <Link to="/">
-          <img
-            src={logo}
-            alt="Logo"
-            className="h-12"
-          />
-        </Link>
-      </div>
+      <div className="page-container flex items-center justify-between gap-6 py-5 md:py-6">
+        <div className="w-[210px] shrink-0">
+          <Link to="/">
+            <img
+              src={logo}
+              alt="Logo"
+              className="h-12"
+            />
+          </Link>
+        </div>
 
-      <nav className="hidden md:flex items-center gap-8">
-        <button
-          type="button"
-          onClick={handleAccommodationsClick}
+        <nav className="hidden md:flex flex-1 items-center justify-center gap-8">
+          <button
+            type="button"
+            onClick={handleAccommodationsClick}
           className="text-base cursor-pointer transition-colors"
           style={{
             color: textColor,
@@ -102,42 +103,43 @@ export const Header: React.FC = () => {
           style={{ color: textColor }}
           onMouseEnter={(e) => e.currentTarget.style.color = hoverColor}
           onMouseLeave={(e) => e.currentTarget.style.color = textColor}
-        >
-          Contato
-        </Link>
-      </nav>
-
-      <div className="flex items-center gap-4">
-        <Link to="/area-do-cliente">
-          <Button
-            className="hidden md:flex rounded-full px-6 py-2 items-center gap-2 transition-colors"
-            style={{
-              backgroundColor: buttonBackground,
-              color: buttonTextColor
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = buttonHover}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = buttonBackground}
           >
-            <User size={18} />
-            <span className="uppercase font-medium">{buttonText}</span>
-          </Button>
-        </Link>
+            Contato
+          </Link>
+        </nav>
 
-        <Link to="/area-do-cliente">
-          <Button
-            className="md:hidden rounded-full p-2 transition-colors"
-            style={{
-              backgroundColor: buttonBackground,
-              color: buttonTextColor
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = buttonHover}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = buttonBackground}
-          >
-            <User size={18} />
-          </Button>
-        </Link>
+        <div className="flex items-center gap-4 shrink-0">
+          <Link to="/area-do-cliente">
+            <Button
+              className="hidden md:flex rounded-full px-6 py-2 items-center gap-2 transition-colors"
+              style={{
+                backgroundColor: buttonBackground,
+                color: buttonTextColor
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = buttonHover}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = buttonBackground}
+            >
+              <User size={18} />
+              <span className="uppercase font-medium">{buttonText}</span>
+            </Button>
+          </Link>
 
-        <MobileMenu />
+          <Link to="/area-do-cliente">
+            <Button
+              className="md:hidden rounded-full p-2 transition-colors"
+              style={{
+                backgroundColor: buttonBackground,
+                color: buttonTextColor
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = buttonHover}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = buttonBackground}
+            >
+              <User size={18} />
+            </Button>
+          </Link>
+
+          <MobileMenu />
+        </div>
       </div>
     </header>
   );

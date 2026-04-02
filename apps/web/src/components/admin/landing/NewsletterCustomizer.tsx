@@ -141,12 +141,12 @@ export const NewsletterCustomizer = () => {
           <div className="border rounded-lg overflow-auto max-h-[600px]">
             {/* Preview em tamanho real - seguindo o padrão do NewsletterSection */}
             <section
-              className="px-4 md:px-12 lg:px-24 py-16"
+              className="page-section-tight"
               style={{
                 backgroundColor: watchedValues.backgroundColor || '#0466C8',
               }}
             >
-              <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
+              <div className="page-container flex flex-col md:flex-row justify-between items-center">
                 {/* Title */}
                 <div className="mb-6 md:mb-0">
                   <h3

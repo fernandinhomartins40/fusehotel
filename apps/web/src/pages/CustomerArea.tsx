@@ -26,10 +26,10 @@ const CustomerArea: React.FC = () => {
         {isAuthenticated ? (
           <CustomerDashboard />
         ) : (
-          <div className="container mx-auto px-4 py-20">
+          <div className="page-container page-section-hero">
             <div className="max-w-md mx-auto">
               <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold text-foreground mb-4">Area do Cliente</h1>
+                <h1 className="page-title text-foreground mb-4">Area do Cliente</h1>
                 <p className="text-gray-600">
                   {safeRedirectTo
                     ? 'Faca login para retomar o checkout sem perder os dados da reserva'

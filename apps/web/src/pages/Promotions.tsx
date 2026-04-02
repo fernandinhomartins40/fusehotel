@@ -16,20 +16,20 @@ const Promotions: React.FC = () => {
 
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="bg-gradient-to-r from-primary to-secondary text-white py-20">
-          <div className="container mx-auto px-4 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+        <section className="bg-gradient-to-r from-primary to-secondary text-white page-section-hero">
+          <div className="page-container text-center">
+            <h1 className="page-title mb-4">
               Pacotes e Promoções
             </h1>
-            <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto">
+            <p className="page-lead md:text-2xl text-white/90 max-w-3xl mx-auto">
               Descubra nossas ofertas especiais e pacotes exclusivos para tornar sua estadia ainda mais memorável
             </p>
           </div>
         </section>
 
         {/* Promotions Grid */}
-        <section className="py-16">
-          <div className="container mx-auto px-4">
+        <section className="page-section">
+          <div className="page-container">
             {isLoading ? (
               <Card>
                 <CardContent className="flex items-center justify-center p-12">

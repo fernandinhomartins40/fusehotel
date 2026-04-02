@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form';
+﻿import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -157,7 +157,7 @@ export const HistoryCustomizer = () => {
         <CardContent>
           <div className="border rounded-lg overflow-hidden">
             <section
-              className="container mx-auto px-4 py-16"
+              className="page-section"
               style={{ backgroundColor: watchedValues.backgroundColor || '#FFFFFF' }}
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">

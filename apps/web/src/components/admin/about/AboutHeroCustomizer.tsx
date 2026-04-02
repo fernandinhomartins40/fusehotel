@@ -127,7 +127,7 @@ export const AboutHeroCustomizer = () => {
         <CardContent>
           <div className="border rounded-lg overflow-hidden">
             <div
-              className="text-white py-16"
+              className="text-white page-section-hero"
               style={{
                 backgroundColor: watchedValues.backgroundColor || '#0466C8',
                 height: watchedValues.height || '400px',
@@ -135,7 +135,7 @@ export const AboutHeroCustomizer = () => {
                 alignItems: 'center',
               }}
             >
-              <div className="container mx-auto px-4">
+              <div className="page-container">
                 <h1
                   className="text-4xl md:text-5xl font-bold mb-4"
                   style={{ color: watchedValues.titleColor || '#FFFFFF' }}

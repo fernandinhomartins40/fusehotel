@@ -24,12 +24,12 @@ export const PartnersSection: React.FC = () => {
 
   return (
     <section
-      className="px-4 md:px-12 lg:px-24 py-16"
+      className="page-section-tight"
       style={{
         background: config.backgroundGradient || 'linear-gradient(148deg, #05111D 0%, #0C3864 100%)'
       }}
     >
-      <div className="container mx-auto">
+      <div className="page-container">
         {config.title && (
           <div className="text-center mb-12">
             <h2

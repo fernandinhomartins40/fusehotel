@@ -58,7 +58,7 @@ const Services: React.FC = () => {
       <main className="flex-1">
         {/* Hero Section */}
         <div
-          className="text-white py-16"
+          className="text-white page-section-hero"
           style={{
             backgroundColor: heroConfig.backgroundColor,
             height: heroConfig.height,
@@ -66,16 +66,16 @@ const Services: React.FC = () => {
             alignItems: 'center',
           }}
         >
-          <div className="container mx-auto px-4 text-center">
+          <div className="page-container text-center">
             <h1
-              className="text-4xl md:text-5xl font-bold mb-6"
+              className="page-title mb-6"
               style={{ color: heroConfig.titleColor }}
             >
               {heroConfig.title}
             </h1>
             {heroConfig.subtitle && (
               <p
-                className="text-xl max-w-3xl mx-auto"
+                className="page-lead max-w-3xl mx-auto"
                 style={{ color: heroConfig.subtitleColor }}
               >
                 {heroConfig.subtitle}
@@ -86,10 +86,10 @@ const Services: React.FC = () => {
 
         {/* Accommodation Services */}
         <section
-          className="py-16"
+          className="page-section"
           style={{ backgroundColor: accommodationConfig.backgroundColor }}
         >
-          <div className="container mx-auto px-4">
+          <div className="page-container">
             <div className="text-center mb-16">
               <h2
                 className="text-3xl font-bold mb-4"
@@ -156,10 +156,10 @@ const Services: React.FC = () => {
 
         {/* Gastronomy */}
         <section
-          className="py-16"
+          className="page-section"
           style={{ backgroundColor: gastronomyConfig.backgroundColor }}
         >
-          <div className="container mx-auto px-4">
+          <div className="page-container">
             <div className="text-center mb-12">
               <h2
                 className="text-3xl font-bold mb-4"
@@ -208,10 +208,10 @@ const Services: React.FC = () => {
 
         {/* Recreation and Wellness */}
         <section
-          className="py-16"
+          className="page-section"
           style={{ backgroundColor: recreationConfig.backgroundColor }}
         >
-          <div className="container mx-auto px-4">
+          <div className="page-container">
             <div className="text-center mb-16">
               <h2
                 className="text-3xl font-bold mb-4"
@@ -253,10 +253,10 @@ const Services: React.FC = () => {
 
         {/* Business Services */}
         <section
-          className="py-16"
+          className="page-section"
           style={{ backgroundColor: businessConfig.backgroundColor }}
         >
-          <div className="container mx-auto px-4">
+          <div className="page-container">
             <div className="text-center mb-12">
               <h2
                 className="text-3xl font-bold mb-4"
@@ -311,10 +311,10 @@ const Services: React.FC = () => {
 
         {/* Special Services */}
         <section
-          className="py-16"
+          className="page-section"
           style={{ backgroundColor: specialConfig.backgroundColor }}
         >
-          <div className="container mx-auto px-4">
+          <div className="page-container">
             <div className="text-center mb-16">
               <h2
                 className="text-3xl font-bold mb-4"
@@ -361,10 +361,10 @@ const Services: React.FC = () => {
 
         {/* Call to Action */}
         <section
-          className="py-16"
+          className="page-section-tight"
           style={{ backgroundColor: ctaConfig.backgroundColor }}
         >
-          <div className="container mx-auto px-4 text-center">
+          <div className="page-container text-center">
             <h2
               className="text-3xl font-bold mb-4"
               style={{ color: ctaConfig.titleColor }}

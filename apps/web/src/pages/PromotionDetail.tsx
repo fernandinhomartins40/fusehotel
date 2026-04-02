@@ -186,7 +186,7 @@ const PromotionDetail: React.FC = () => {
 
       <main className="flex-grow">
         <div className="bg-gray-50 py-4">
-          <div className="max-w-7xl mx-auto px-4">
+          <div className="page-container">
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
@@ -222,7 +222,7 @@ const PromotionDetail: React.FC = () => {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="page-container page-section">
           {showBookingForm && selectedAccommodation ? (
             <div className="space-y-6">
               <Button
@@ -500,8 +500,8 @@ const PromotionDetail: React.FC = () => {
           )}
         </div>
 
-        <div className="bg-gray-50 py-8">
-          <div className="max-w-7xl mx-auto px-4 text-center">
+        <div className="bg-gray-50 page-section-tight">
+          <div className="page-container text-center">
             <Button
               variant="outline"
               asChild

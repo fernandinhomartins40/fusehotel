@@ -29,12 +29,12 @@ export const NewsletterSection: React.FC = () => {
 
   return (
     <section
-      className="px-4 md:px-12 lg:px-24 py-16"
+      className="page-section-tight"
       style={{
         backgroundColor: config.backgroundColor,
       }}
     >
-      <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
+      <div className="page-container flex flex-col md:flex-row justify-between items-center">
         <div className="mb-6 md:mb-0">
           <h3
             className="text-[56px] font-extrabold tracking-tight leading-none uppercase"

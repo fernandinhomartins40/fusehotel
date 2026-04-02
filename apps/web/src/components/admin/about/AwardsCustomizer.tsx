@@ -313,10 +313,10 @@ export const AwardsCustomizer = () => {
         <CardContent>
           <div className="overflow-hidden rounded-lg border">
             <section
-              className="py-16"
+              className="page-section"
               style={{ backgroundColor: watchedValues.backgroundColor || '#F9F9F9' }}
             >
-              <div className="container mx-auto px-4">
+              <div className="page-container">
                 <h2
                   className="mb-12 text-center text-3xl font-bold"
                   style={{ color: watchedValues.titleColor || '#0466C8' }}

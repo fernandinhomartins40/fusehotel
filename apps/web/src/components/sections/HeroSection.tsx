@@ -27,12 +27,12 @@ export const HeroSection: React.FC = () => {
 
   if (!slides || slides.length === 0) {
     return (
-      <section className="h-[700px] bg-cover bg-center relative overflow-hidden"
+      <section className="page-section-hero h-[700px] bg-cover bg-center relative overflow-hidden"
         style={{
           backgroundImage: 'linear-gradient(90deg, rgba(4, 34, 65, 0.8) 0%, rgba(4, 34, 65, 0.5) 45%, rgba(4, 34, 65, 0) 100%), url("/lovable-uploads/c04646a7-93df-4e87-b81e-e131b503402c.png")'
         }}>
         <div className="absolute inset-0 flex flex-col justify-center px-4 md:px-12 lg:px-24">
-          <div className="container mx-auto flex flex-col items-start text-left">
+          <div className="page-container flex flex-col items-start text-left">
             <h2 className="text-white text-[13px] tracking-[2.7px] font-medium mb-5 uppercase">
               O refúgio perfeito para se desconectar
             </h2>
@@ -101,7 +101,7 @@ export const HeroSection: React.FC = () => {
               }}
             >
               <div className="absolute inset-0 flex flex-col justify-center px-4 md:px-12 lg:px-24">
-                <div className="container mx-auto flex flex-col items-start text-left">
+                <div className="page-container flex flex-col items-start text-left">
                   {slide.showSubtitle && slide.subtitle && (
                     <h2 className="text-white text-[13px] tracking-[2.7px] font-medium mb-5 uppercase">
                       {slide.subtitle}

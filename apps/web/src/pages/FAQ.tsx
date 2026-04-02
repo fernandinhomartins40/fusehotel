@@ -34,13 +34,13 @@ const FAQ: React.FC = () => {
       <main className="flex-1">
         {/* Hero Section */}
         <div
-          className="text-white py-12"
+          className="text-white page-section-hero"
           style={{
             backgroundColor: heroConfig.backgroundColor || 'hsl(var(--primary))',
             height: heroConfig.height || 'auto',
           }}
         >
-          <div className="container mx-auto px-4 text-center">
+          <div className="page-container text-center">
             <h1
               className="text-3xl md:text-4xl font-bold mb-4"
               style={{ color: heroConfig.titleColor || '#FFFFFF' }}
@@ -58,7 +58,7 @@ const FAQ: React.FC = () => {
 
         {/* FAQ Content */}
         <div
-          className="container mx-auto px-4 py-12"
+          className="page-container page-section"
           style={{ backgroundColor: contentConfig.backgroundColor || '#FFFFFF' }}
         >
           <div className="max-w-4xl mx-auto">

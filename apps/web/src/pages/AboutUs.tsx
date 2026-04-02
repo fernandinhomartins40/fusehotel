@@ -34,10 +34,10 @@ const AboutUs: React.FC = () => {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 py-12">
+      <main className="flex-1">
         {/* Hero Section */}
         <div
-          className="text-white py-16"
+          className="text-white page-section-hero"
           style={{
             backgroundColor: heroConfig.backgroundColor || 'hsl(var(--primary))',
             height: heroConfig.height || '400px',
@@ -45,15 +45,15 @@ const AboutUs: React.FC = () => {
             alignItems: 'center',
           }}
         >
-          <div className="container mx-auto px-4">
+          <div className="page-container">
             <h1
-              className="text-4xl md:text-5xl font-bold mb-4"
+              className="page-title mb-4"
               style={{ color: heroConfig.titleColor || '#FFFFFF' }}
             >
               {heroConfig.title || 'Sobre Nós'}
             </h1>
             <p
-              className="text-xl max-w-3xl"
+              className="page-lead max-w-3xl"
               style={{ color: heroConfig.subtitleColor || '#FFFFFF' }}
             >
               {heroConfig.description || 'Descrição'}
@@ -63,7 +63,7 @@ const AboutUs: React.FC = () => {
 
         {/* History Section */}
         <section
-          className="container mx-auto px-4 py-16"
+          className="page-container page-section"
           style={{ backgroundColor: historyConfig.backgroundColor || '#FFFFFF' }}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
@@ -102,10 +102,10 @@ const AboutUs: React.FC = () => {
         
         {/* Mission and Values */}
         <section
-          className="py-16"
+          className="page-section"
           style={{ backgroundColor: mvvConfig.backgroundColor || '#F9F9F9' }}
         >
-          <div className="container mx-auto px-4">
+          <div className="page-container">
             <h2
               className="text-3xl font-bold mb-12 text-center"
               style={{ color: mvvConfig.titleColor || 'hsl(var(--primary))' }}
@@ -152,7 +152,7 @@ const AboutUs: React.FC = () => {
 
         {/* Team Section */}
         <section
-          className="container mx-auto px-4 py-16"
+          className="page-container page-section"
           style={{ backgroundColor: teamConfig.backgroundColor || '#FFFFFF' }}
         >
           <h2
@@ -190,10 +190,10 @@ const AboutUs: React.FC = () => {
 
         {/* Awards Section */}
         <section
-          className="py-16"
+          className="page-section"
           style={{ backgroundColor: awardsConfig.backgroundColor || '#F9F9F9' }}
         >
-          <div className="container mx-auto px-4">
+          <div className="page-container">
             <h2
               className="text-3xl font-bold mb-12 text-center"
               style={{ color: awardsConfig.titleColor || 'hsl(var(--primary))' }}

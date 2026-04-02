@@ -145,7 +145,7 @@ const RoomDetail: React.FC = () => {
       <main className="flex-grow">
         {/* Breadcrumbs */}
         <div className="bg-gray-50 py-4">
-          <div className="max-w-7xl mx-auto px-4">
+          <div className="page-container">
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
@@ -170,7 +170,7 @@ const RoomDetail: React.FC = () => {
         {images.length > 0 && <ImageGallery images={images} title={accommodation.name} />}
 
         {/* Content */}
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="page-container page-section">
           {showBookingForm ? (
             <div className="space-y-6">
               <Button
@@ -419,8 +419,8 @@ const RoomDetail: React.FC = () => {
 
         {/* Back to Accommodations */}
         {!showBookingForm && (
-          <div className="bg-gray-50 py-8">
-            <div className="max-w-7xl mx-auto px-4 text-center">
+          <div className="bg-gray-50 page-section-tight">
+            <div className="page-container text-center">
               <Button variant="outline" asChild className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
                 <Link to="/acomodacoes" className="flex items-center gap-2">
                   <ArrowLeft size={18} />

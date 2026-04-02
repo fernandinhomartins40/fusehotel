@@ -19,16 +19,16 @@ const Accommodations = () => {
   };
 
   return (
-    <div className="w-full">
+    <div className="flex min-h-screen flex-col">
       <Header />
-      <main>
+      <main className="flex-1">
         {/* Hero Section */}
-        <section className="bg-gradient-to-r from-primary to-secondary text-white py-20">
-          <div className="container mx-auto px-4 md:px-12 lg:px-24">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 uppercase">
+        <section className="bg-gradient-to-r from-primary to-secondary text-white page-section-hero">
+          <div className="page-container">
+            <h1 className="page-title mb-6 uppercase">
               Acomodações
             </h1>
-            <p className="text-xl leading-relaxed max-w-2xl">
+            <p className="page-lead max-w-2xl">
               Descubra nossas acomodações luxuosas com vista para o mar,
               cada uma projetada para oferecer o máximo conforto e elegância.
             </p>
@@ -36,8 +36,8 @@ const Accommodations = () => {
         </section>
 
         {/* Rooms Grid */}
-        <section className="py-20 bg-[#f9f9f9]">
-          <div className="container mx-auto px-4 md:px-12 lg:px-24">
+        <section className="page-section bg-[#f9f9f9]">
+          <div className="page-container">
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />

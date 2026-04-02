@@ -17,7 +17,7 @@ export const Footer: React.FC = () => {
       style={{ backgroundColor: config.backgroundColor || '#000000' }}
     >
       {/* Main Footer Content */}
-      <div className="container mx-auto px-4 py-12">
+      <div className="page-container py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
 
           {/* Column 1: About */}
@@ -240,7 +240,7 @@ export const Footer: React.FC = () => {
 
       {/* Copyright Bar */}
       <div className="border-t" style={{ borderColor: config.borderColor || '#1F2937' }}>
-        <div className="container mx-auto px-4 py-6">
+        <div className="page-container py-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm" style={{ color: config.copyrightColor || '#6B7280' }}>
               {config.copyright || `© ${new Date().getFullYear()} - TODOS OS DIREITOS RESERVADOS`}

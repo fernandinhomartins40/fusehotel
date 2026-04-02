@@ -25,16 +25,16 @@ export const LegalContentPage: React.FC<LegalContentPageProps> = ({
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="flex-1 py-12">
-        <div className="bg-gradient-to-r from-primary to-secondary py-12 text-white">
-          <div className="container mx-auto px-4">
-            <h1 className="mb-4 text-3xl font-bold md:text-4xl">{title}</h1>
-            <p className="max-w-3xl text-xl">{description}</p>
+      <main className="flex-1">
+        <div className="bg-gradient-to-r from-primary to-secondary page-section-hero text-white">
+          <div className="page-container">
+            <h1 className="page-title mb-4">{title}</h1>
+            <p className="page-lead max-w-3xl">{description}</p>
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-12">
-          <div className="mx-auto max-w-4xl rounded-lg bg-white p-8 shadow-md">
+        <div className="page-container page-section">
+          <div className="mx-auto max-w-4xl rounded-2xl bg-white p-6 shadow-md sm:p-8">
             {isLoading && !data ? (
               <div className="flex items-center justify-center py-8 text-gray-600">
                 <Loader2 className="mr-3 h-5 w-5 animate-spin" />

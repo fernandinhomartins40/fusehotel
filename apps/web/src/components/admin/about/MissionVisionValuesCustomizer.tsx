@@ -197,10 +197,10 @@ export const MissionVisionValuesCustomizer = () => {
         <CardContent>
           <div className="border rounded-lg overflow-hidden">
             <section
-              className="py-16"
+              className="page-section"
               style={{ backgroundColor: watchedValues.backgroundColor || '#F9F9F9' }}
             >
-              <div className="container mx-auto px-4">
+              <div className="page-container">
                 <h2
                   className="text-3xl font-bold mb-12 text-center"
                   style={{ color: watchedValues.titleColor || '#0466C8' }}
