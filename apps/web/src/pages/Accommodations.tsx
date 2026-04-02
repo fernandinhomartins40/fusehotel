@@ -24,11 +24,11 @@ const Accommodations = () => {
       <main className="flex-1">
         {/* Hero Section */}
         <section className="bg-gradient-to-r from-primary to-secondary text-white page-section-hero">
-          <div className="page-container">
+          <div className="page-container text-center">
             <h1 className="page-title mb-6 uppercase">
               Acomodações
             </h1>
-            <p className="page-lead max-w-2xl">
+            <p className="page-lead mx-auto max-w-2xl">
               Descubra nossas acomodações luxuosas com vista para o mar,
               cada uma projetada para oferecer o máximo conforto e elegância.
             </p>

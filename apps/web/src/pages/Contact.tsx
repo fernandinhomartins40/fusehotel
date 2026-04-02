@@ -100,7 +100,7 @@ const Contact: React.FC = () => {
             height: heroConfig.height || 'auto',
           }}
         >
-          <div className="page-container">
+          <div className="page-container text-center">
             <h1
               className="mb-4 text-3xl font-bold md:text-4xl"
               style={{ color: heroConfig.titleColor || '#FFFFFF' }}
@@ -108,7 +108,7 @@ const Contact: React.FC = () => {
               {heroConfig.title || 'Entre em Contato'}
             </h1>
             <p
-              className="max-w-3xl text-xl"
+              className="mx-auto max-w-3xl text-xl"
               style={{ color: heroConfig.subtitleColor || '#FFFFFF' }}
             >
               {heroConfig.description ||

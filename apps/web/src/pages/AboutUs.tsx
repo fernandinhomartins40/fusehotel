@@ -45,7 +45,7 @@ const AboutUs: React.FC = () => {
             alignItems: 'center',
           }}
         >
-          <div className="page-container">
+          <div className="page-container text-center">
             <h1
               className="page-title mb-4"
               style={{ color: heroConfig.titleColor || '#FFFFFF' }}
@@ -53,7 +53,7 @@ const AboutUs: React.FC = () => {
               {heroConfig.title || 'Sobre Nós'}
             </h1>
             <p
-              className="page-lead max-w-3xl"
+              className="page-lead mx-auto max-w-3xl"
               style={{ color: heroConfig.subtitleColor || '#FFFFFF' }}
             >
               {heroConfig.description || 'Descrição'}
