@@ -15,7 +15,7 @@ FuseHotel é uma solução enterprise-ready para gestão hoteleira que oferece:
 - ✅ **Arquitetura Escalável** - Monorepo, microservices-ready
 
 **🌐 Produção**: [perolahotel.com](https://perolahotel.com)
-**🖥️ Servidor**: 72.60.10.112
+**🖥️ Servidor**: 72.60.10.108
 
 ---
 
@@ -155,7 +155,7 @@ fusehotel/
 - **Database**: PostgreSQL 16 Alpine
 - **CI/CD**: GitHub Actions
 - **SSL**: Let's Encrypt (Certbot)
-- **VPS**: 72.60.10.112
+- **VPS**: 72.60.10.108
 - **Domínio**: perolahotel.com
 
 ---
@@ -406,7 +406,7 @@ git push origin main
 
 ```bash
 # 1. Conecte ao servidor VPS
-ssh user@72.60.10.112
+ssh user@72.60.10.108
 
 # 2. Navegue até o projeto
 cd /path/to/fusehotel
@@ -929,4 +929,4 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 **Desenvolvido com ❤️ pela equipe FuseHotel**
 
-🏨 [perolahotel.com](https://perolahotel.com) | 🖥️ VPS: 72.60.10.112
+🏨 [perolahotel.com](https://perolahotel.com) | 🖥️ VPS: 72.60.10.108

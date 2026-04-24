@@ -30,7 +30,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y sshpass rsync
 
           # Criar diretório no VPS
-          sshpass -f ~/.ssh/vps_password ssh -o StrictHostKeyChecking=no root@72.60.10.112 "mkdir -p /root/fusehotel"
+          sshpass -f ~/.ssh/vps_password ssh -o StrictHostKeyChecking=no root@72.60.10.108 "mkdir -p /root/fusehotel"
 
           # Verificar estrutura do projeto antes do rsync
           echo "=== Verificando estrutura localmente antes do rsync ==="
@@ -48,16 +48,16 @@ jobs:
             --exclude='.env' \
             --exclude='.env.local' \
             -e "ssh -o StrictHostKeyChecking=no" \
-            ./ root@72.60.10.112:/root/fusehotel/
+            ./ root@72.60.10.108:/root/fusehotel/
 
           # Verificar se código foi copiado
           echo "=== Verificando estrutura na VPS após rsync ==="
-          sshpass -f ~/.ssh/vps_password ssh -o StrictHostKeyChecking=no root@72.60.10.112 "ls -la /root/fusehotel/apps/api/src/ | head -20"
+          sshpass -f ~/.ssh/vps_password ssh -o StrictHostKeyChecking=no root@72.60.10.108 "ls -la /root/fusehotel/apps/api/src/ | head -20"
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
         with:
-          host: 72.60.10.112
+          host: 72.60.10.108
           username: root
           password: ${{ secrets.VPS_PASSWORD }}
           port: 22
@@ -147,7 +147,7 @@ jobs:
 
             # CORS
             FRONTEND_URL=https://www.perolahotel.com
-            CORS_ORIGIN=https://www.perolahotel.com,http://www.perolahotel.com,https://perolahotel.com,http://perolahotel.com,http://72.60.10.112:3090,http://localhost:3090
+            CORS_ORIGIN=https://www.perolahotel.com,http://www.perolahotel.com,https://perolahotel.com,http://perolahotel.com,http://72.60.10.108:3090,http://localhost:3090
 
             # Logs
             LOG_LEVEL=info
@@ -354,7 +354,7 @@ jobs:
                 echo "✅ Deploy concluído - aplicação está rodando!"
                 echo "📍 Domínio: https://perolahotel.com"
                 echo "📍 Domínio: https://www.perolahotel.com"
-                echo "📍 IP:Porta: http://72.60.10.112:3090"
+                echo "📍 IP:Porta: http://72.60.10.108:3090"
                 echo "📦 Volumes: PERSISTENTES entre deploys"
                 exit 0
               fi
@@ -380,8 +380,8 @@ jobs:
         run: |
           echo "✅ Deploy concluído com sucesso!"
           echo "🌐 FuseHotel disponível em: https://www.perolahotel.com"
-          echo "🌐 Acesso alternativo: http://72.60.10.112:3090"
-          echo "📊 Health check: http://72.60.10.112:3090/health"
+          echo "🌐 Acesso alternativo: http://72.60.10.108:3090"
+          echo "📊 Health check: http://72.60.10.108:3090/health"
           echo ""
           echo "📦 Volumes preservados entre deploys"
           echo "🔒 SSL/Nginx: Configurações existentes mantidas"
