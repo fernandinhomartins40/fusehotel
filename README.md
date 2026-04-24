@@ -283,8 +283,8 @@ npm run prisma:migrate
 npm run prisma:seed
 
 # 7. Acesse a aplicação
-# Frontend: http://localhost:3090
-# API: http://localhost:3090/api
+# Frontend: http://localhost:3091
+# API: http://localhost:3091/api
 # Postgres: localhost:5432
 ```
 

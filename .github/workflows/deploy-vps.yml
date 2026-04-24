@@ -147,7 +147,7 @@ jobs:
 
             # CORS
             FRONTEND_URL=https://www.perolahotel.com
-            CORS_ORIGIN=https://www.perolahotel.com,http://www.perolahotel.com,https://perolahotel.com,http://perolahotel.com,http://72.60.10.108:3090,http://localhost:3090
+            CORS_ORIGIN=https://www.perolahotel.com,http://www.perolahotel.com,https://perolahotel.com,http://perolahotel.com,http://72.60.10.108:3091,http://localhost:3091
 
             # Logs
             LOG_LEVEL=info
@@ -320,17 +320,17 @@ jobs:
             # Verificar se está escutando nas portas corretas
             echo ""
             echo "=== Verificando portas em uso ==="
-            netstat -tulpn | grep nginx | grep -E ":80 |:443 |:3090 "
+            netstat -tulpn | grep nginx | grep -E ":80 |:443 |:3091 "
 
             # ===== VERIFICAR HEALTH CHECK =====
             echo "=== Verificando health check ==="
             for i in {1..15}; do
-              if curl -f http://localhost:3090/health; then
-                echo "✅ FuseHotel está rodando na porta 3090!"
+              if curl -f http://localhost:3091/health; then
+                echo "✅ FuseHotel está rodando na porta 3091!"
 
                 echo ""
-                echo "=== Testando frontend porta 3090 ==="
-                curl -I http://localhost:3090 | head -5
+                echo "=== Testando frontend porta 3091 ==="
+                curl -I http://localhost:3091 | head -5
 
                 echo ""
                 echo "=== Testando HTTPS ==="
@@ -354,7 +354,7 @@ jobs:
                 echo "✅ Deploy concluído - aplicação está rodando!"
                 echo "📍 Domínio: https://perolahotel.com"
                 echo "📍 Domínio: https://www.perolahotel.com"
-                echo "📍 IP:Porta: http://72.60.10.108:3090"
+                echo "📍 IP:Porta: http://72.60.10.108:3091"
                 echo "📦 Volumes: PERSISTENTES entre deploys"
                 exit 0
               fi
@@ -380,8 +380,8 @@ jobs:
         run: |
           echo "✅ Deploy concluído com sucesso!"
           echo "🌐 FuseHotel disponível em: https://www.perolahotel.com"
-          echo "🌐 Acesso alternativo: http://72.60.10.108:3090"
-          echo "📊 Health check: http://72.60.10.108:3090/health"
+          echo "🌐 Acesso alternativo: http://72.60.10.108:3091"
+          echo "📊 Health check: http://72.60.10.108:3091/health"
           echo ""
           echo "📦 Volumes preservados entre deploys"
           echo "🔒 SSL/Nginx: Configurações existentes mantidas"

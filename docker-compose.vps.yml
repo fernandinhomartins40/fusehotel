@@ -68,7 +68,7 @@ services:
       - ./infra/nginx/nginx.vps.conf:/etc/nginx/nginx.conf:ro
       - nginx_logs:/var/log/nginx
     ports:
-      - "3090:80"
+      - "3091:80"
     depends_on:
       - api
       - web

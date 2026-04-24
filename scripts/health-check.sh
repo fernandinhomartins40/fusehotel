@@ -39,13 +39,13 @@ echo ""
 echo "=== Verificando Serviços ==="
 
 # Health check do backend
-test_endpoint "http://localhost:3090/health" "API Health Check"
+test_endpoint "http://localhost:3091/health" "API Health Check"
 
 # Frontend
-test_endpoint "http://localhost:3090/" "Frontend" 200
+test_endpoint "http://localhost:3091/" "Frontend" 200
 
 # API - autenticação (deve retornar erro sem token, mas significa que está funcionando)
-test_endpoint "http://localhost:3090/api/auth/me" "API Auth Endpoint" 401
+test_endpoint "http://localhost:3091/api/auth/me" "API Auth Endpoint" 401
 
 echo ""
 echo "=== Verificando Recursos ==="
