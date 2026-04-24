@@ -61,8 +61,8 @@ jobs:
           username: root
           password: ${{ secrets.VPS_PASSWORD }}
           port: 22
-          timeout: 600s
-          command_timeout: 600s
+          timeout: 1800s
+          command_timeout: 1800s
           script: |
             set -e
 
@@ -156,17 +156,9 @@ jobs:
             RUN_SEED=true
             EOF
 
-            # Adicionar BUILD_TIMESTAMP ao .env
-            echo "BUILD_TIMESTAMP=$(date +%s)" >> .env
-
-            # Limpar containers e imagens antigas (PRESERVAR volumes)
-            echo "Limpando recursos antigos..."
-            docker container prune -f || true
-            docker image prune -af || true
-
-            # Garantir BUILD_TIMESTAMP como variável de ambiente ANTES do build
-            export BUILD_TIMESTAMP=$(date +%s)
-            echo "BUILD_TIMESTAMP=${BUILD_TIMESTAMP}"
+            # Evitar prune global: esta VPS hospeda outros projetos.
+            # O deploy deve tocar apenas nos recursos do FuseHotel.
+            echo "Pulando prune global de Docker para preservar imagens e evitar timeouts..."
 
             # ===== VALIDAÇÃO PRÉ-BUILD: Verificar estrutura do projeto =====
             echo "=== Validando estrutura do projeto antes do build ==="
@@ -241,15 +233,13 @@ jobs:
             fi
             echo "✅ Todos os containers antigos foram removidos"
 
-            # Remover imagens antigas para forçar rebuild completo
-            echo "Removendo imagens antigas do fusehotel..."
-            docker rmi fusehotel-api-vps 2>/dev/null || true
-            docker rmi fusehotel-web-vps 2>/dev/null || true
-            docker rmi $(docker images -q 'fusehotel*') 2>/dev/null || true
+            # Build das imagens Docker em sequência para reduzir pico de carga
+            echo "Construindo imagem da API..."
+            docker-compose -f docker-compose.vps.yml build api || { echo "❌ Erro ao construir imagem da API"; exit 1; }
 
-            # Build das imagens Docker
-            echo "Construindo imagens Docker..."
-            docker-compose -f docker-compose.vps.yml build --no-cache --pull || { echo "❌ Erro ao construir imagens Docker"; exit 1; }
+            echo "Construindo imagem do Web..."
+            docker-compose -f docker-compose.vps.yml build web || { echo "❌ Erro ao construir imagem do Web"; exit 1; }
+
             echo "✅ Imagens Docker construídas com sucesso"
 
             # Iniciar containers (com force-recreate para garantir containers novos)

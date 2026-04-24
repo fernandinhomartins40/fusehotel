@@ -1,0 +1,14 @@
+.git
+.github
+.claude
+node_modules
+apps/*/node_modules
+packages/*/node_modules
+apps/*/dist
+packages/*/dist
+apps/api/uploads
+apps/api/logs
+coverage
+*.log
+.env
+.env.*

@@ -1,8 +1,5 @@
 FROM node:20-alpine AS builder
 
-ARG BUILD_TIMESTAMP
-ENV BUILD_TIMESTAMP=${BUILD_TIMESTAMP}
-
 # Instalar OpenSSL para Prisma
 RUN apk add --no-cache openssl
 
@@ -20,8 +17,11 @@ COPY apps/api/package*.json ./apps/api/
 COPY apps/api/tsconfig.json ./apps/api/
 COPY apps/api/src ./apps/api/src
 
-# Instalar dependências do monorepo (shared + api)
-RUN npm install --workspace=@fusehotel/shared --workspace=@fusehotel/api
+# Instalar dependências do monorepo de forma determinística
+RUN --mount=type=cache,target=/root/.npm \
+  npm ci --no-audit --no-fund --prefer-offline \
+  --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000 --fetch-timeout=600000 \
+  --workspace=@fusehotel/shared --workspace=@fusehotel/api
 
 # Build do shared package primeiro
 WORKDIR /app/packages/shared

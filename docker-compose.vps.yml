@@ -23,8 +23,6 @@ services:
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.api.vps
-      args:
-        BUILD_TIMESTAMP: ${BUILD_TIMESTAMP:-0}
     container_name: fusehotel-api-vps
     environment:
       NODE_ENV: production
@@ -58,8 +56,6 @@ services:
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.web.vps
-      args:
-        BUILD_TIMESTAMP: ${BUILD_TIMESTAMP:-0}
     container_name: fusehotel-web-vps
     networks:
       - fusehotel-network

@@ -1,8 +1,5 @@
 FROM node:20-alpine AS builder
 
-ARG BUILD_TIMESTAMP
-ENV BUILD_TIMESTAMP=${BUILD_TIMESTAMP}
-
 WORKDIR /app
 
 # Copiar package.json da raiz
@@ -15,8 +12,11 @@ COPY packages/shared ./packages/shared
 # Copiar package.json do web
 COPY apps/web/package*.json ./apps/web/
 
-# Instalar dependências
-RUN npm install --workspace=@fusehotel/shared --workspace=@fusehotel/web
+# Instalar dependências de forma determinística
+RUN --mount=type=cache,target=/root/.npm \
+  npm ci --no-audit --no-fund --prefer-offline \
+  --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000 --fetch-timeout=600000 \
+  --workspace=@fusehotel/shared --workspace=@fusehotel/web
 
 # Build do shared package
 WORKDIR /app/packages/shared
