@@ -22,6 +22,11 @@ export class ReportsService {
       reservationsMonth,
       outstandingFolios,
       posRevenue,
+      quotesMonth,
+      convertedQuotesMonth,
+      businessAccounts,
+      channelSales,
+      financeEntries,
     ] = await Promise.all([
       prisma.roomUnit.findMany({
         select: {
@@ -114,11 +119,79 @@ export class ReportsService {
           id: true,
         },
       }),
+      prismaPms.reservationQuote.aggregate({
+        where: {
+          createdAt: {
+            gte: monthStart,
+          },
+        },
+        _count: {
+          id: true,
+        },
+      }),
+      prismaPms.reservationQuote.count({
+        where: {
+          createdAt: {
+            gte: monthStart,
+          },
+          status: 'CONVERTED',
+        },
+      }),
+      prismaPms.businessAccount.count({
+        where: {
+          isActive: true,
+        },
+      }),
+      prisma.reservation.groupBy({
+        by: ['source'],
+        where: {
+          createdAt: {
+            gte: monthStart,
+          },
+          status: {
+            in: [
+              ReservationStatus.CONFIRMED,
+              ReservationStatus.CHECKED_IN,
+              ReservationStatus.CHECKED_OUT,
+              ReservationStatus.COMPLETED,
+            ],
+          },
+        },
+        _count: {
+          id: true,
+        },
+        _sum: {
+          totalAmount: true,
+        },
+      }),
+      prismaPms.financialEntry.findMany({
+        where: {
+          status: {
+            in: ['OPEN', 'PARTIALLY_PAID', 'PAID'],
+          },
+        },
+        select: {
+          type: true,
+          amount: true,
+          paidAmount: true,
+        },
+      }),
     ]);
 
     const totalRooms = roomUnits.length;
     const occupiedRooms = roomUnits.filter((roomUnit: { status: string }) => roomUnit.status === 'OCCUPIED').length;
     const occupancyRate = totalRooms > 0 ? Number(((occupiedRooms / totalRooms) * 100).toFixed(2)) : 0;
+    const daysElapsed = Math.max(1, Math.round((dayStart.getTime() - monthStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+    const revparBase = totalRooms * daysElapsed;
+    const revpar = revparBase > 0 ? Number((Number(reservationsMonth._sum.totalAmount ?? 0) / revparBase).toFixed(2)) : 0;
+    const quoteCountMonth = quotesMonth._count.id;
+    const conversionRate = quoteCountMonth > 0 ? Number(((convertedQuotesMonth / quoteCountMonth) * 100).toFixed(2)) : 0;
+    const receivablesOpen = financeEntries
+      .filter((entry: any) => entry.type === 'RECEIVABLE')
+      .reduce((sum: number, entry: any) => sum + Number(entry.amount) - Number(entry.paidAmount ?? 0), 0);
+    const payablesOpen = financeEntries
+      .filter((entry: any) => entry.type === 'PAYABLE')
+      .reduce((sum: number, entry: any) => sum + Number(entry.amount) - Number(entry.paidAmount ?? 0), 0);
 
     return {
       referenceDate: dayStart.toISOString().slice(0, 10),
@@ -142,6 +215,19 @@ export class ReportsService {
         outstandingFolios: Number(outstandingFolios._sum.balance ?? 0),
         posRevenueMonth: Number(posRevenue._sum.totalAmount ?? 0),
         posOrdersMonth: posRevenue._count.id,
+        receivablesOpen: Number(receivablesOpen.toFixed(2)),
+        payablesOpen: Number(payablesOpen.toFixed(2)),
+        revpar,
+      },
+      commercial: {
+        quotesMonth: quoteCountMonth,
+        conversionRate,
+        activeBusinessAccounts: businessAccounts,
+        channelSales: channelSales.map((item: any) => ({
+          source: item.source,
+          reservations: item._count.id,
+          revenue: Number(item._sum.totalAmount ?? 0),
+        })),
       },
     };
   }

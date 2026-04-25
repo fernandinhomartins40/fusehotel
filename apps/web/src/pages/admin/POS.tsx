@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import {
   BarChart3,
   BedDouble,
-  ChefHat,
   ClipboardCheck,
   ConciergeBell,
   Receipt,
@@ -20,7 +19,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { useAdminReservations } from '@/hooks/useAdminReservations';
 import { useAddFolioEntry, useFolio } from '@/hooks/useFolios';
 import { useCheckIn, useCheckOut, useFrontdeskDashboard, useStays } from '@/hooks/useFrontdesk';
 import { useHousekeepingTasks, useUpdateHousekeepingStatus } from '@/hooks/useHousekeeping';
@@ -30,21 +28,32 @@ import {
   useUpdateMaintenanceOrder,
 } from '@/hooks/useMaintenance';
 import {
+  useActiveCashSession,
+  useCancelPOSOrder,
+  useCashSessions,
+  useCloseCashSession,
+  useCreateCashMovement,
   useCreatePOSOrder,
   useCreatePOSProduct,
+  useOpenCashSession,
   usePOSOrders,
   usePOSProducts,
+  useRefundPOSPayment,
+  useRegisterPOSPayment,
   useUpdatePOSOrderStatus,
 } from '@/hooks/usePOS';
 import { useOperationsReport } from '@/hooks/useReports';
 import { useRoomUnits } from '@/hooks/useRoomUnits';
 import type {
+  CashMovementType,
   FolioEntryType,
   HousekeepingTaskStatus,
   MaintenanceOrderPriority,
   MaintenanceOrderStatus,
+  PaymentMethod,
   POSOrderStatus,
   POSProductCategory,
+  POSSettlementType,
   RoomUnit,
   Stay,
 } from '@/types/pms';
@@ -106,15 +115,36 @@ const posCategoryLabels: Record<POSProductCategory, string> = {
   OTHER: 'Outros',
 };
 
+const settlementLabels: Record<POSSettlementType, string> = {
+  DIRECT: 'Pagamento direto',
+  FOLIO: 'Lançar no fólio',
+};
+
+const paymentMethodLabels: Record<PaymentMethod, string> = {
+  CASH: 'Dinheiro',
+  PIX: 'PIX',
+  CREDIT_CARD: 'Cartão de crédito',
+  DEBIT_CARD: 'Cartão de débito',
+  BANK_TRANSFER: 'Transferência',
+  VOUCHER: 'Voucher',
+};
+
+const cashMovementLabels: Record<Extract<CashMovementType, 'SUPPLY' | 'WITHDRAWAL' | 'CLOSING_ADJUSTMENT'>, string> = {
+  SUPPLY: 'Suprimento',
+  WITHDRAWAL: 'Sangria',
+  CLOSING_ADJUSTMENT: 'Ajuste',
+};
+
 export default function POS() {
   const { data: dashboard } = useFrontdeskDashboard();
-  const { data: reservations = [] } = useAdminReservations({ status: 'CONFIRMED' });
   const { data: stays = [] } = useStays();
   const { data: roomUnits = [] } = useRoomUnits();
   const { data: housekeepingTasks = [] } = useHousekeepingTasks();
   const { data: maintenanceOrders = [] } = useMaintenanceOrders();
   const { data: products = [] } = usePOSProducts();
   const { data: orders = [] } = usePOSOrders();
+  const { data: activeCashSession } = useActiveCashSession();
+  const { data: cashSessions = [] } = useCashSessions();
   const { data: report } = useOperationsReport();
 
   const checkIn = useCheckIn();
@@ -126,11 +156,27 @@ export default function POS() {
   const createProduct = useCreatePOSProduct();
   const createOrder = useCreatePOSOrder();
   const updateOrderStatus = useUpdatePOSOrderStatus();
+  const openCashSession = useOpenCashSession();
+  const closeCashSession = useCloseCashSession();
+  const createCashMovement = useCreateCashMovement();
+  const registerPayment = useRegisterPOSPayment();
+  const refundPayment = useRefundPOSPayment();
+  const cancelOrder = useCancelPOSOrder();
 
   const [selectedRooms, setSelectedRooms] = useState<Record<string, string>>({});
   const [selectedStayId, setSelectedStayId] = useState('');
   const [billingForm, setBillingForm] = useState({
     type: 'PAYMENT' as FolioEntryType,
+    amount: '',
+    description: '',
+  });
+  const [cashSessionForm, setCashSessionForm] = useState({
+    openingFloat: '',
+    countedCashAmount: '',
+    notes: '',
+  });
+  const [cashMovementForm, setCashMovementForm] = useState({
+    type: 'SUPPLY' as Extract<CashMovementType, 'SUPPLY' | 'WITHDRAWAL' | 'CLOSING_ADJUSTMENT'>,
     amount: '',
     description: '',
   });
@@ -147,12 +193,36 @@ export default function POS() {
     price: '',
     description: '',
   });
-  const [orderForm, setOrderForm] = useState({
-    stayId: '',
+  const [pendingItem, setPendingItem] = useState({
     productId: '',
     quantity: '1',
     notes: '',
   });
+  const [orderItems, setOrderItems] = useState<Array<{ productId: string; quantity: number; notes?: string }>>([]);
+  const [orderForm, setOrderForm] = useState({
+    stayId: 'none',
+    roomUnitId: 'none',
+    origin: 'FRONTDESK',
+    settlementType: 'DIRECT' as POSSettlementType,
+    customerName: '',
+    tableNumber: '',
+    serviceFeeAmount: '',
+    discountAmount: '',
+    notes: '',
+  });
+  const [selectedOrderId, setSelectedOrderId] = useState('none');
+  const [paymentForm, setPaymentForm] = useState({
+    amount: '',
+    method: 'PIX' as PaymentMethod,
+    reference: '',
+    notes: '',
+  });
+  const [refundForm, setRefundForm] = useState({
+    paymentId: 'none',
+    amount: '',
+    notes: '',
+  });
+  const [cancelReason, setCancelReason] = useState('');
 
   const { data: folio } = useFolio(selectedStayId || undefined);
 
@@ -184,6 +254,26 @@ export default function POS() {
   const selectedStay = useMemo(
     () => inHouseStays.find((stay) => stay.id === selectedStayId) ?? null,
     [inHouseStays, selectedStayId]
+  );
+  const selectedOrder = useMemo(
+    () => orders.find((order) => order.id === selectedOrderId) ?? null,
+    [orders, selectedOrderId]
+  );
+  const pendingProduct = useMemo(
+    () => activePOSProducts.find((product) => product.id === pendingItem.productId) ?? null,
+    [activePOSProducts, pendingItem.productId]
+  );
+  const orderSubtotal = useMemo(
+    () =>
+      orderItems.reduce((sum, item) => {
+        const product = activePOSProducts.find((candidate) => candidate.id === item.productId);
+        return sum + Number(product?.price ?? 0) * item.quantity;
+      }, 0),
+    [activePOSProducts, orderItems]
+  );
+  const directOrders = useMemo(
+    () => orders.filter((order) => order.settlementType === 'DIRECT' && order.status !== 'CANCELLED'),
+    [orders]
   );
 
   const handleCheckIn = (reservation: Reservation) => {
@@ -240,21 +330,130 @@ export default function POS() {
     setProductForm({ name: '', category: 'FOOD', price: '', description: '' });
   };
 
-  const handlePOSOrderCreate = () => {
-    if (!orderForm.stayId || !orderForm.productId || !orderForm.quantity) return;
-    createOrder.mutate({
-      stayId: orderForm.stayId,
-      origin: 'ROOM_SERVICE',
-      notes: orderForm.notes || undefined,
-      items: [
-        {
-          productId: orderForm.productId,
-          quantity: Number(orderForm.quantity),
-          notes: orderForm.notes || undefined,
-        },
-      ],
+  const handleAddOrderItem = () => {
+    if (!pendingItem.productId || !pendingItem.quantity) return;
+
+    setOrderItems((current) => [
+      ...current,
+      {
+        productId: pendingItem.productId,
+        quantity: Number(pendingItem.quantity),
+        notes: pendingItem.notes || undefined,
+      },
+    ]);
+
+    setPendingItem({
+      productId: '',
+      quantity: '1',
+      notes: '',
     });
-    setOrderForm({ stayId: '', productId: '', quantity: '1', notes: '' });
+  };
+
+  const handleRemoveOrderItem = (index: number) => {
+    setOrderItems((current) => current.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const handlePOSOrderCreate = () => {
+    if (!orderItems.length) return;
+
+    createOrder.mutate({
+      stayId: orderForm.stayId !== 'none' ? orderForm.stayId : undefined,
+      roomUnitId: orderForm.roomUnitId !== 'none' ? orderForm.roomUnitId : undefined,
+      origin: orderForm.origin as any,
+      settlementType: orderForm.settlementType,
+      customerName: orderForm.customerName || undefined,
+      tableNumber: orderForm.tableNumber || undefined,
+      notes: orderForm.notes || undefined,
+      serviceFeeAmount: orderForm.serviceFeeAmount ? Number(orderForm.serviceFeeAmount) : undefined,
+      discountAmount: orderForm.discountAmount ? Number(orderForm.discountAmount) : undefined,
+      items: orderItems,
+    });
+    setOrderItems([]);
+    setOrderForm({
+      stayId: 'none',
+      roomUnitId: 'none',
+      origin: 'FRONTDESK',
+      settlementType: 'DIRECT',
+      customerName: '',
+      tableNumber: '',
+      serviceFeeAmount: '',
+      discountAmount: '',
+      notes: '',
+    });
+  };
+
+  const handleOpenCashSession = () => {
+    openCashSession.mutate({
+      openingFloat: cashSessionForm.openingFloat ? Number(cashSessionForm.openingFloat) : undefined,
+      notes: cashSessionForm.notes || undefined,
+    });
+    setCashSessionForm((current) => ({ ...current, openingFloat: '', notes: '' }));
+  };
+
+  const handleCloseCashSession = () => {
+    if (!cashSessionForm.countedCashAmount) return;
+    closeCashSession.mutate({
+      countedCashAmount: Number(cashSessionForm.countedCashAmount),
+      notes: cashSessionForm.notes || undefined,
+    });
+    setCashSessionForm((current) => ({ ...current, countedCashAmount: '', notes: '' }));
+  };
+
+  const handleCreateCashMovement = () => {
+    if (!cashMovementForm.amount || !cashMovementForm.description) return;
+    createCashMovement.mutate({
+      type: cashMovementForm.type,
+      amount: Number(cashMovementForm.amount),
+      description: cashMovementForm.description,
+      method: 'CASH',
+    });
+    setCashMovementForm({
+      type: 'SUPPLY',
+      amount: '',
+      description: '',
+    });
+  };
+
+  const handleRegisterPayment = () => {
+    if (!selectedOrder || !paymentForm.amount) return;
+    registerPayment.mutate({
+      orderId: selectedOrder.id,
+      amount: Number(paymentForm.amount),
+      method: paymentForm.method,
+      cashSessionId: activeCashSession?.id,
+      reference: paymentForm.reference || undefined,
+      notes: paymentForm.notes || undefined,
+    });
+    setPaymentForm({
+      amount: '',
+      method: 'PIX',
+      reference: '',
+      notes: '',
+    });
+  };
+
+  const handleRefundPayment = () => {
+    if (refundForm.paymentId === 'none') return;
+    refundPayment.mutate({
+      paymentId: refundForm.paymentId,
+      amount: refundForm.amount ? Number(refundForm.amount) : undefined,
+      notes: refundForm.notes || undefined,
+    });
+    setRefundForm({
+      paymentId: 'none',
+      amount: '',
+      notes: '',
+    });
+  };
+
+  const handleCancelOrder = () => {
+    if (!selectedOrder || !cancelReason) return;
+    cancelOrder.mutate({
+      id: selectedOrder.id,
+      reason: cancelReason,
+      refundPayments: true,
+    });
+    setCancelReason('');
   };
 
   return (
@@ -292,8 +491,9 @@ export default function POS() {
           </div>
         </div>
 
-        <Tabs defaultValue="faturamento" className="space-y-6">
+        <Tabs defaultValue="caixa" className="space-y-6">
           <TabsList className="h-auto w-full justify-start overflow-auto rounded-xl bg-white p-1">
+            <TabsTrigger value="caixa">Caixa</TabsTrigger>
             <TabsTrigger value="faturamento">Faturamento</TabsTrigger>
             <TabsTrigger value="recepcao">Recepção</TabsTrigger>
             <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
@@ -301,6 +501,181 @@ export default function POS() {
             <TabsTrigger value="manutencao">Manutenção</TabsTrigger>
             <TabsTrigger value="indicadores">Indicadores</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="caixa" className="space-y-6">
+            <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Caixa do turno</CardTitle>
+                  <CardDescription>
+                    Abra, movimente e feche o caixa operacional do PDV.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {!activeCashSession ? (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Fundo inicial</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={cashSessionForm.openingFloat}
+                          onChange={(event) =>
+                            setCashSessionForm((current) => ({ ...current, openingFloat: event.target.value }))
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Observações</Label>
+                        <Textarea
+                          value={cashSessionForm.notes}
+                          onChange={(event) =>
+                            setCashSessionForm((current) => ({ ...current, notes: event.target.value }))
+                          }
+                        />
+                      </div>
+                      <Button className="w-full" onClick={handleOpenCashSession} disabled={openCashSession.isPending}>
+                        Abrir caixa
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="rounded-xl border bg-slate-50 p-4 text-sm">
+                        <div className="font-medium">Caixa {activeCashSession.code}</div>
+                        <div className="text-slate-600">
+                          Abertura: {new Date(activeCashSession.openedAt).toLocaleString('pt-BR')}
+                        </div>
+                        <div className="text-slate-600">
+                          Fundo: {currencyFormatter.format(Number(activeCashSession.openingFloat))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Movimentação manual</Label>
+                        <Select
+                          value={cashMovementForm.type}
+                          onValueChange={(value) =>
+                            setCashMovementForm((current) => ({
+                              ...current,
+                              type: value as Extract<CashMovementType, 'SUPPLY' | 'WITHDRAWAL' | 'CLOSING_ADJUSTMENT'>,
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(cashMovementLabels).map(([value, label]) => (
+                              <SelectItem key={value} value={value}>
+                                {label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Valor</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={cashMovementForm.amount}
+                          onChange={(event) =>
+                            setCashMovementForm((current) => ({ ...current, amount: event.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Descrição</Label>
+                        <Textarea
+                          value={cashMovementForm.description}
+                          onChange={(event) =>
+                            setCashMovementForm((current) => ({ ...current, description: event.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleCreateCashMovement}
+                        disabled={createCashMovement.isPending}
+                      >
+                        Registrar movimentação
+                      </Button>
+
+                      <div className="space-y-2">
+                        <Label>Valor contado no fechamento</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={cashSessionForm.countedCashAmount}
+                          onChange={(event) =>
+                            setCashSessionForm((current) => ({ ...current, countedCashAmount: event.target.value }))
+                          }
+                        />
+                      </div>
+
+                      <Button className="w-full" onClick={handleCloseCashSession} disabled={closeCashSession.isPending}>
+                        Fechar caixa
+                      </Button>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Histórico do caixa</CardTitle>
+                  <CardDescription>
+                    Acompanhe sessões abertas, fechadas e movimentações recentes.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {!cashSessions.length ? (
+                    <div className="rounded-lg border border-dashed p-8 text-center text-slate-500">
+                      Nenhum caixa registrado ainda.
+                    </div>
+                  ) : (
+                    cashSessions.map((session) => (
+                      <div key={session.id} className="rounded-xl border p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium">{session.code}</div>
+                            <div className="text-sm text-slate-500">
+                              {new Date(session.openedAt).toLocaleString('pt-BR')}
+                            </div>
+                          </div>
+                          <Badge variant={session.status === 'OPEN' ? 'default' : 'outline'}>
+                            {session.status === 'OPEN' ? 'Aberto' : 'Fechado'}
+                          </Badge>
+                        </div>
+                        <div className="mt-3 grid gap-3 md:grid-cols-4">
+                          <MetricLine label="Fundo" value={currencyFormatter.format(Number(session.openingFloat))} />
+                          <MetricLine
+                            label="Esperado"
+                            value={currencyFormatter.format(Number(session.expectedCashAmount ?? 0))}
+                          />
+                          <MetricLine
+                            label="Contado"
+                            value={currencyFormatter.format(Number(session.countedCashAmount ?? 0))}
+                          />
+                          <MetricLine
+                            label="Diferença"
+                            value={currencyFormatter.format(Number(session.differenceAmount ?? 0))}
+                          />
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
           <TabsContent value="faturamento" className="space-y-6">
             <div className="grid gap-6 xl:grid-cols-[320px_1fr]">
@@ -572,11 +947,11 @@ export default function POS() {
           </TabsContent>
 
           <TabsContent value="pedidos" className="space-y-6">
-            <div className="grid gap-6 xl:grid-cols-[360px_360px_1fr]">
+            <div className="grid gap-6 xl:grid-cols-[340px_420px_1fr]">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <ChefHat className="h-5 w-5" />
+                    <ShoppingCart className="h-5 w-5" />
                     Produtos
                   </CardTitle>
                   <CardDescription>
@@ -636,7 +1011,7 @@ export default function POS() {
                     Pedido
                   </CardTitle>
                   <CardDescription>
-                    Crie pedidos de room service com lançamento posterior no fólio.
+                    Monte o carrinho, defina liquidação e opere o pedido completo.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -648,6 +1023,7 @@ export default function POS() {
                       <SelectValue placeholder="Hospedagem" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="none">Sem hospedagem</SelectItem>
                       {inHouseStays.map((stay) => (
                         <SelectItem key={stay.id} value={stay.id}>
                           {(stay.roomUnit?.code || 'Sem quarto') + ' - ' + stay.reservation.guestName}
@@ -657,29 +1033,161 @@ export default function POS() {
                   </Select>
 
                   <Select
-                    value={orderForm.productId}
-                    onValueChange={(value) => setOrderForm((current) => ({ ...current, productId: value }))}
+                    value={orderForm.roomUnitId}
+                    onValueChange={(value) => setOrderForm((current) => ({ ...current, roomUnitId: value }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Produto" />
+                      <SelectValue placeholder="Quarto" />
                     </SelectTrigger>
                     <SelectContent>
-                      {activePOSProducts.map((product) => (
-                        <SelectItem key={product.id} value={product.id}>
-                          {product.name} - {currencyFormatter.format(Number(product.price))}
+                      <SelectItem value="none">Sem quarto</SelectItem>
+                      {roomUnits.map((roomUnit) => (
+                        <SelectItem key={roomUnit.id} value={roomUnit.id}>
+                          {roomUnit.code} - {roomUnit.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={orderForm.origin}
+                    onValueChange={(value) => setOrderForm((current) => ({ ...current, origin: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="FRONTDESK">Balcão</SelectItem>
+                      <SelectItem value="RESTAURANT">Restaurante</SelectItem>
+                      <SelectItem value="BAR">Bar</SelectItem>
+                      <SelectItem value="ROOM_SERVICE">Room service</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={orderForm.settlementType}
+                    onValueChange={(value) =>
+                      setOrderForm((current) => ({ ...current, settlementType: value as POSSettlementType }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(settlementLabels).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
 
                   <Input
-                    type="number"
-                    min="1"
-                    step="1"
-                    placeholder="Quantidade"
-                    value={orderForm.quantity}
-                    onChange={(event) => setOrderForm((current) => ({ ...current, quantity: event.target.value }))}
+                    placeholder="Cliente no balcão"
+                    value={orderForm.customerName}
+                    onChange={(event) =>
+                      setOrderForm((current) => ({ ...current, customerName: event.target.value }))
+                    }
                   />
+
+                  <Input
+                    placeholder="Mesa / comanda"
+                    value={orderForm.tableNumber}
+                    onChange={(event) =>
+                      setOrderForm((current) => ({ ...current, tableNumber: event.target.value }))
+                    }
+                  />
+
+                  <div className="grid grid-cols-[1fr_110px] gap-3">
+                    <Select
+                      value={pendingItem.productId}
+                      onValueChange={(value) => setPendingItem((current) => ({ ...current, productId: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Produto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {activePOSProducts.map((product) => (
+                          <SelectItem key={product.id} value={product.id}>
+                            {product.name} - {currencyFormatter.format(Number(product.price))}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Input
+                      type="number"
+                      min="1"
+                      step="1"
+                      placeholder="Qtd."
+                      value={pendingItem.quantity}
+                      onChange={(event) =>
+                        setPendingItem((current) => ({ ...current, quantity: event.target.value }))
+                      }
+                    />
+                  </div>
+
+                  <Textarea
+                    placeholder="Observações do item"
+                    value={pendingItem.notes}
+                    onChange={(event) => setPendingItem((current) => ({ ...current, notes: event.target.value }))}
+                  />
+
+                  <Button variant="outline" className="w-full" onClick={handleAddOrderItem} disabled={!pendingProduct}>
+                    Adicionar item
+                  </Button>
+
+                  <div className="rounded-lg border p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="font-medium">Carrinho</span>
+                      <span className="text-sm text-slate-500">{orderItems.length} item(ns)</span>
+                    </div>
+                    <div className="space-y-2">
+                      {!orderItems.length ? (
+                        <div className="text-sm text-slate-500">Nenhum item adicionado.</div>
+                      ) : (
+                        orderItems.map((item, index) => {
+                          const product = activePOSProducts.find((candidate) => candidate.id === item.productId);
+                          return (
+                            <div key={index} className="flex items-center justify-between gap-3 rounded-md border p-2">
+                              <div>
+                                <div className="font-medium">{product?.name || 'Produto removido'}</div>
+                                <div className="text-sm text-slate-500">
+                                  {item.quantity} x {currencyFormatter.format(Number(product?.price ?? 0))}
+                                </div>
+                              </div>
+                              <Button variant="ghost" size="sm" onClick={() => handleRemoveOrderItem(index)}>
+                                Remover
+                              </Button>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Taxa de serviço"
+                      value={orderForm.serviceFeeAmount}
+                      onChange={(event) =>
+                        setOrderForm((current) => ({ ...current, serviceFeeAmount: event.target.value }))
+                      }
+                    />
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Desconto"
+                      value={orderForm.discountAmount}
+                      onChange={(event) =>
+                        setOrderForm((current) => ({ ...current, discountAmount: event.target.value }))
+                      }
+                    />
+                  </div>
 
                   <Textarea
                     placeholder="Observações do pedido"
@@ -687,7 +1195,27 @@ export default function POS() {
                     onChange={(event) => setOrderForm((current) => ({ ...current, notes: event.target.value }))}
                   />
 
-                  <Button className="w-full" onClick={handlePOSOrderCreate} disabled={createOrder.isPending}>
+                  <div className="rounded-lg border bg-slate-50 p-4 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span>Subtotal</span>
+                      <span>{currencyFormatter.format(orderSubtotal)}</span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span>Total previsto</span>
+                      <span className="font-semibold">
+                        {currencyFormatter.format(
+                          Math.max(
+                            orderSubtotal +
+                              Number(orderForm.serviceFeeAmount || 0) -
+                              Number(orderForm.discountAmount || 0),
+                            0
+                          )
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  <Button className="w-full" onClick={handlePOSOrderCreate} disabled={createOrder.isPending || !orderItems.length}>
                     Criar pedido
                   </Button>
                 </CardContent>
@@ -700,66 +1228,206 @@ export default function POS() {
                     Controle o preparo, a entrega e o fechamento sem sair da central.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Pedido</TableHead>
-                        <TableHead>Hóspede</TableHead>
-                        <TableHead>Total</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Criado em</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {!orders.length ? (
+                <CardContent className="space-y-4">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Select value={selectedOrderId} onValueChange={setSelectedOrderId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecionar pedido" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Nenhum pedido</SelectItem>
+                        {directOrders.map((order) => (
+                          <SelectItem key={order.id} value={order.id}>
+                            {order.orderNumber} - {currencyFormatter.format(Number(order.totalAmount))}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="rounded-lg border bg-slate-50 p-3 text-sm">
+                      <div className="text-slate-500">Pedido selecionado</div>
+                      <div className="font-medium">{selectedOrder?.orderNumber || '-'}</div>
+                      <div className="text-slate-500">
+                        Saldo:{' '}
+                        {selectedOrder
+                          ? currencyFormatter.format(Number(selectedOrder.totalAmount) - Number(selectedOrder.paidAmount))
+                          : '-'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Valor do pagamento"
+                      value={paymentForm.amount}
+                      onChange={(event) =>
+                        setPaymentForm((current) => ({ ...current, amount: event.target.value }))
+                      }
+                    />
+                    <Select
+                      value={paymentForm.method}
+                      onValueChange={(value) =>
+                        setPaymentForm((current) => ({ ...current, method: value as PaymentMethod }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(paymentMethodLabels).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Input
+                      placeholder="Referência / NSU"
+                      value={paymentForm.reference}
+                      onChange={(event) =>
+                        setPaymentForm((current) => ({ ...current, reference: event.target.value }))
+                      }
+                    />
+                    <Input
+                      placeholder="Observações do pagamento"
+                      value={paymentForm.notes}
+                      onChange={(event) =>
+                        setPaymentForm((current) => ({ ...current, notes: event.target.value }))
+                      }
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    <Button onClick={handleRegisterPayment} disabled={!selectedOrder || registerPayment.isPending}>
+                      Registrar pagamento
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        selectedOrder && updateOrderStatus.mutate({ id: selectedOrder.id, status: 'CLOSED' })
+                      }
+                      disabled={!selectedOrder || updateOrderStatus.isPending}
+                    >
+                      Fechar pedido
+                    </Button>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Select
+                      value={refundForm.paymentId}
+                      onValueChange={(value) => setRefundForm((current) => ({ ...current, paymentId: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pagamento para estorno" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Nenhum pagamento</SelectItem>
+                        {(selectedOrder?.payments || []).map((payment) => (
+                          <SelectItem key={payment.id} value={payment.id}>
+                            {paymentMethodLabels[payment.method]} - {currencyFormatter.format(Number(payment.amount))}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Valor do estorno"
+                      value={refundForm.amount}
+                      onChange={(event) =>
+                        setRefundForm((current) => ({ ...current, amount: event.target.value }))
+                      }
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    <Button variant="outline" onClick={handleRefundPayment} disabled={refundPayment.isPending}>
+                      Estornar pagamento
+                    </Button>
+                    <Input
+                      className="max-w-sm"
+                      placeholder="Motivo do cancelamento"
+                      value={cancelReason}
+                      onChange={(event) => setCancelReason(event.target.value)}
+                    />
+                    <Button
+                      variant="destructive"
+                      onClick={handleCancelOrder}
+                      disabled={!selectedOrder || cancelOrder.isPending || !cancelReason}
+                    >
+                      Cancelar pedido
+                    </Button>
+                  </div>
+
+                  <div className="rounded-lg border">
+                    <Table>
+                      <TableHeader>
                         <TableRow>
-                          <TableCell colSpan={5}>Nenhum pedido registrado.</TableCell>
+                          <TableHead>Pedido</TableHead>
+                          <TableHead>Liquidação</TableHead>
+                          <TableHead>Total</TableHead>
+                          <TableHead>Pago</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Criado em</TableHead>
                         </TableRow>
-                      ) : (
-                        orders.map((order) => (
-                          <TableRow key={order.id}>
-                            <TableCell className="font-mono">{order.orderNumber}</TableCell>
-                            <TableCell>{order.stay?.reservation.guestName || '-'}</TableCell>
-                            <TableCell>{currencyFormatter.format(Number(order.totalAmount))}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Badge
-                                  variant={
-                                    order.status === 'CANCELLED'
-                                      ? 'destructive'
-                                      : order.status === 'DELIVERED'
-                                        ? 'default'
-                                        : 'outline'
-                                  }
-                                >
-                                  {posStatusLabels[order.status]}
-                                </Badge>
-                                <Select
-                                  value={order.status}
-                                  onValueChange={(value) =>
-                                    updateOrderStatus.mutate({ id: order.id, status: value as POSOrderStatus })
-                                  }
-                                >
-                                  <SelectTrigger className="w-[160px]">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {Object.entries(posStatusLabels).map(([value, label]) => (
-                                      <SelectItem key={value} value={value}>
-                                        {label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </TableCell>
-                            <TableCell>{new Date(order.createdAt).toLocaleString('pt-BR')}</TableCell>
+                      </TableHeader>
+                      <TableBody>
+                        {!orders.length ? (
+                          <TableRow>
+                            <TableCell colSpan={6}>Nenhum pedido registrado.</TableCell>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
+                        ) : (
+                          orders.map((order) => (
+                            <TableRow key={order.id}>
+                              <TableCell className="font-mono">{order.orderNumber}</TableCell>
+                              <TableCell>{settlementLabels[order.settlementType]}</TableCell>
+                              <TableCell>{currencyFormatter.format(Number(order.totalAmount))}</TableCell>
+                              <TableCell>{currencyFormatter.format(Number(order.paidAmount))}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Badge
+                                    variant={
+                                      order.status === 'CANCELLED'
+                                        ? 'destructive'
+                                        : order.status === 'DELIVERED'
+                                          ? 'default'
+                                          : 'outline'
+                                    }
+                                  >
+                                    {posStatusLabels[order.status]}
+                                  </Badge>
+                                  <Select
+                                    value={order.status}
+                                    onValueChange={(value) =>
+                                      updateOrderStatus.mutate({ id: order.id, status: value as POSOrderStatus })
+                                    }
+                                  >
+                                    <SelectTrigger className="w-[160px]">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {Object.entries(posStatusLabels).map(([value, label]) => (
+                                        <SelectItem key={value} value={value}>
+                                          {label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </TableCell>
+                              <TableCell>{new Date(order.createdAt).toLocaleString('pt-BR')}</TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             </div>

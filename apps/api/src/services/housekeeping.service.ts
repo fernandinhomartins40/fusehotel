@@ -28,12 +28,13 @@ export class HousekeepingService {
             status: true,
           },
         },
+        assignedTo: true,
       },
       orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
     });
   }
 
-  static async updateStatus(id: string, status: HousekeepingTaskStatus) {
+  static async updateStatus(id: string, status: HousekeepingTaskStatus, assignedToId?: string) {
     const task = await prisma.housekeepingTask.findUnique({
       where: { id },
       include: {
@@ -78,6 +79,7 @@ export class HousekeepingService {
         where: { id },
         data: {
           status,
+          assignedToId,
           ...nextTimestamps,
         },
         include: {
@@ -103,10 +105,157 @@ export class HousekeepingService {
               status: true,
             },
           },
+          assignedTo: true,
         },
       });
     });
 
     return updatedTask;
+  }
+
+  static async listStaff() {
+    const prismaPms = prisma as any;
+
+    return prismaPms.housekeepingStaff.findMany({
+      include: {
+        tasks: {
+          where: {
+            status: {
+              in: ['PENDING', 'IN_PROGRESS'],
+            },
+          },
+          select: {
+            id: true,
+            title: true,
+            status: true,
+          },
+        },
+      },
+      orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
+    });
+  }
+
+  static async createStaff(data: any) {
+    const prismaPms = prisma as any;
+
+    return prismaPms.housekeepingStaff.create({
+      data: {
+        name: data.name.trim(),
+        phone: data.phone?.trim(),
+        role: data.role?.trim(),
+        isActive: data.isActive ?? true,
+      },
+    });
+  }
+
+  static async updateStaff(id: string, data: any) {
+    const prismaPms = prisma as any;
+    const staff = await prismaPms.housekeepingStaff.findUnique({ where: { id } });
+
+    if (!staff) {
+      throw new NotFoundError('Profissional da governança não encontrado');
+    }
+
+    return prismaPms.housekeepingStaff.update({
+      where: { id },
+      data: {
+        name: data.name?.trim(),
+        phone: data.phone?.trim(),
+        role: data.role?.trim(),
+        isActive: data.isActive,
+      },
+    });
+  }
+
+  static async listLostFound() {
+    const prismaPms = prisma as any;
+
+    return prismaPms.lostFoundItem.findMany({
+      include: {
+        roomUnit: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+          },
+        },
+        stay: {
+          select: {
+            id: true,
+            status: true,
+            reservation: {
+              select: {
+                reservationCode: true,
+                guestName: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: [{ status: 'asc' }, { foundAt: 'desc' }],
+    });
+  }
+
+  static async createLostFound(data: any) {
+    const prismaPms = prisma as any;
+
+    return prismaPms.lostFoundItem.create({
+      data: {
+        roomUnitId: data.roomUnitId,
+        stayId: data.stayId,
+        title: data.title.trim(),
+        description: data.description?.trim(),
+        foundBy: data.foundBy?.trim(),
+        storedLocation: data.storedLocation?.trim(),
+      },
+      include: {
+        roomUnit: true,
+        stay: {
+          include: {
+            reservation: {
+              select: {
+                reservationCode: true,
+                guestName: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  static async updateLostFound(id: string, data: any) {
+    const prismaPms = prisma as any;
+    const item = await prismaPms.lostFoundItem.findUnique({ where: { id } });
+
+    if (!item) {
+      throw new NotFoundError('Item de achados e perdidos não encontrado');
+    }
+
+    return prismaPms.lostFoundItem.update({
+      where: { id },
+      data: {
+        title: data.title?.trim(),
+        description: data.description?.trim(),
+        foundBy: data.foundBy?.trim(),
+        storedLocation: data.storedLocation?.trim(),
+        status: data.status,
+        claimedBy: data.claimedBy?.trim(),
+        claimedAt: data.status === 'RETURNED' ? new Date() : data.claimedAt,
+      },
+      include: {
+        roomUnit: true,
+        stay: {
+          include: {
+            reservation: {
+              select: {
+                reservationCode: true,
+                guestName: true,
+              },
+            },
+          },
+        },
+      },
+    });
   }
 }

@@ -24,6 +24,10 @@ import foliosRoutes from './folios.routes';
 import maintenanceRoutes from './maintenance.routes';
 import posRoutes from './pos.routes';
 import reportsRoutes from './reports.routes';
+import distributionRoutes from './distribution.routes';
+import inventoryRoutes from './inventory.routes';
+import financeRoutes from './finance.routes';
+import crmRoutes from './crm.routes';
 
 const router = Router();
 
@@ -52,5 +56,9 @@ router.use('/folios', foliosRoutes);
 router.use('/maintenance', maintenanceRoutes);
 router.use('/pos', posRoutes);
 router.use('/reports', reportsRoutes);
+router.use('/distribution', distributionRoutes);
+router.use('/inventory', inventoryRoutes);
+router.use('/finance', financeRoutes);
+router.use('/crm', crmRoutes);
 
 export default router;

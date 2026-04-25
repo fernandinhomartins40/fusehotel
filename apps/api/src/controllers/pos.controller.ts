@@ -47,4 +47,76 @@ export class POSController {
       next(error);
     }
   }
+
+  static async getActiveCashSession(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const session = await POSService.getActiveCashSession();
+      return sendSuccess(res, session);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async listCashSessions(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const sessions = await POSService.listCashSessions();
+      return sendSuccess(res, sessions);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async openCashSession(req: Request, res: Response, next: NextFunction) {
+    try {
+      const session = await POSService.openCashSession(req.body, (req as any).user);
+      return sendSuccess(res, session, 'Caixa aberto com sucesso', 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async closeCashSession(req: Request, res: Response, next: NextFunction) {
+    try {
+      const session = await POSService.closeCashSession(req.body, (req as any).user);
+      return sendSuccess(res, session, 'Caixa fechado com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async createCashMovement(req: Request, res: Response, next: NextFunction) {
+    try {
+      const movement = await POSService.createCashMovement(req.body, (req as any).user);
+      return sendSuccess(res, movement, 'Movimentação registrada com sucesso', 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async registerPayment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const order = await POSService.registerPayment(req.body, (req as any).user);
+      return sendSuccess(res, order, 'Pagamento registrado com sucesso', 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async refundPayment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const order = await POSService.refundPayment(req.body, (req as any).user);
+      return sendSuccess(res, order, 'Estorno registrado com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async cancelOrder(req: Request, res: Response, next: NextFunction) {
+    try {
+      const order = await POSService.cancelOrder(req.params.id, req.body, (req as any).user);
+      return sendSuccess(res, order, 'Pedido cancelado com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
 }

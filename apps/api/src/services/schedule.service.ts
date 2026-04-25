@@ -1,6 +1,8 @@
 import { Prisma, ReservationStatus } from '@prisma/client';
 import { prisma } from '../config/database';
 
+const prismaPms = prisma as any;
+
 interface ScheduleQueryParams {
   startDate: string;
   endDate: string;
@@ -55,6 +57,30 @@ export class ScheduleService {
     const accommodations = await prisma.accommodation.findMany({
       where: params.accommodationId ? { id: params.accommodationId } : {},
       include: {
+        roomUnits: {
+          where: {
+            isActive: true,
+          },
+          select: {
+            id: true,
+          },
+        },
+        ratePlans: {
+          where: {
+            isActive: true,
+            OR: [
+              { startsAt: null },
+              { startsAt: { lte: this.toDateBoundary(rangeEndInclusive) } },
+            ],
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+        inventoryBlocks: {
+          where: {
+            startsAt: { lt: this.toDateBoundary(rangeEndExclusive) },
+            endsAt: { gt: this.toDateBoundary(rangeStart) },
+          },
+        },
         reservations: {
           where: this.buildReservationCandidateWhere(rangeStart, rangeEndExclusive),
           orderBy: { checkInDate: 'asc' },
@@ -89,6 +115,17 @@ export class ScheduleService {
         type: accommodation.type,
         capacity: accommodation.capacity,
         isAvailable: accommodation.isAvailable,
+        availableUnits: Math.max(
+          Math.max(accommodation.roomUnits.length, 1) - accommodation.reservations.length - accommodation.inventoryBlocks.reduce((sum, block) => {
+            if (!block.stopSell) {
+              return sum;
+            }
+
+            return sum + (block.roomUnitId ? 1 : Number(block.allotment ?? 0));
+          }, 0),
+          0
+        ),
+        baseRate: Number(accommodation.ratePlans[0]?.basePrice ?? 0),
         reservations,
         availability: this.generateAvailabilityCalendar(
           rangeStart,
@@ -108,7 +145,33 @@ export class ScheduleService {
   ): Promise<boolean> {
     const accommodation = await prisma.accommodation.findUnique({
       where: { id: accommodationId },
-      select: { id: true, isAvailable: true },
+      select: {
+        id: true,
+        isAvailable: true,
+        roomUnits: {
+          where: {
+            isActive: true,
+          },
+          select: {
+            id: true,
+          },
+        },
+        inventoryBlocks: {
+          where: {
+            startsAt: {
+              lt: this.toDateBoundary(this.toDateKey(endDate)),
+            },
+            endsAt: {
+              gt: this.toDateBoundary(this.toDateKey(startDate)),
+            },
+          },
+          select: {
+            roomUnitId: true,
+            stopSell: true,
+            allotment: true,
+          },
+        },
+      },
     });
 
     if (!accommodation || !accommodation.isAvailable) {
@@ -133,10 +196,19 @@ export class ScheduleService {
         checkOutDate: true,
       },
     });
-
-    return !candidateReservations.some((reservation) =>
+    const overlappingReservations = candidateReservations.filter((reservation) =>
       this.doesReservationOverlapRange(reservation, rangeStart, rangeEndExclusive)
-    );
+    ).length;
+    const blockedUnits = accommodation.inventoryBlocks.reduce((sum, block) => {
+      if (!block.stopSell) {
+        return sum;
+      }
+
+      return sum + (block.roomUnitId ? 1 : Number(block.allotment ?? 0));
+    }, 0);
+    const availableUnits = Math.max(Math.max(accommodation.roomUnits.length, 1) - blockedUnits, 0);
+
+    return overlappingReservations < availableUnits;
   }
 
   async getScheduleStats(startDate: string, endDate: string) {
@@ -144,11 +216,19 @@ export class ScheduleService {
     const rangeEndInclusive = this.toDateKey(endDate);
     const rangeEndExclusive = this.addDays(rangeEndInclusive, 1);
 
-    const [accommodations, candidateReservations] = await Promise.all([
+    const [accommodations, candidateReservations, blocks] = await Promise.all([
       prisma.accommodation.findMany({
         select: {
           id: true,
           isAvailable: true,
+          roomUnits: {
+            where: {
+              isActive: true,
+            },
+            select: {
+              id: true,
+            },
+          },
         },
       }),
       prisma.reservation.findMany({
@@ -158,6 +238,18 @@ export class ScheduleService {
           checkInDate: true,
           checkOutDate: true,
           status: true,
+        },
+      }),
+      prismaPms.inventoryBlock.findMany({
+        where: {
+          startsAt: { lt: this.toDateBoundary(rangeEndExclusive) },
+          endsAt: { gt: this.toDateBoundary(rangeStart) },
+          stopSell: true,
+        },
+        select: {
+          accommodationId: true,
+          roomUnitId: true,
+          allotment: true,
         },
       }),
     ]);
@@ -170,17 +262,23 @@ export class ScheduleService {
     const activeReservations = reservations.filter(
       (reservation) => reservation.status === ReservationStatus.CHECKED_IN
     ).length;
-    const availableAccommodations = accommodations.filter(
-      (accommodation) =>
-        accommodation.isAvailable &&
-        !reservations.some(
-          (reservation) => reservation.accommodationId === accommodation.id
-        )
-    ).length;
+    const availableAccommodations = accommodations.filter((accommodation) => {
+      const blockedUnits = blocks
+        .filter((block: any) => block.accommodationId === accommodation.id)
+        .reduce((sum: number, block: any) => sum + (block.roomUnitId ? 1 : Number(block.allotment ?? 0)), 0);
+      const activeInventory = Math.max(Math.max(accommodation.roomUnits.length, 1) - blockedUnits, 0);
+      const reservedCount = reservations.filter((reservation) => reservation.accommodationId === accommodation.id).length;
+      return accommodation.isAvailable && reservedCount < Math.max(activeInventory, 1);
+    }).length;
 
     const totalDays = this.getDateRangeLength(rangeStart, rangeEndExclusive);
-    const availableInventory = accommodations.filter((accommodation) => accommodation.isAvailable)
-      .length;
+    const availableInventory = accommodations.reduce((sum, accommodation) => {
+      const blockedUnits = blocks
+        .filter((block: any) => block.accommodationId === accommodation.id)
+        .reduce((blockSum: number, block: any) => blockSum + (block.roomUnitId ? 1 : Number(block.allotment ?? 0)), 0);
+
+      return sum + Math.max(Math.max(accommodation.roomUnits.length, 1) - blockedUnits, 0);
+    }, 0);
 
     const totalOccupiedNights = reservations.reduce((occupiedNights, reservation) => {
       const effectiveStart = this.maxDateKey(

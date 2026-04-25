@@ -23,6 +23,18 @@ export type PaymentMethod =
   | 'CASH'
   | 'VOUCHER';
 
+export type ReservationSource =
+  | 'WEBSITE'
+  | 'PHONE'
+  | 'EMAIL'
+  | 'WHATSAPP'
+  | 'WALK_IN'
+  | 'BOOKING'
+  | 'AIRBNB'
+  | 'EXPEDIA'
+  | 'CORPORATE'
+  | 'OTHER';
+
 export interface AccommodationImage {
   id: string;
   url: string;
@@ -78,6 +90,12 @@ export interface Reservation {
   status: ReservationStatus;
   paymentStatus: PaymentStatus;
   paymentMethod: PaymentMethod | null;
+  source: ReservationSource;
+  externalChannel: string | null;
+  externalReservationId: string | null;
+  paymentLinkUrl: string | null;
+  paymentLinkExpiresAt: string | null;
+  voucherSentAt: string | null;
   specialRequests: string | null;
   checkedInAt: string | null;
   checkedOutAt: string | null;

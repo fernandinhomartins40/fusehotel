@@ -112,6 +112,9 @@ model Accommodation {
   reservations Reservation[]
   reviews      Review[]
   roomUnits    RoomUnit[]
+  ratePlans    RatePlan[]
+  inventoryBlocks InventoryBlock[]
+  quotes       ReservationQuote[]
 
   @@index([slug])
   @@index([type])
@@ -194,6 +197,19 @@ enum PaymentMethod {
   BANK_TRANSFER
   CASH
   VOUCHER
+}
+
+enum ReservationSource {
+  WEBSITE
+  PHONE
+  EMAIL
+  WHATSAPP
+  WALK_IN
+  BOOKING
+  AIRBNB
+  EXPEDIA
+  CORPORATE
+  OTHER
 }
 
 enum RoomUnitStatus {
@@ -295,11 +311,102 @@ enum POSOrderStatus {
   CANCELLED
 }
 
+enum POSSettlementType {
+  DIRECT
+  FOLIO
+}
+
+enum CashSessionStatus {
+  OPEN
+  CLOSED
+}
+
+enum CashMovementType {
+  OPENING_FLOAT
+  SALE
+  REFUND
+  SUPPLY
+  WITHDRAWAL
+  CLOSING_ADJUSTMENT
+}
+
+enum QuoteStatus {
+  OPEN
+  SENT
+  EXPIRED
+  CONVERTED
+  CANCELLED
+}
+
+enum PreCheckInStatus {
+  PENDING
+  SUBMITTED
+  APPROVED
+  CHECKED_IN
+  CANCELLED
+}
+
+enum FNRHStatus {
+  PENDING
+  READY
+  SENT
+  ERROR
+}
+
+enum LostFoundStatus {
+  OPEN
+  RETURNED
+  DISCARDED
+}
+
+enum StockMovementType {
+  PURCHASE_IN
+  TRANSFER_IN
+  TRANSFER_OUT
+  CONSUMPTION
+  ADJUSTMENT_IN
+  ADJUSTMENT_OUT
+}
+
+enum FinancialEntryType {
+  RECEIVABLE
+  PAYABLE
+}
+
+enum FinancialEntryStatus {
+  OPEN
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum MarkupType {
+  FIXED
+  PERCENT
+}
+
+enum BusinessAccountType {
+  COMPANY
+  OPERATOR
+  AGENCY
+  CORPORATE
+}
+
+enum ChannelConnectionType {
+  BOOKING
+  AIRBNB
+  EXPEDIA
+  DIRECT
+  OTHER
+}
+
 model Reservation {
   id                String            @id @default(uuid())
   reservationCode   String            @unique
   accommodationId   String
   userId            String?
+  businessAccountId String?
   checkInDate       DateTime
   checkOutDate      DateTime
   numberOfNights    Int
@@ -320,27 +427,38 @@ model Reservation {
   status            ReservationStatus @default(PENDING)
   paymentStatus     PaymentStatus     @default(PENDING)
   paymentMethod     PaymentMethod?
+  source            ReservationSource @default(WEBSITE)
+  externalChannel   String?
+  externalReservationId String?
+  paymentLinkUrl    String?
+  paymentLinkExpiresAt DateTime?
   specialRequests   String?           @db.Text
   cancelledAt       DateTime?
   cancellationReason String?          @db.Text
   checkedInAt       DateTime?
   checkedOutAt      DateTime?
+  voucherSentAt     DateTime?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 
   accommodation Accommodation @relation(fields: [accommodationId], references: [id])
+  businessAccount BusinessAccount? @relation(fields: [businessAccountId], references: [id], onDelete: SetNull)
   user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   payments      Payment[]
   review        Review?
   stay          Stay?
   housekeepingTasks HousekeepingTask[]
+  preCheckIn    PreCheckIn?
+  feedbacks     GuestFeedback[]
 
   @@index([reservationCode])
   @@index([userId])
   @@index([accommodationId])
+  @@index([businessAccountId])
   @@index([status])
   @@index([checkInDate])
   @@index([checkOutDate])
+  @@index([source])
 }
 
 model RoomUnit {
@@ -361,6 +479,8 @@ model RoomUnit {
   housekeepingTasks  HousekeepingTask[]
   maintenanceOrders  MaintenanceOrder[]
   posOrders          POSOrder[]
+  inventoryBlocks    InventoryBlock[]
+  lostFoundItems     LostFoundItem[]
 
   @@index([accommodationId])
   @@index([status])
@@ -389,6 +509,7 @@ model Stay {
   folio              Folio?
   housekeepingTasks  HousekeepingTask[]
   posOrders          POSOrder[]
+  lostFoundItems     LostFoundItem[]
 
   @@index([roomUnitId])
   @@index([status])
@@ -453,10 +574,12 @@ model HousekeepingTask {
   roomUnitId     String
   stayId         String?
   reservationId  String?
+  assignedToId   String?
   status         HousekeepingTaskStatus   @default(PENDING)
   priority       HousekeepingTaskPriority @default(MEDIUM)
   title          String
   notes          String?                  @db.Text
+  checklist      Json?
   scheduledFor   DateTime?
   startedAt      DateTime?
   completedAt    DateTime?
@@ -467,10 +590,12 @@ model HousekeepingTask {
   roomUnit       RoomUnit                 @relation(fields: [roomUnitId], references: [id], onDelete: Cascade)
   stay           Stay?                    @relation(fields: [stayId], references: [id], onDelete: SetNull)
   reservation    Reservation?             @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  assignedTo     HousekeepingStaff?       @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
 
   @@index([roomUnitId])
   @@index([stayId])
   @@index([reservationId])
+  @@index([assignedToId])
   @@index([status])
   @@index([priority])
 }
@@ -485,6 +610,8 @@ model MaintenanceOrder {
   notes         String?                  @db.Text
   estimatedCost Decimal?                 @db.Decimal(10, 2)
   actualCost    Decimal?                 @db.Decimal(10, 2)
+  blockedFrom   DateTime?
+  blockedUntil  DateTime?
   openedAt      DateTime                 @default(now())
   startedAt     DateTime?
   completedAt   DateTime?
@@ -501,14 +628,21 @@ model MaintenanceOrder {
 model POSProduct {
   id          String             @id @default(uuid())
   name        String
+  sku         String?            @unique
   category    POSProductCategory
   price       Decimal            @db.Decimal(10, 2)
+  costPrice   Decimal            @default(0) @db.Decimal(10, 2)
+  stockQuantity Decimal          @default(0) @db.Decimal(10, 2)
+  minStockQuantity Decimal       @default(0) @db.Decimal(10, 2)
+  saleUnit    String             @default("UN")
+  trackStock  Boolean            @default(false)
   isActive    Boolean            @default(true)
   description String?            @db.Text
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
   items       POSOrderItem[]
+  inventoryMovements InventoryMovement[]
 
   @@index([category])
   @@index([isActive])
@@ -520,20 +654,34 @@ model POSOrder {
   stayId      String?
   roomUnitId  String?
   origin      POSOrderOrigin
+  settlementType POSSettlementType @default(DIRECT)
   status      POSOrderStatus @default(OPEN)
+  customerName String?
+  tableNumber String?
   notes       String?        @db.Text
+  subtotalAmount Decimal     @default(0) @db.Decimal(10, 2)
+  serviceFeeAmount Decimal   @default(0) @db.Decimal(10, 2)
+  discountAmount Decimal     @default(0) @db.Decimal(10, 2)
+  paidAmount  Decimal        @default(0) @db.Decimal(10, 2)
   totalAmount Decimal        @default(0) @db.Decimal(10, 2)
+  postedToFolioAt DateTime?
+  closedAt    DateTime?
+  cancelledAt DateTime?
+  cancellationReason String? @db.Text
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
   stay        Stay?          @relation(fields: [stayId], references: [id], onDelete: SetNull)
   roomUnit    RoomUnit?      @relation(fields: [roomUnitId], references: [id], onDelete: SetNull)
   items       POSOrderItem[]
+  payments    POSPayment[]
+  cashMovements CashMovement[]
 
   @@index([stayId])
   @@index([roomUnitId])
   @@index([origin])
   @@index([status])
+  @@index([settlementType])
 }
 
 model POSOrderItem {
@@ -555,6 +703,85 @@ model POSOrderItem {
   @@index([productId])
 }
 
+model POSPayment {
+  id            String        @id @default(uuid())
+  orderId        String
+  cashSessionId  String?
+  amount         Decimal       @db.Decimal(10, 2)
+  refundedAmount Decimal       @default(0) @db.Decimal(10, 2)
+  method         PaymentMethod
+  status         PaymentStatus @default(COMPLETED)
+  transactionId  String?       @unique
+  reference      String?
+  gateway        String?
+  gatewayResponse Json?
+  notes          String?       @db.Text
+  paidAt         DateTime?
+  refundedAt     DateTime?
+  createdByUserId String?
+  createdByEmail String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  order          POSOrder      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  cashSession    CashSession?  @relation(fields: [cashSessionId], references: [id], onDelete: SetNull)
+  cashMovements  CashMovement[]
+
+  @@index([orderId])
+  @@index([cashSessionId])
+  @@index([status])
+  @@index([method])
+}
+
+model CashSession {
+  id               String            @id @default(uuid())
+  code             String            @unique
+  status           CashSessionStatus @default(OPEN)
+  openingFloat     Decimal           @default(0) @db.Decimal(10, 2)
+  expectedCashAmount Decimal?        @db.Decimal(10, 2)
+  countedCashAmount Decimal?         @db.Decimal(10, 2)
+  differenceAmount Decimal?          @db.Decimal(10, 2)
+  notes            String?           @db.Text
+  openedByUserId   String?
+  openedByEmail    String?
+  closedByUserId   String?
+  closedByEmail    String?
+  openedAt         DateTime          @default(now())
+  closedAt         DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  payments         POSPayment[]
+  movements        CashMovement[]
+
+  @@index([status])
+  @@index([openedAt])
+}
+
+model CashMovement {
+  id              String           @id @default(uuid())
+  cashSessionId    String
+  orderId          String?
+  paymentId        String?
+  type             CashMovementType
+  method           PaymentMethod?
+  amount           Decimal          @db.Decimal(10, 2)
+  description      String
+  performedByUserId String?
+  performedByEmail String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  cashSession      CashSession      @relation(fields: [cashSessionId], references: [id], onDelete: Cascade)
+  order            POSOrder?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  payment          POSPayment?      @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([cashSessionId])
+  @@index([orderId])
+  @@index([paymentId])
+  @@index([type])
+}
+
 model Payment {
   id              String        @id @default(uuid())
   reservationId   String
@@ -573,6 +800,237 @@ model Payment {
 
   @@index([reservationId])
   @@index([transactionId])
+}
+
+model HousekeepingStaff {
+  id          String   @id @default(uuid())
+  name        String
+  phone       String?
+  role        String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tasks       HousekeepingTask[]
+
+  @@index([isActive])
+}
+
+model LostFoundItem {
+  id             String          @id @default(uuid())
+  roomUnitId      String?
+  stayId          String?
+  title          String
+  description    String?         @db.Text
+  foundBy        String?
+  storedLocation String?
+  status         LostFoundStatus @default(OPEN)
+  foundAt        DateTime        @default(now())
+  claimedBy      String?
+  claimedAt      DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  roomUnit       RoomUnit?       @relation(fields: [roomUnitId], references: [id], onDelete: SetNull)
+  stay           Stay?           @relation(fields: [stayId], references: [id], onDelete: SetNull)
+
+  @@index([roomUnitId])
+  @@index([stayId])
+  @@index([status])
+}
+
+model RatePlan {
+  id                 String      @id @default(uuid())
+  accommodationId    String
+  name               String
+  basePrice          Decimal     @db.Decimal(10, 2)
+  markupType         MarkupType  @default(FIXED)
+  markupValue        Decimal     @default(0) @db.Decimal(10, 2)
+  minStay            Int         @default(1)
+  maxStay            Int?
+  allotment          Int?
+  closedToArrival    Boolean     @default(false)
+  closedToDeparture  Boolean     @default(false)
+  isActive           Boolean     @default(true)
+  salesChannel       String?
+  startsAt           DateTime?
+  endsAt             DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  accommodation      Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+
+  @@index([accommodationId])
+  @@index([isActive])
+  @@index([salesChannel])
+}
+
+model InventoryBlock {
+  id              String    @id @default(uuid())
+  accommodationId String
+  roomUnitId      String?
+  title           String
+  reason          String?
+  startsAt        DateTime
+  endsAt          DateTime
+  stopSell        Boolean   @default(true)
+  allotment       Int?
+  salesChannel    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  roomUnit        RoomUnit? @relation(fields: [roomUnitId], references: [id], onDelete: SetNull)
+
+  @@index([accommodationId])
+  @@index([roomUnitId])
+  @@index([startsAt])
+  @@index([endsAt])
+}
+
+model ChannelConnection {
+  id            String                @id @default(uuid())
+  name          String
+  type          ChannelConnectionType
+  isActive      Boolean               @default(false)
+  syncEnabled   Boolean               @default(false)
+  externalCode  String?
+  notes         String?               @db.Text
+  lastSyncedAt  DateTime?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  @@index([type])
+  @@index([isActive])
+}
+
+model ReservationQuote {
+  id                 String            @id @default(uuid())
+  quoteCode          String            @unique
+  accommodationId    String
+  guestName          String
+  guestEmail         String?
+  guestPhone         String?
+  source             ReservationSource @default(WHATSAPP)
+  checkInDate        DateTime
+  checkOutDate       DateTime
+  numberOfGuests     Int
+  numberOfExtraBeds  Int               @default(0)
+  amount             Decimal           @db.Decimal(10, 2)
+  status             QuoteStatus       @default(OPEN)
+  paymentLinkUrl     String?
+  expiresAt          DateTime?
+  notes              String?           @db.Text
+  convertedReservationId String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  accommodation      Accommodation     @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+
+  @@index([accommodationId])
+  @@index([status])
+  @@index([source])
+}
+
+model PreCheckIn {
+  id             String           @id @default(uuid())
+  reservationId  String           @unique
+  token          String           @unique
+  status         PreCheckInStatus @default(PENDING)
+  fnrhStatus     FNRHStatus       @default(PENDING)
+  guestData      Json?
+  documentData   Json?
+  signatureData  String?
+  submittedAt    DateTime?
+  approvedAt     DateTime?
+  checkedInAt    DateTime?
+  sentToGovernmentAt DateTime?
+  lastError      String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  reservation    Reservation      @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+}
+
+model InventoryMovement {
+  id            String            @id @default(uuid())
+  productId      String
+  type           StockMovementType
+  quantity       Decimal          @db.Decimal(10, 2)
+  unitCost       Decimal?         @db.Decimal(10, 2)
+  referenceId    String?
+  notes          String?          @db.Text
+  createdByUserId String?
+  createdByEmail String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  product        POSProduct       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([type])
+}
+
+model FinancialEntry {
+  id             String               @id @default(uuid())
+  type           FinancialEntryType
+  status         FinancialEntryStatus @default(OPEN)
+  description    String
+  category       String?
+  amount         Decimal              @db.Decimal(10, 2)
+  paidAmount     Decimal              @default(0) @db.Decimal(10, 2)
+  dueDate        DateTime?
+  issuedAt       DateTime             @default(now())
+  paidAt         DateTime?
+  customerName   String?
+  supplierName   String?
+  referenceType  String?
+  referenceId    String?
+  notes          String?              @db.Text
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@index([type])
+  @@index([status])
+  @@index([dueDate])
+}
+
+model BusinessAccount {
+  id               String              @id @default(uuid())
+  name             String
+  type             BusinessAccountType
+  document         String?
+  email            String?
+  phone            String?
+  commissionRate   Decimal?            @db.Decimal(5, 2)
+  markupType       MarkupType?
+  markupValue      Decimal?            @db.Decimal(10, 2)
+  paymentTermsDays Int?
+  notes            String?             @db.Text
+  isActive         Boolean             @default(true)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  reservations     Reservation[]
+
+  @@index([type])
+  @@index([isActive])
+}
+
+model GuestFeedback {
+  id             String   @id @default(uuid())
+  reservationId  String
+  rating         Int
+  source         String?
+  comment        String?  @db.Text
+  respondedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  reservation    Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  @@index([reservationId])
+  @@index([rating])
 }
 
 model Review {

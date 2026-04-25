@@ -20,6 +20,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PWAInstallPrompt } from '@/components/layout/PWAInstallPrompt';
 import {
   Sidebar,
   SidebarContent,
@@ -48,7 +49,7 @@ interface MenuItem {
 const centralOperations: MenuItem[] = [
   {
     path: '/admin/pos',
-    label: 'Central PDV',
+    label: 'Central operacional',
     icon: ShoppingCart,
     activeClassName:
       'data-[active=true]:bg-lime-50 data-[active=true]:text-lime-700 data-[active=true]:border-r-2 data-[active=true]:border-lime-600',
@@ -69,7 +70,7 @@ const centralOperations: MenuItem[] = [
   },
   {
     path: '/admin/schedule',
-    label: 'Agenda',
+    label: 'Mapa de reservas',
     icon: CalendarDays,
     activeClassName:
       'data-[active=true]:bg-indigo-50 data-[active=true]:text-indigo-700 data-[active=true]:border-r-2 data-[active=true]:border-indigo-600',
@@ -107,7 +108,7 @@ const hotelOperations: MenuItem[] = [
   },
   {
     path: '/admin/customers',
-    label: 'Clientes',
+    label: 'Hóspedes',
     icon: Users,
     activeClassName:
       'data-[active=true]:bg-cyan-50 data-[active=true]:text-cyan-700 data-[active=true]:border-r-2 data-[active=true]:border-cyan-600',
@@ -178,7 +179,6 @@ const siteItems: MenuItem[] = [
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
-
   const isActive = (path: string) => location.pathname === path;
 
   const renderMenuItems = (items: MenuItem[]) =>
@@ -199,57 +199,57 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-gray-50">
-        <Sidebar className="border-r border-gray-200">
-          <SidebarHeader className="border-b border-gray-200 bg-white">
+      <div className="flex min-h-screen w-full bg-slate-50">
+        <Sidebar className="border-r border-slate-200">
+          <SidebarHeader className="border-b border-slate-200 bg-white">
             <div className="flex items-center px-2 py-2">
               <div className="flex items-center gap-2 text-lg font-semibold">
-                <div className="rounded-lg bg-blue-600 p-2 text-white">
+                <div className="rounded-lg bg-slate-900 p-2 text-white">
                   <LayoutDashboard className="h-5 w-5" />
                 </div>
-                <span className="text-gray-900">Painel do Hoteleiro</span>
+                <span className="text-slate-900">FuseHotel PMS</span>
               </div>
             </div>
           </SidebarHeader>
 
           <SidebarContent className="bg-white">
             <SidebarGroup>
-              <SidebarGroupLabel className="font-medium text-gray-500">Operação central</SidebarGroupLabel>
+              <SidebarGroupLabel className="font-medium text-slate-500">Operação central</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>{renderMenuItems(centralOperations)}</SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
             <SidebarGroup>
-              <SidebarGroupLabel className="font-medium text-gray-500">Operação do hotel</SidebarGroupLabel>
+              <SidebarGroupLabel className="font-medium text-slate-500">Hotel</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>{renderMenuItems(hotelOperations)}</SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
             <SidebarGroup>
-              <SidebarGroupLabel className="font-medium text-gray-500">Comercial</SidebarGroupLabel>
+              <SidebarGroupLabel className="font-medium text-slate-500">Comercial</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>{renderMenuItems(commercialItems)}</SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
             <SidebarGroup>
-              <SidebarGroupLabel className="font-medium text-gray-500">Site</SidebarGroupLabel>
+              <SidebarGroupLabel className="font-medium text-slate-500">Site</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>{renderMenuItems(siteItems)}</SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
             <SidebarGroup>
-              <SidebarGroupLabel className="font-medium text-gray-500">Sistema</SidebarGroupLabel>
+              <SidebarGroupLabel className="font-medium text-slate-500">Sistema</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
                       isActive={isActive('/admin/settings')}
-                      className="data-[active=true]:border-r-2 data-[active=true]:border-gray-600 data-[active=true]:bg-gray-50 data-[active=true]:text-gray-700"
+                      className="data-[active=true]:border-r-2 data-[active=true]:border-slate-600 data-[active=true]:bg-slate-50 data-[active=true]:text-slate-700"
                     >
                       <Link to="/admin/settings">
                         <Settings />
@@ -265,13 +265,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
         <main className="flex-1 overflow-hidden">
           <header className="flex h-16 items-center gap-4 border-b bg-white px-4 shadow-sm lg:px-6">
-            <SidebarTrigger className="text-gray-600 hover:text-gray-900" />
+            <SidebarTrigger className="text-slate-600 hover:text-slate-900" />
             <div className="flex-1" />
+            <PWAInstallPrompt />
             <Button
               variant="outline"
               size="sm"
               asChild
-              className="border-gray-300 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              className="border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-slate-900"
             >
               <Link to="/">
                 <Home className="mr-2 h-4 w-4" />

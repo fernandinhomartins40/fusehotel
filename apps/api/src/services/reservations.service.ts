@@ -185,7 +185,7 @@ export class ReservationService {
       finalUserId = user.id;
     }
 
-    return prisma.reservation.create({
+    const reservation = await prisma.reservation.create({
       data: {
         reservationCode: `FH-${Date.now()}-${uuidv4().substring(0, 8).toUpperCase()}`,
         accommodationId: data.accommodationId,
@@ -213,6 +213,24 @@ export class ReservationService {
         accommodation: true,
       },
     });
+
+    const prismaPms = prisma as any;
+    await prismaPms.financialEntry.create({
+      data: {
+        type: 'RECEIVABLE',
+        status: 'OPEN',
+        description: `Reserva ${reservation.reservationCode}`,
+        category: 'Hospedagem',
+        amount: totalAmount,
+        dueDate: checkInDate,
+        issuedAt: new Date(),
+        customerName: reservation.guestName,
+        referenceType: 'RESERVATION',
+        referenceId: reservation.id,
+      },
+    });
+
+    return reservation;
   }
 
   static async cancel(id: string, reason: string, requester: RequestUser) {

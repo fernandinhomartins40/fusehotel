@@ -32,6 +32,7 @@ import RoomUnits from "./pages/admin/RoomUnits";
 import Housekeeping from "./pages/admin/Housekeeping";
 import Maintenance from "./pages/admin/Maintenance";
 import POS from "./pages/admin/POS";
+import PMSCentral from "./pages/admin/PMSCentral";
 import Reports from "./pages/admin/Reports";
 import AboutUs from "./pages/AboutUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -40,6 +41,7 @@ import Contact from "./pages/Contact";
 import Services from "./pages/Services";
 import ResetPassword from "./pages/ResetPassword";
 import TermsOfService from "./pages/TermsOfService";
+import PreCheckIn from "./pages/PreCheckIn";
 
 const App = () => {
   const [queryClient] = React.useState(() => new QueryClient({
@@ -74,6 +76,7 @@ const App = () => {
               <Route path="/contato" element={<Contact />} />
               <Route path="/servicos" element={<Services />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/pre-check-in/:token" element={<PreCheckIn />} />
 
               <Route path="/admin/login" element={<AdminLogin />} />
 
@@ -143,6 +146,14 @@ const App = () => {
               />
               <Route
                 path="/admin/pos"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <PMSCentral />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pos-legacy"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
                     <POS />
