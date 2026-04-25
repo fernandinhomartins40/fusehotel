@@ -21,6 +21,9 @@ import roomUnitsRoutes from './room-units.routes';
 import frontdeskRoutes from './frontdesk.routes';
 import housekeepingRoutes from './housekeeping.routes';
 import foliosRoutes from './folios.routes';
+import maintenanceRoutes from './maintenance.routes';
+import posRoutes from './pos.routes';
+import reportsRoutes from './reports.routes';
 
 const router = Router();
 
@@ -46,5 +49,8 @@ router.use('/room-units', roomUnitsRoutes);
 router.use('/frontdesk', frontdeskRoutes);
 router.use('/housekeeping', housekeepingRoutes);
 router.use('/folios', foliosRoutes);
+router.use('/maintenance', maintenanceRoutes);
+router.use('/pos', posRoutes);
+router.use('/reports', reportsRoutes);
 
 export default router;

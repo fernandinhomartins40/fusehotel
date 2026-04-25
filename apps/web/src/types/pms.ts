@@ -35,6 +35,16 @@ export type HousekeepingTaskStatus =
   | 'INSPECTED'
   | 'CANCELLED';
 
+export type MaintenanceOrderStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+
+export type MaintenanceOrderPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+
+export type POSProductCategory = 'FOOD' | 'BEVERAGE' | 'SERVICE' | 'CONVENIENCE' | 'OTHER';
+
+export type POSOrderOrigin = 'ROOM_SERVICE' | 'FRONTDESK' | 'RESTAURANT' | 'BAR';
+
+export type POSOrderStatus = 'OPEN' | 'PREPARING' | 'DELIVERED' | 'CLOSED' | 'CANCELLED';
+
 export interface RoomUnit {
   id: string;
   accommodationId: string;
@@ -139,5 +149,91 @@ export interface FrontdeskDashboard {
     dirty: number;
     cleaning: number;
     outOfOrder: number;
+  };
+}
+
+export interface MaintenanceOrder {
+  id: string;
+  roomUnitId: string;
+  status: MaintenanceOrderStatus;
+  priority: MaintenanceOrderPriority;
+  title: string;
+  description: string | null;
+  notes: string | null;
+  estimatedCost: number | null;
+  actualCost: number | null;
+  openedAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  roomUnit: RoomUnit & {
+    accommodation?: {
+      id: string;
+      name: string;
+    };
+  };
+}
+
+export interface POSProduct {
+  id: string;
+  name: string;
+  category: POSProductCategory;
+  price: number;
+  isActive: boolean;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface POSOrderItem {
+  id: string;
+  orderId: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  notes: string | null;
+}
+
+export interface POSOrder {
+  id: string;
+  orderNumber: string;
+  stayId: string | null;
+  roomUnitId: string | null;
+  origin: POSOrderOrigin;
+  status: POSOrderStatus;
+  notes: string | null;
+  totalAmount: number;
+  createdAt: string;
+  updatedAt: string;
+  stay?: Stay | null;
+  roomUnit?: RoomUnit | null;
+  items: POSOrderItem[];
+}
+
+export interface OperationsReport {
+  referenceDate: string;
+  rooms: {
+    total: number;
+    occupied: number;
+    occupancyRate: number;
+  };
+  frontdesk: {
+    arrivalsToday: number;
+    departuresToday: number;
+    inHouse: number;
+  };
+  operations: {
+    pendingHousekeeping: number;
+    openMaintenance: number;
+  };
+  finance: {
+    reservationRevenueMonth: number;
+    reservationCountMonth: number;
+    outstandingFolios: number;
+    posRevenueMonth: number;
+    posOrdersMonth: number;
   };
 }

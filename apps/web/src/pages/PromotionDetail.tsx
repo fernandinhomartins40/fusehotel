@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ArrowLeft, Calendar, Loader2, MapPin, Star, Tag, Users } from 'lucide-react';
@@ -165,10 +165,10 @@ const PromotionDetail: React.FC = () => {
         <Header />
         <main className="flex-grow flex items-center justify-center">
           <div className="text-center p-8">
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">Promocao nao encontrada</h1>
+            <h1 className="text-4xl font-bold text-gray-800 mb-4">Promoção não encontrada</h1>
             <p className="text-lg text-gray-600 mb-6">
               {(error as any)?.response?.data?.message ||
-                'A promocao que voce esta procurando nao esta disponivel.'}
+                'A promocao que voce esta procurando não esta disponivel.'}
             </p>
             <Button className="bg-primary hover:bg-primary/90" asChild>
               <Link to="/promocoes">Ver todas promocoes</Link>
@@ -216,7 +216,7 @@ const PromotionDetail: React.FC = () => {
           <div className="absolute inset-0 bg-secondary/60" />
           <div className="absolute bottom-8 left-8 text-white">
             <Badge className="mb-4 bg-primary hover:bg-primary/90 text-primary-foreground">
-              {promotion.type === 'PACKAGE' ? 'Pacote' : 'Promocao'}
+              {promotion.type === 'PACKAGE' ? 'Pacote' : 'Promoção'}
             </Badge>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">{promotion.title}</h1>
           </div>
@@ -359,7 +359,7 @@ const PromotionDetail: React.FC = () => {
 
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="promotionAccommodation">Acomodacao</Label>
+                      <Label htmlFor="promotionAccommodation">Acomodação</Label>
                       <Select
                         value={selectedAccommodationId}
                         onValueChange={setSelectedAccommodationId}
@@ -404,7 +404,7 @@ const PromotionDetail: React.FC = () => {
                     <div>
                       <Label htmlFor="promotionGuests" className="flex items-center gap-2">
                         <Users size={16} />
-                        Hospedes
+                        Hóspedes
                       </Label>
                       <Select
                         value={numberOfGuests.toString()}
@@ -419,7 +419,7 @@ const PromotionDetail: React.FC = () => {
                             (_, i) => i + 1
                           ).map((guestCount) => (
                             <SelectItem key={guestCount} value={guestCount.toString()}>
-                              {guestCount} {guestCount === 1 ? 'hospede' : 'hospedes'}
+                              {guestCount} {guestCount === 1 ? 'hóspede' : 'hóspedes'}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -470,7 +470,7 @@ const PromotionDetail: React.FC = () => {
                     {!selectedAccommodation
                       ? 'Selecione uma acomodacao'
                       : !selectedAccommodation.isAvailable
-                        ? 'Acomodacao indisponivel'
+                        ? 'Acomodação indisponível'
                         : isCheckingAvailability
                           ? 'Verificando agenda...'
                           : isSelectedPeriodUnavailable
@@ -486,13 +486,13 @@ const PromotionDetail: React.FC = () => {
 
                   {selectedAccommodation && isSelectedPeriodUnavailable && (
                     <p className="text-xs text-red-600 text-center">
-                      A agenda indica indisponibilidade para este periodo.
+                      A agenda indica indisponibilidade para este período.
                     </p>
                   )}
 
                   <p className="text-xs text-gray-500 text-center">
                     O pacote promocional entra no checkout e a acomodacao escolhida fica bloqueada
-                    na agenda ate o aceite do hotel.
+                    na agenda até o aceite do hotel.
                   </p>
                 </div>
               </div>
@@ -522,3 +522,5 @@ const PromotionDetail: React.FC = () => {
 };
 
 export default PromotionDetail;
+
+

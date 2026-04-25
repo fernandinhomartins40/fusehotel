@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { CalendarDays, Clock3, Mail, MessageCircle, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -101,7 +101,7 @@ export function ReservationDetails({
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-sm text-muted-foreground">Codigo da reserva</p>
+          <p className="text-sm text-muted-foreground">Código da reserva</p>
           <p className="font-mono text-sm">{reservation.reservationCode}</p>
         </div>
         <Badge className={reservationStatusClassNames[reservation.status]}>
@@ -111,7 +111,7 @@ export function ReservationDetails({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <h3 className="text-sm font-medium text-muted-foreground">Hospede</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">Hóspede</h3>
           <div className="mt-2 space-y-2">
             <p className="font-medium">{reservation.guestName}</p>
             <p className="text-sm flex items-center gap-2">
@@ -127,7 +127,7 @@ export function ReservationDetails({
         </div>
 
         <div>
-          <h3 className="text-sm font-medium text-muted-foreground">Acomodacao</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">Acomodação</h3>
           <div className="mt-2 space-y-2">
             <p className="font-medium">{reservation.accommodation?.name || 'Nao informada'}</p>
             <p className="text-sm text-gray-600">{reservation.accommodation?.type || ''}</p>
@@ -353,3 +353,4 @@ export function ReservationDetails({
     </div>
   );
 }
+

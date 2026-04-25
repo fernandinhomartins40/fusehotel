@@ -70,6 +70,7 @@ export class FoliosService {
           description: data.description,
           amount: signedAmount,
           quantity: data.quantity ?? 1,
+          referenceId: data.referenceId,
         },
       });
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Plus, Edit2, Trash2, Save, X } from 'lucide-react';
 
@@ -69,10 +69,10 @@ export const AwardsCustomizer = () => {
       { section: 'about-awards', config: data },
       {
         onSuccess: () => {
-          toast.success('Configuracoes de premios salvas com sucesso!');
+          toast.success('Configurações de prêmios salvas com sucesso!');
         },
         onError: (error: any) => {
-          toast.error(error?.response?.data?.message || 'Erro ao salvar configuracoes');
+          toast.error(error?.response?.data?.message || 'Erro ao salvar configurações');
         },
       }
     );
@@ -80,7 +80,7 @@ export const AwardsCustomizer = () => {
 
   const handleReset = () => {
     form.reset(defaultAwardsSectionConfig);
-    toast.success('Configuracoes resetadas para o padrao');
+    toast.success('Configurações resetadas para o padrão');
   };
 
   const handleAddAward = () => {
@@ -129,7 +129,7 @@ export const AwardsCustomizer = () => {
   };
 
   const handleDeleteAward = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este premio?')) {
+    if (confirm('Tem certeza que deseja excluir este prêmio?')) {
       deleteAward.mutate(id);
     }
   };
@@ -143,7 +143,7 @@ export const AwardsCustomizer = () => {
   if (isLoading || isLoadingAwards) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-muted-foreground">Carregando configuracoes...</div>
+        <div className="text-muted-foreground">Carregando configurações...</div>
       </div>
     );
   }
@@ -153,7 +153,7 @@ export const AwardsCustomizer = () => {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Secao Reconhecimentos e Premios</CardTitle>
+            <CardTitle>Seção Reconhecimentos e Prêmios</CardTitle>
             <Button variant="outline" size="sm" onClick={handleReset} type="button">
               Resetar para Padrao
             </Button>
@@ -162,11 +162,11 @@ export const AwardsCustomizer = () => {
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Titulo da Secao</Label>
+              <Label htmlFor="title">Título da Seção</Label>
               <Input
                 id="title"
                 {...form.register('title')}
-                placeholder="Reconhecimentos e Premios"
+                placeholder="Reconhecimentos e Prêmios"
               />
             </div>
 
@@ -190,7 +190,7 @@ export const AwardsCustomizer = () => {
               />
 
               <ColorPickerField
-                label="Cor do Titulo"
+                label="Cor do Título"
                 value={form.watch('titleColor') || '#0466C8'}
                 onChange={(color) => form.setValue('titleColor', color)}
               />
@@ -198,7 +198,7 @@ export const AwardsCustomizer = () => {
 
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={updateSettings.isPending}>
-                {updateSettings.isPending ? 'Salvando...' : 'Salvar Configuracoes'}
+                {updateSettings.isPending ? 'Salvando...' : 'Salvar Configurações'}
               </Button>
             </div>
           </form>
@@ -208,7 +208,7 @@ export const AwardsCustomizer = () => {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Premios e Reconhecimentos</CardTitle>
+            <CardTitle>Prêmios e Reconhecimentos</CardTitle>
             <Button onClick={handleAddAward} size="sm">
               <Plus className="mr-1 h-4 w-4" />
               Adicionar Premio
@@ -222,12 +222,12 @@ export const AwardsCustomizer = () => {
               className="mb-6 space-y-4 rounded-lg border p-4"
             >
               <div className="space-y-2">
-                <Label htmlFor="title">Titulo</Label>
+                <Label htmlFor="title">Título</Label>
                 <Input id="title" {...awardForm.register('title', { required: true })} />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Descricao</Label>
+                <Label htmlFor="description">Descrição</Label>
                 <Input id="description" {...awardForm.register('description', { required: true })} />
               </div>
 
@@ -321,7 +321,7 @@ export const AwardsCustomizer = () => {
                   className="mb-12 text-center text-3xl font-bold"
                   style={{ color: watchedValues.titleColor || '#0466C8' }}
                 >
-                  {watchedValues.title || 'Reconhecimentos e Premios'}
+                  {watchedValues.title || 'Reconhecimentos e Prêmios'}
                 </h2>
                 <div
                   className={`grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-${watchedValues.gridColumns || 4}`}
@@ -356,3 +356,5 @@ export const AwardsCustomizer = () => {
     </div>
   );
 };
+
+

@@ -258,6 +258,43 @@ enum HousekeepingTaskPriority {
   URGENT
 }
 
+enum MaintenanceOrderStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum MaintenanceOrderPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum POSProductCategory {
+  FOOD
+  BEVERAGE
+  SERVICE
+  CONVENIENCE
+  OTHER
+}
+
+enum POSOrderOrigin {
+  ROOM_SERVICE
+  FRONTDESK
+  RESTAURANT
+  BAR
+}
+
+enum POSOrderStatus {
+  OPEN
+  PREPARING
+  DELIVERED
+  CLOSED
+  CANCELLED
+}
+
 model Reservation {
   id                String            @id @default(uuid())
   reservationCode   String            @unique
@@ -322,6 +359,8 @@ model RoomUnit {
   accommodation      Accommodation      @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
   stays              Stay[]
   housekeepingTasks  HousekeepingTask[]
+  maintenanceOrders  MaintenanceOrder[]
+  posOrders          POSOrder[]
 
   @@index([accommodationId])
   @@index([status])
@@ -349,6 +388,7 @@ model Stay {
   guests             StayGuest[]
   folio              Folio?
   housekeepingTasks  HousekeepingTask[]
+  posOrders          POSOrder[]
 
   @@index([roomUnitId])
   @@index([status])
@@ -433,6 +473,86 @@ model HousekeepingTask {
   @@index([reservationId])
   @@index([status])
   @@index([priority])
+}
+
+model MaintenanceOrder {
+  id           String                    @id @default(uuid())
+  roomUnitId    String
+  status        MaintenanceOrderStatus   @default(OPEN)
+  priority      MaintenanceOrderPriority @default(MEDIUM)
+  title         String
+  description   String?                  @db.Text
+  notes         String?                  @db.Text
+  estimatedCost Decimal?                 @db.Decimal(10, 2)
+  actualCost    Decimal?                 @db.Decimal(10, 2)
+  openedAt      DateTime                 @default(now())
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+
+  roomUnit      RoomUnit                 @relation(fields: [roomUnitId], references: [id], onDelete: Cascade)
+
+  @@index([roomUnitId])
+  @@index([status])
+  @@index([priority])
+}
+
+model POSProduct {
+  id          String             @id @default(uuid())
+  name        String
+  category    POSProductCategory
+  price       Decimal            @db.Decimal(10, 2)
+  isActive    Boolean            @default(true)
+  description String?            @db.Text
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  items       POSOrderItem[]
+
+  @@index([category])
+  @@index([isActive])
+}
+
+model POSOrder {
+  id          String         @id @default(uuid())
+  orderNumber String         @unique
+  stayId      String?
+  roomUnitId  String?
+  origin      POSOrderOrigin
+  status      POSOrderStatus @default(OPEN)
+  notes       String?        @db.Text
+  totalAmount Decimal        @default(0) @db.Decimal(10, 2)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  stay        Stay?          @relation(fields: [stayId], references: [id], onDelete: SetNull)
+  roomUnit    RoomUnit?      @relation(fields: [roomUnitId], references: [id], onDelete: SetNull)
+  items       POSOrderItem[]
+
+  @@index([stayId])
+  @@index([roomUnitId])
+  @@index([origin])
+  @@index([status])
+}
+
+model POSOrderItem {
+  id         String     @id @default(uuid())
+  orderId     String
+  productId   String
+  productName String
+  quantity    Int
+  unitPrice   Decimal    @db.Decimal(10, 2)
+  totalPrice  Decimal    @db.Decimal(10, 2)
+  notes       String?    @db.Text
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  order       POSOrder   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     POSProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([productId])
 }
 
 model Payment {

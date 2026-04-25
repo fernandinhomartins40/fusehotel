@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Eye, Filter, Loader2, CalendarPlus } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { ReservationDetails } from '@/components/admin/ReservationDetails';
@@ -235,8 +235,8 @@ export function Reservations() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Codigo</TableHead>
-                    <TableHead>Hospede</TableHead>
-                    <TableHead>Acomodacao</TableHead>
+                    <TableHead>Hóspede</TableHead>
+                    <TableHead>Acomodação</TableHead>
                     <TableHead>Check-in</TableHead>
                     <TableHead>Check-out</TableHead>
                     <TableHead>Valor</TableHead>
@@ -328,3 +328,4 @@ export function Reservations() {
 }
 
 export default Reservations;
+

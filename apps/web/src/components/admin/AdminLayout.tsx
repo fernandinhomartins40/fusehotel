@@ -1,7 +1,24 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Calendar, Home, Settings, Tag, Users, Palette, FileText, HelpCircle, Mail, CalendarDays, ConciergeBell, BedDouble, ClipboardCheck } from 'lucide-react';
+import {
+  BarChart3,
+  BedDouble,
+  Calendar,
+  CalendarDays,
+  ClipboardCheck,
+  ConciergeBell,
+  FileText,
+  HelpCircle,
+  Home,
+  LayoutDashboard,
+  Mail,
+  Palette,
+  Settings,
+  ShoppingCart,
+  Tag,
+  Users,
+  Wrench,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sidebar,
@@ -21,12 +38,164 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
+interface MenuItem {
+  path: string;
+  label: string;
+  icon: React.ElementType;
+  activeClassName: string;
+}
+
+const centralOperations: MenuItem[] = [
+  {
+    path: '/admin/pos',
+    label: 'Central PDV',
+    icon: ShoppingCart,
+    activeClassName:
+      'data-[active=true]:bg-lime-50 data-[active=true]:text-lime-700 data-[active=true]:border-r-2 data-[active=true]:border-lime-600',
+  },
+  {
+    path: '/admin/frontdesk',
+    label: 'Recepção',
+    icon: ConciergeBell,
+    activeClassName:
+      'data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-700 data-[active=true]:border-r-2 data-[active=true]:border-emerald-600',
+  },
+  {
+    path: '/admin/reservations',
+    label: 'Reservas',
+    icon: Calendar,
+    activeClassName:
+      'data-[active=true]:bg-purple-50 data-[active=true]:text-purple-700 data-[active=true]:border-r-2 data-[active=true]:border-purple-600',
+  },
+  {
+    path: '/admin/schedule',
+    label: 'Agenda',
+    icon: CalendarDays,
+    activeClassName:
+      'data-[active=true]:bg-indigo-50 data-[active=true]:text-indigo-700 data-[active=true]:border-r-2 data-[active=true]:border-indigo-600',
+  },
+  {
+    path: '/admin/reports',
+    label: 'Relatórios',
+    icon: BarChart3,
+    activeClassName:
+      'data-[active=true]:bg-fuchsia-50 data-[active=true]:text-fuchsia-700 data-[active=true]:border-r-2 data-[active=true]:border-fuchsia-600',
+  },
+];
+
+const hotelOperations: MenuItem[] = [
+  {
+    path: '/admin/room-units',
+    label: 'Quartos',
+    icon: BedDouble,
+    activeClassName:
+      'data-[active=true]:bg-sky-50 data-[active=true]:text-sky-700 data-[active=true]:border-r-2 data-[active=true]:border-sky-600',
+  },
+  {
+    path: '/admin/housekeeping',
+    label: 'Governança',
+    icon: ClipboardCheck,
+    activeClassName:
+      'data-[active=true]:bg-amber-50 data-[active=true]:text-amber-700 data-[active=true]:border-r-2 data-[active=true]:border-amber-600',
+  },
+  {
+    path: '/admin/maintenance',
+    label: 'Manutenção',
+    icon: Wrench,
+    activeClassName:
+      'data-[active=true]:bg-rose-50 data-[active=true]:text-rose-700 data-[active=true]:border-r-2 data-[active=true]:border-rose-600',
+  },
+  {
+    path: '/admin/customers',
+    label: 'Clientes',
+    icon: Users,
+    activeClassName:
+      'data-[active=true]:bg-cyan-50 data-[active=true]:text-cyan-700 data-[active=true]:border-r-2 data-[active=true]:border-cyan-600',
+  },
+];
+
+const commercialItems: MenuItem[] = [
+  {
+    path: '/admin',
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+    activeClassName:
+      'data-[active=true]:bg-blue-50 data-[active=true]:text-blue-700 data-[active=true]:border-r-2 data-[active=true]:border-blue-600',
+  },
+  {
+    path: '/admin/accommodations',
+    label: 'Acomodações',
+    icon: Home,
+    activeClassName:
+      'data-[active=true]:bg-green-50 data-[active=true]:text-green-700 data-[active=true]:border-r-2 data-[active=true]:border-green-600',
+  },
+  {
+    path: '/admin/packages-promotions',
+    label: 'Pacotes e promoções',
+    icon: Tag,
+    activeClassName:
+      'data-[active=true]:bg-orange-50 data-[active=true]:text-orange-700 data-[active=true]:border-r-2 data-[active=true]:border-orange-600',
+  },
+];
+
+const siteItems: MenuItem[] = [
+  {
+    path: '/admin/landing-customizer',
+    label: 'Página inicial',
+    icon: Home,
+    activeClassName:
+      'data-[active=true]:bg-pink-50 data-[active=true]:text-pink-700 data-[active=true]:border-r-2 data-[active=true]:border-pink-600',
+  },
+  {
+    path: '/admin/about-customizer',
+    label: 'Sobre nós',
+    icon: FileText,
+    activeClassName:
+      'data-[active=true]:bg-purple-50 data-[active=true]:text-purple-700 data-[active=true]:border-r-2 data-[active=true]:border-purple-600',
+  },
+  {
+    path: '/admin/services-customizer',
+    label: 'Serviços',
+    icon: Palette,
+    activeClassName:
+      'data-[active=true]:bg-indigo-50 data-[active=true]:text-indigo-700 data-[active=true]:border-r-2 data-[active=true]:border-indigo-600',
+  },
+  {
+    path: '/admin/faq-customizer',
+    label: 'FAQ',
+    icon: HelpCircle,
+    activeClassName:
+      'data-[active=true]:bg-yellow-50 data-[active=true]:text-yellow-700 data-[active=true]:border-r-2 data-[active=true]:border-yellow-600',
+  },
+  {
+    path: '/admin/contact-customizer',
+    label: 'Contato',
+    icon: Mail,
+    activeClassName:
+      'data-[active=true]:bg-teal-50 data-[active=true]:text-teal-700 data-[active=true]:border-r-2 data-[active=true]:border-teal-600',
+  },
+];
+
 export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
 
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
+  const isActive = (path: string) => location.pathname === path;
+
+  const renderMenuItems = (items: MenuItem[]) =>
+    items.map((item) => {
+      const Icon = item.icon;
+
+      return (
+        <SidebarMenuItem key={item.path}>
+          <SidebarMenuButton asChild isActive={isActive(item.path)} className={item.activeClassName}>
+            <Link to={item.path}>
+              <Icon />
+              <span>{item.label}</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      );
+    });
 
   return (
     <SidebarProvider>
@@ -35,7 +204,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <SidebarHeader className="border-b border-gray-200 bg-white">
             <div className="flex items-center px-2 py-2">
               <div className="flex items-center gap-2 text-lg font-semibold">
-                <div className="p-2 bg-blue-600 text-white rounded-lg">
+                <div className="rounded-lg bg-blue-600 p-2 text-white">
                   <LayoutDashboard className="h-5 w-5" />
                 </div>
                 <span className="text-gray-900">Painel do Hoteleiro</span>
@@ -44,163 +213,44 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </SidebarHeader>
 
           <SidebarContent className="bg-white">
-            {/* Gestão Principal */}
             <SidebarGroup>
-              <SidebarGroupLabel className="text-gray-500 font-medium">Gestão</SidebarGroupLabel>
+              <SidebarGroupLabel className="font-medium text-gray-500">Operação central</SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive('/admin')} className="data-[active=true]:bg-blue-50 data-[active=true]:text-blue-700 data-[active=true]:border-r-2 data-[active=true]:border-blue-600">
-                      <Link to="/admin">
-                        <LayoutDashboard />
-                        <span>Dashboard</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive('/admin/frontdesk')} className="data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-700 data-[active=true]:border-r-2 data-[active=true]:border-emerald-600">
-                      <Link to="/admin/frontdesk">
-                        <ConciergeBell />
-                        <span>Recepcao</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive('/admin/reservations')} className="data-[active=true]:bg-purple-50 data-[active=true]:text-purple-700 data-[active=true]:border-r-2 data-[active=true]:border-purple-600">
-                      <Link to="/admin/reservations">
-                        <Calendar />
-                        <span>Reservas</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive('/admin/schedule')} className="data-[active=true]:bg-indigo-50 data-[active=true]:text-indigo-700 data-[active=true]:border-r-2 data-[active=true]:border-indigo-600">
-                      <Link to="/admin/schedule">
-                        <CalendarDays />
-                        <span>Agenda</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive('/admin/room-units')} className="data-[active=true]:bg-sky-50 data-[active=true]:text-sky-700 data-[active=true]:border-r-2 data-[active=true]:border-sky-600">
-                      <Link to="/admin/room-units">
-                        <BedDouble />
-                        <span>Quartos</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive('/admin/customers')} className="data-[active=true]:bg-cyan-50 data-[active=true]:text-cyan-700 data-[active=true]:border-r-2 data-[active=true]:border-cyan-600">
-                      <Link to="/admin/customers">
-                        <Users />
-                        <span>Clientes</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive('/admin/housekeeping')} className="data-[active=true]:bg-amber-50 data-[active=true]:text-amber-700 data-[active=true]:border-r-2 data-[active=true]:border-amber-600">
-                      <Link to="/admin/housekeeping">
-                        <ClipboardCheck />
-                        <span>Governanca</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
+                <SidebarMenu>{renderMenuItems(centralOperations)}</SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* Conteúdo do Hotel */}
             <SidebarGroup>
-              <SidebarGroupLabel className="text-gray-500 font-medium">Conteúdo do Hotel</SidebarGroupLabel>
+              <SidebarGroupLabel className="font-medium text-gray-500">Operação do hotel</SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive('/admin/accommodations')} className="data-[active=true]:bg-green-50 data-[active=true]:text-green-700 data-[active=true]:border-r-2 data-[active=true]:border-green-600">
-                      <Link to="/admin/accommodations">
-                        <Home />
-                        <span>Acomodações</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive('/admin/packages-promotions')} className="data-[active=true]:bg-orange-50 data-[active=true]:text-orange-700 data-[active=true]:border-r-2 data-[active=true]:border-orange-600">
-                      <Link to="/admin/packages-promotions">
-                        <Tag />
-                        <span>Pacotes e Promoções</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
+                <SidebarMenu>{renderMenuItems(hotelOperations)}</SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* Customização do Site */}
             <SidebarGroup>
-              <SidebarGroupLabel className="text-gray-500 font-medium">Customização do Site</SidebarGroupLabel>
+              <SidebarGroupLabel className="font-medium text-gray-500">Comercial</SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive('/admin/landing-customizer')} className="data-[active=true]:bg-pink-50 data-[active=true]:text-pink-700 data-[active=true]:border-r-2 data-[active=true]:border-pink-600">
-                      <Link to="/admin/landing-customizer">
-                        <Home className="h-4 w-4" />
-                        <span>Página Inicial</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive('/admin/about-customizer')} className="data-[active=true]:bg-purple-50 data-[active=true]:text-purple-700 data-[active=true]:border-r-2 data-[active=true]:border-purple-600">
-                      <Link to="/admin/about-customizer">
-                        <FileText className="h-4 w-4" />
-                        <span>Sobre Nós</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive('/admin/services-customizer')} className="data-[active=true]:bg-indigo-50 data-[active=true]:text-indigo-700 data-[active=true]:border-r-2 data-[active=true]:border-indigo-600">
-                      <Link to="/admin/services-customizer">
-                        <Palette className="h-4 w-4" />
-                        <span>Serviços</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive('/admin/faq-customizer')} className="data-[active=true]:bg-yellow-50 data-[active=true]:text-yellow-700 data-[active=true]:border-r-2 data-[active=true]:border-yellow-600">
-                      <Link to="/admin/faq-customizer">
-                        <HelpCircle className="h-4 w-4" />
-                        <span>FAQ</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive('/admin/contact-customizer')} className="data-[active=true]:bg-teal-50 data-[active=true]:text-teal-700 data-[active=true]:border-r-2 data-[active=true]:border-teal-600">
-                      <Link to="/admin/contact-customizer">
-                        <Mail className="h-4 w-4" />
-                        <span>Contato</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
+                <SidebarMenu>{renderMenuItems(commercialItems)}</SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* Configurações */}
             <SidebarGroup>
-              <SidebarGroupLabel className="text-gray-500 font-medium">Sistema</SidebarGroupLabel>
+              <SidebarGroupLabel className="font-medium text-gray-500">Site</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>{renderMenuItems(siteItems)}</SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            <SidebarGroup>
+              <SidebarGroupLabel className="font-medium text-gray-500">Sistema</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={isActive('/admin/settings')} className="data-[active=true]:bg-gray-50 data-[active=true]:text-gray-700 data-[active=true]:border-r-2 data-[active=true]:border-gray-600">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive('/admin/settings')}
+                      className="data-[active=true]:border-r-2 data-[active=true]:border-gray-600 data-[active=true]:bg-gray-50 data-[active=true]:text-gray-700"
+                    >
                       <Link to="/admin/settings">
                         <Settings />
                         <span>Configurações</span>
@@ -214,10 +264,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </Sidebar>
 
         <main className="flex-1 overflow-hidden">
-          <header className="flex h-16 items-center gap-4 border-b bg-white px-4 lg:px-6 shadow-sm">
+          <header className="flex h-16 items-center gap-4 border-b bg-white px-4 shadow-sm lg:px-6">
             <SidebarTrigger className="text-gray-600 hover:text-gray-900" />
             <div className="flex-1" />
-            <Button variant="outline" size="sm" asChild className="border-gray-300 text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="border-gray-300 text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            >
               <Link to="/">
                 <Home className="mr-2 h-4 w-4" />
                 Voltar ao site
@@ -225,9 +280,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </Button>
           </header>
 
-          <div className="flex-1 overflow-auto">
-            {children}
-          </div>
+          <div className="flex-1 overflow-auto">{children}</div>
         </main>
       </div>
     </SidebarProvider>

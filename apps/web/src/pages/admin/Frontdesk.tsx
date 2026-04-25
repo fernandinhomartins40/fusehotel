@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { ArrowRightLeft, Banknote, BedDouble, ClipboardList, DoorClosed, Hotel } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +28,7 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', {
 });
 
 const entryTypeLabels: Record<FolioEntryType, string> = {
-  DAILY_RATE: 'Diaria',
+  DAILY_RATE: 'Diária',
   EXTRA_BED: 'Cama extra',
   SERVICE_FEE: 'Taxa',
   TAX: 'Imposto',
@@ -48,7 +48,7 @@ export default function Frontdesk() {
   const addFolioEntry = useAddFolioEntry();
 
   const [selectedRooms, setSelectedRooms] = useState<Record<string, string>>({});
-  const [folioStayId, setFolioStayId] = useState<string | null>(null);
+  const [folioStayId, setFólioStayId] = useState<string | null>(null);
   const [entryForm, setEntryForm] = useState({
     type: 'PAYMENT' as FolioEntryType,
     amount: '',
@@ -125,16 +125,16 @@ export default function Frontdesk() {
     <AdminLayout>
       <div className="flex flex-col gap-6 p-6">
         <div>
-          <h1 className="text-3xl font-bold">Recepcao</h1>
+          <h1 className="text-3xl font-bold">Recepção</h1>
           <p className="text-gray-600 mt-1">
-            Operacao do dia conectada diretamente as reservas do site.
+            Operação do dia conectada diretamente às reservas do site.
           </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-5">
           <StatCard title="Chegadas" value={dashboard?.arrivals.length ?? 0} icon={Hotel} />
           <StatCard title="Hospedados" value={dashboard?.inHouse.length ?? 0} icon={BedDouble} />
-          <StatCard title="Saidas" value={dashboard?.departures.length ?? 0} icon={DoorClosed} />
+          <StatCard title="Saídas" value={dashboard?.departures.length ?? 0} icon={DoorClosed} />
           <StatCard title="Quartos livres" value={dashboard?.roomStats.available ?? 0} icon={ClipboardList} />
           <StatCard title="Quartos sujos" value={dashboard?.roomStats.dirty ?? 0} icon={ArrowRightLeft} />
         </div>
@@ -148,17 +148,17 @@ export default function Frontdesk() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Reserva</TableHead>
-                  <TableHead>Hospede</TableHead>
+                  <TableHead>Hóspede</TableHead>
                   <TableHead>Categoria</TableHead>
-                  <TableHead>Periodo</TableHead>
+                  <TableHead>Período</TableHead>
                   <TableHead>Quarto</TableHead>
-                  <TableHead className="text-right">Acao</TableHead>
+                  <TableHead className="text-right">Ação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6}>Carregando recepcao...</TableCell>
+                    <TableCell colSpan={6}>Carregando recepção...</TableCell>
                   </TableRow>
                 ) : !dashboard?.arrivals.length ? (
                   <TableRow>
@@ -175,7 +175,7 @@ export default function Frontdesk() {
                         <TableCell>{reservation.guestName}</TableCell>
                         <TableCell>{reservation.accommodation?.name}</TableCell>
                         <TableCell>
-                          {new Date(reservation.checkInDate).toLocaleDateString('pt-BR')} ate{' '}
+                          {new Date(reservation.checkInDate).toLocaleDateString('pt-BR')} até{' '}
                           {new Date(reservation.checkOutDate).toLocaleDateString('pt-BR')}
                         </TableCell>
                         <TableCell>
@@ -223,11 +223,11 @@ export default function Frontdesk() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Reserva</TableHead>
-                  <TableHead>Hospede</TableHead>
+                  <TableHead>Hóspede</TableHead>
                   <TableHead>Quarto</TableHead>
-                  <TableHead>Saida prevista</TableHead>
+                  <TableHead>Saída prevista</TableHead>
                   <TableHead>Saldo</TableHead>
-                  <TableHead className="text-right">Acoes</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -251,9 +251,9 @@ export default function Frontdesk() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="outline" onClick={() => setFolioStayId(stay.id)}>
+                          <Button variant="outline" onClick={() => setFólioStayId(stay.id)}>
                             <Banknote className="mr-2 h-4 w-4" />
-                            Folio
+                            Fólio
                           </Button>
                           <Button
                             onClick={() => handleCheckOut(stay)}
@@ -272,17 +272,17 @@ export default function Frontdesk() {
         </Card>
       </div>
 
-      <Dialog open={Boolean(folioStayId)} onOpenChange={(open) => !open && setFolioStayId(null)}>
+      <Dialog open={Boolean(folioStayId)} onOpenChange={(open) => !open && setFólioStayId(null)}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Folio da hospedagem</DialogTitle>
+            <DialogTitle>Fólio da hospedagem</DialogTitle>
             <DialogDescription>
               Lançamentos financeiros da estadia e liquidação para check-out.
             </DialogDescription>
           </DialogHeader>
 
           {!folio ? (
-            <div>Carregando folio...</div>
+            <div>Carregando fólio...</div>
           ) : (
             <div className="grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
               <div className="space-y-4">
@@ -298,7 +298,7 @@ export default function Frontdesk() {
                     <TableRow>
                       <TableHead>Data</TableHead>
                       <TableHead>Tipo</TableHead>
-                      <TableHead>Descricao</TableHead>
+                      <TableHead>Descrição</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -319,7 +319,7 @@ export default function Frontdesk() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Lancar movimento</CardTitle>
+                  <CardTitle>Lançar movimento</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -353,7 +353,7 @@ export default function Frontdesk() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Descricao</Label>
+                    <Label>Descrição</Label>
                     <Textarea
                       value={entryForm.description}
                       onChange={(event) => setEntryForm((current) => ({ ...current, description: event.target.value }))}
@@ -361,7 +361,7 @@ export default function Frontdesk() {
                   </div>
 
                   <Button className="w-full" onClick={handleAddEntry} disabled={addFolioEntry.isPending}>
-                    Registrar no folio
+                    Registrar no fólio
                   </Button>
                 </CardContent>
               </Card>
@@ -396,3 +396,6 @@ function StatCard({
     </Card>
   );
 }
+
+
+

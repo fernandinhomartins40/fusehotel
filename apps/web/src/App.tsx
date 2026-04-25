@@ -30,6 +30,9 @@ import Schedule from "./pages/admin/Schedule";
 import Frontdesk from "./pages/admin/Frontdesk";
 import RoomUnits from "./pages/admin/RoomUnits";
 import Housekeeping from "./pages/admin/Housekeeping";
+import Maintenance from "./pages/admin/Maintenance";
+import POS from "./pages/admin/POS";
+import Reports from "./pages/admin/Reports";
 import AboutUs from "./pages/AboutUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import FAQ from "./pages/FAQ";
@@ -127,6 +130,30 @@ const App = () => {
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
                     <Housekeeping />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/maintenance"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <Maintenance />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pos"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <POS />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/reports"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <Reports />
                   </ProtectedRoute>
                 }
               />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { differenceInDays } from 'date-fns';
 import {
@@ -215,7 +215,7 @@ export const CreateReservationDialog: React.FC<CreateReservationDialogProps> = (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="accommodationId">
-                Acomodacao <span className="text-red-500">*</span>
+                Acomodação <span className="text-red-500">*</span>
               </Label>
               <Controller
                 name="accommodationId"
@@ -293,7 +293,7 @@ export const CreateReservationDialog: React.FC<CreateReservationDialogProps> = (
               <Alert variant="destructive">
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  Esta acomodacao esta marcada como indisponivel no cadastro e nao pode receber novas reservas.
+                  Esta acomodacao esta marcada como indisponível no cadastro e não pode receber novas reservas.
                 </AlertDescription>
               </Alert>
             )}
@@ -302,7 +302,7 @@ export const CreateReservationDialog: React.FC<CreateReservationDialogProps> = (
               <Alert variant="destructive">
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  Esta acomodacao nao esta disponivel para o periodo selecionado na agenda.
+                  Esta acomodacao não esta disponivel para o período selecionado na agenda.
                 </AlertDescription>
               </Alert>
             )}
@@ -310,7 +310,7 @@ export const CreateReservationDialog: React.FC<CreateReservationDialogProps> = (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="numberOfGuests">
-                  Numero de Hospedes <span className="text-red-500">*</span>
+                  Numero de Hóspedes <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="numberOfGuests"
@@ -318,8 +318,8 @@ export const CreateReservationDialog: React.FC<CreateReservationDialogProps> = (
                   min={1}
                   max={selectedAccommodation?.capacity || 10}
                   {...register('numberOfGuests', {
-                    required: 'Numero de hospedes e obrigatorio',
-                    min: { value: 1, message: 'Minimo 1 hospede' },
+                    required: 'Número de hóspedes é obrigatório',
+                    min: { value: 1, message: 'Mínimo 1 hóspede' },
                   })}
                 />
                 {errors.numberOfGuests && (
@@ -415,7 +415,7 @@ export const CreateReservationDialog: React.FC<CreateReservationDialogProps> = (
                                 <span>{customer.name}</span>
                                 <span className="text-xs text-muted-foreground">
                                   {customer.email}
-                                  {customer.whatsapp ? ` • ${customer.whatsapp}` : ' • Sem WhatsApp'}
+                                  {customer.whatsapp ? ` â€¢ ${customer.whatsapp}` : ' â€¢ Sem WhatsApp'}
                                 </span>
                               </div>
                             </CommandItem>
@@ -509,7 +509,7 @@ export const CreateReservationDialog: React.FC<CreateReservationDialogProps> = (
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
-                  <span>Taxa de servico (5%):</span>
+                  <span>Taxa de serviço (5%):</span>
                   <span>R$ {serviceFee.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -563,3 +563,4 @@ export const CreateReservationDialog: React.FC<CreateReservationDialogProps> = (
     </>
   );
 };
+

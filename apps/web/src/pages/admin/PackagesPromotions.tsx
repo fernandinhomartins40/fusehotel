@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { Check, Edit, Loader2, Plus, Trash } from 'lucide-react';
@@ -48,7 +48,7 @@ import { PromotionFormData, promotionFormSchema } from '@/lib/validations/promot
 
 const promotionTypeOptions: Array<{ value: PromotionType; label: string }> = [
   { value: 'PACKAGE', label: 'Pacote' },
-  { value: 'DISCOUNT', label: 'Promocao' },
+  { value: 'DISCOUNT', label: 'Promoção' },
   { value: 'SEASONAL', label: 'Sazonal' },
   { value: 'SPECIAL_OFFER', label: 'Oferta Especial' },
   { value: 'EARLY_BIRD', label: 'Reserva Antecipada' },
@@ -300,7 +300,7 @@ const PackagesPromotions = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Titulo</TableHead>
+                        <TableHead>Título</TableHead>
                         <TableHead>Tipo</TableHead>
                         <TableHead>Validade</TableHead>
                         <TableHead>Preco</TableHead>
@@ -379,7 +379,7 @@ const PackagesPromotions = () => {
                       : 'Ainda nao ha promocoes cadastradas no sistema.'}
                   </p>
                   <Button onClick={handleNewPromotion}>
-                    <Plus className="mr-2 h-4 w-4" /> Criar Nova Promocao
+                    <Plus className="mr-2 h-4 w-4" /> Criar Nova Promoção
                   </Button>
                 </CardContent>
               </Card>
@@ -391,7 +391,7 @@ const PackagesPromotions = () => {
       <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[700px]">
           <DialogHeader>
-            <DialogTitle>{editingPromotion ? 'Editar Promocao' : 'Criar Promocao'}</DialogTitle>
+            <DialogTitle>{editingPromotion ? 'Editar Promoção' : 'Criar Promoção'}</DialogTitle>
             <DialogDescription>
               {editingPromotion
                 ? 'Atualize os detalhes da promocao ou pacote abaixo.'
@@ -402,7 +402,7 @@ const PackagesPromotions = () => {
           <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="title">Titulo</Label>
+                <Label htmlFor="title">Título</Label>
                 <Input id="title" {...form.register('title')} />
               </div>
 
@@ -429,12 +429,12 @@ const PackagesPromotions = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="shortDescription">Descricao Curta</Label>
+              <Label htmlFor="shortDescription">Descrição Curta</Label>
               <Input id="shortDescription" {...form.register('shortDescription')} />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="longDescription">Descricao Completa</Label>
+              <Label htmlFor="longDescription">Descrição Completa</Label>
               <Textarea id="longDescription" {...form.register('longDescription')} rows={5} />
             </div>
 
@@ -491,7 +491,7 @@ const PackagesPromotions = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="image">Imagem da Promocao</Label>
+              <Label htmlFor="image">Imagem da Promoção</Label>
               <ImageCropUpload
                 value={watchedImage}
                 onChange={(url) => form.setValue('image', url, { shouldDirty: true })}
@@ -585,7 +585,7 @@ const PackagesPromotions = () => {
                 ) : (
                   <>
                     <Check className="mr-2 h-4 w-4" />
-                    {editingPromotion ? 'Salvar Alteracoes' : 'Criar Promocao'}
+                    {editingPromotion ? 'Salvar alterações' : 'Criar Promoção'}
                   </>
                 )}
               </Button>
@@ -598,3 +598,4 @@ const PackagesPromotions = () => {
 };
 
 export default PackagesPromotions;
+

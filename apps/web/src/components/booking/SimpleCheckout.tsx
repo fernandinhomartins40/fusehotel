@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -221,27 +221,27 @@ export function SimpleCheckout({
         promotionCode: promotionCode || undefined,
       });
 
-      const message = `*NOVA SOLICITACAO DE RESERVA*
+      const message = `*NOVA SOLICITAÇÃO DE RESERVA*
 
-*Codigo:* ${reservation.data.reservationCode}
+*Código:* ${reservation.data.reservationCode}
 
-*DADOS DO HOSPEDE*
+*DADOS DO HÓSPEDE*
 Nome: ${guestName}
 Email: ${guestEmail}
 WhatsApp: ${guestWhatsApp}
 
-*DETALHES DA ACOMODACAO*
-Acomodacao: ${accommodationName}
+*DETALHES DA ACOMODAÇÃO*
+Acomodação: ${accommodationName}
 Tipo: ${accommodationType}
-${promotionTitle ? `Promocao/Pacote: ${promotionTitle}\n` : ''}${promotionCode ? `Codigo promocional: ${promotionCode}\n` : ''}
-*PERIODO DA ESTADIA*
+${promotionTitle ? `Promoção/Pacote: ${promotionTitle}\n` : ''}${promotionCode ? `Código promocional: ${promotionCode}\n` : ''}
+*PERÍODO DA ESTADIA*
 Check-in: ${format(checkInDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
 Check-out: ${format(checkOutDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-Diarias: ${numberOfNights} ${numberOfNights === 1 ? 'noite' : 'noites'}
-Hospedes: ${numberOfGuests} ${numberOfGuests === 1 ? 'pessoa' : 'pessoas'}
+Diárias: ${numberOfNights} ${numberOfNights === 1 ? 'noite' : 'noites'}
+Hóspedes: ${numberOfGuests} ${numberOfGuests === 1 ? 'pessoa' : 'pessoas'}
 ${numberOfExtraBeds > 0 ? `Camas extras: ${numberOfExtraBeds}\n` : ''}${promotionDiscount > 0 ? `Desconto aplicado: ${formatCurrency(promotionDiscount)}\n` : ''}*VALOR TOTAL: ${formatCurrency(totalAmount)}*
 
-Solicitacao enviada. Aguardo o aceite do hotel.`.trim();
+Solicitação enviada. Aguardo o aceite do hotel.`.trim();
 
       const hotelWhatsApp = settings?.hotelWhatsApp || '5511999999999';
       window.open(buildWhatsAppUrl(hotelWhatsApp, message), '_blank');
@@ -253,8 +253,8 @@ Solicitacao enviada. Aguardo o aceite do hotel.`.trim();
 
       toast.success('Reserva criada com sucesso', {
         description: isAuthenticated
-          ? `Codigo da reserva: ${reservation.data.reservationCode}. O resumo foi aberto no WhatsApp do hotel.`
-          : 'Cadastro provisiorio criado. Para acessar depois, use o WhatsApp como usuario e as 3 primeiras letras do nome como senha inicial.',
+          ? `Código da reserva: ${reservation.data.reservationCode}. O resumo foi aberto no WhatsApp do hotel.`
+          : 'Cadastro provisório criado. Para acessar depois, use o WhatsApp como usuario e as 3 primeiras letras do nome como senha inicial.',
         duration: 6000,
       });
     } catch (error: any) {
@@ -271,17 +271,17 @@ Solicitacao enviada. Aguardo o aceite do hotel.`.trim();
       <CardHeader>
         <CardTitle className="text-2xl">Finalizar Reserva</CardTitle>
         <p className="text-sm text-gray-600">
-          Preencha seus dados. Se ja existir cadastro, o checkout sera retomado apos o login.
+          Preencha seus dados. Se já existir cadastro, o checkout será retomado após o login.
         </p>
       </CardHeader>
 
       <CardContent className="space-y-6">
         <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-          <h3 className="font-semibold text-lg mb-3">Resumo da Reserva</h3>
+          <h3 className="font-semibold text-lg mb-3">Resumo da reserva</h3>
 
           <div className="space-y-2 text-sm">
             <div className="flex justify-between gap-4">
-              <span className="text-gray-600">Acomodacao:</span>
+              <span className="text-gray-600">Acomodação:</span>
               <span className="font-medium text-right">{accommodationName}</span>
             </div>
 
@@ -289,7 +289,7 @@ Solicitacao enviada. Aguardo o aceite do hotel.`.trim();
               <div className="flex justify-between gap-4">
                 <span className="text-gray-600 flex items-center gap-1">
                   <Ticket size={14} />
-                  Pacote/Promocao:
+                  Pacote/Promoção:
                 </span>
                 <span className="font-medium text-right">{promotionTitle}</span>
               </div>
@@ -314,7 +314,7 @@ Solicitacao enviada. Aguardo o aceite do hotel.`.trim();
             <div className="flex justify-between">
               <span className="text-gray-600 flex items-center gap-1">
                 <Users size={14} />
-                Hospedes:
+                Hóspedes:
               </span>
               <span className="font-medium">{numberOfGuests}</span>
             </div>
@@ -332,7 +332,7 @@ Solicitacao enviada. Aguardo o aceite do hotel.`.trim();
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span>
-                {numberOfNights} {numberOfNights === 1 ? 'diaria' : 'diarias'} x{' '}
+                {numberOfNights} {numberOfNights === 1 ? 'diária' : 'diárias'} x{' '}
                 {formatCurrency(pricePerNight)}
               </span>
               <span>{formatCurrency(subtotal)}</span>
@@ -346,7 +346,7 @@ Solicitacao enviada. Aguardo o aceite do hotel.`.trim();
             )}
 
             <div className="flex justify-between text-gray-600">
-              <span>Taxa de servico (5%)</span>
+              <span>Taxa de serviço (5%)</span>
               <span>{formatCurrency(serviceFee)}</span>
             </div>
 
@@ -378,7 +378,7 @@ Solicitacao enviada. Aguardo o aceite do hotel.`.trim();
               id="guestName"
               value={guestName}
               onChange={(e) => setGuestName(e.target.value)}
-              placeholder="Joao da Silva"
+              placeholder="João da Silva"
               className="mt-1"
             />
           </div>
@@ -397,7 +397,7 @@ Solicitacao enviada. Aguardo o aceite do hotel.`.trim();
               className="mt-1"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Se este email ou WhatsApp ja possuir cadastro, voce sera direcionado para login.
+              Se este e-mail ou WhatsApp já possuir cadastro, você será direcionado para login.
             </p>
           </div>
 
@@ -412,7 +412,7 @@ Solicitacao enviada. Aguardo o aceite do hotel.`.trim();
               className="mt-1"
             />
             <p className="text-xs text-gray-500 mt-1">
-              O resumo da solicitacao sera enviado para o WhatsApp do hotel e o aceite sera retornado para este numero.
+              O resumo da solicitação será enviado para o WhatsApp do hotel e o aceite será retornado para este número.
             </p>
           </div>
         </div>
@@ -442,9 +442,10 @@ Solicitacao enviada. Aguardo o aceite do hotel.`.trim();
         </Button>
 
         <p className="text-xs text-gray-500 text-center">
-          Ao concluir, a reserva sera criada com status pendente e a acomodacao ficara bloqueada na agenda ate o aceite do hotel.
+          Ao concluir, a reserva será criada com status pendente e a acomodação ficará bloqueada na agenda até o aceite do hotel.
         </p>
       </CardContent>
     </Card>
   );
 }
+

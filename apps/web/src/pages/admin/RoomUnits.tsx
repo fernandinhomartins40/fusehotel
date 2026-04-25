@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { BedDouble, Plus } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -12,13 +12,13 @@ import { useCreateRoomUnit, useRoomUnits, useUpdateRoomUnit } from '@/hooks/useR
 import type { HousekeepingStatus, RoomUnit, RoomUnitStatus } from '@/types/pms';
 
 const roomStatusLabels: Record<RoomUnitStatus, string> = {
-  AVAILABLE: 'Disponivel',
+  AVAILABLE: 'Disponível',
   OCCUPIED: 'Ocupado',
   DIRTY: 'Sujo',
   CLEANING: 'Em limpeza',
   INSPECTED: 'Inspecionado',
   OUT_OF_ORDER: 'Fora de ordem',
-  OUT_OF_SERVICE: 'Fora de servico',
+  OUT_OF_SERVICE: 'Fora de serviço',
   BLOCKED: 'Bloqueado',
 };
 
@@ -83,9 +83,9 @@ export default function RoomUnits() {
     <AdminLayout>
       <div className="flex flex-col gap-6 p-6">
         <div>
-          <h1 className="text-3xl font-bold">Quartos Fisicos</h1>
+          <h1 className="text-3xl font-bold">Quartos Físicos</h1>
           <p className="text-gray-600 mt-1">
-            Cadastro operacional das unidades reais usadas no check-in, governanca e estadia.
+            Cadastro operacional das unidades reais usadas no check-in, governança e estadia.
           </p>
         </div>
 
@@ -120,7 +120,7 @@ export default function RoomUnits() {
             />
 
             <Input
-              placeholder="Codigo"
+              placeholder="Código"
               value={form.code}
               onChange={(event) => setForm((current) => ({ ...current, code: event.target.value }))}
             />
@@ -138,7 +138,7 @@ export default function RoomUnits() {
 
             <div className="md:col-span-5">
               <Input
-                placeholder="Observacoes operacionais"
+                placeholder="Observações operacionais"
                 value={form.notes}
                 onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
               />
@@ -150,19 +150,19 @@ export default function RoomUnits() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BedDouble className="h-5 w-5" />
-              Inventario operacional
+              Inventário operacional
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Codigo</TableHead>
+                  <TableHead>Código</TableHead>
                   <TableHead>Quarto</TableHead>
                   <TableHead>Categoria</TableHead>
                   <TableHead>Andar</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Governanca</TableHead>
+                  <TableHead>Governança</TableHead>
                   <TableHead>Ativo</TableHead>
                 </TableRow>
               </TableHeader>
@@ -232,3 +232,4 @@ export default function RoomUnits() {
     </AdminLayout>
   );
 }
+

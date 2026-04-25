@@ -1,4 +1,4 @@
-import { ClipboardCheck } from 'lucide-react';
+﻿import { ClipboardCheck } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import type { HousekeepingTaskStatus } from '@/types/pms';
 const statusLabels: Record<HousekeepingTaskStatus, string> = {
   PENDING: 'Pendente',
   IN_PROGRESS: 'Em andamento',
-  COMPLETED: 'Concluida',
+  COMPLETED: 'Concluída',
   INSPECTED: 'Inspecionada',
   CANCELLED: 'Cancelada',
 };
@@ -23,9 +23,9 @@ export default function Housekeeping() {
     <AdminLayout>
       <div className="flex flex-col gap-6 p-6">
         <div>
-          <h1 className="text-3xl font-bold">Governanca</h1>
+          <h1 className="text-3xl font-bold">Governança</h1>
           <p className="text-gray-600 mt-1">
-            Controle de limpeza e liberacao operacional dos quartos.
+            Controle de limpeza e liberação operacional dos quartos.
           </p>
         </div>
 
@@ -55,7 +55,7 @@ export default function Housekeeping() {
                   </TableRow>
                 ) : tasks.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6}>Nenhuma tarefa de governanca encontrada.</TableCell>
+                    <TableCell colSpan={6}>Nenhuma tarefa de governança encontrada.</TableCell>
                   </TableRow>
                 ) : (
                   tasks.map((task) => (
@@ -101,3 +101,4 @@ export default function Housekeeping() {
     </AdminLayout>
   );
 }
+

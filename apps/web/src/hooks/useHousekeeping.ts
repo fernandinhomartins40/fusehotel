@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+﻿import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
 import type { HousekeepingTask, HousekeepingTaskStatus } from '@/types/pms';
@@ -25,10 +25,11 @@ export function useUpdateHousekeepingStatus() {
       queryClient.invalidateQueries({ queryKey: ['housekeeping-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['room-units'] });
       queryClient.invalidateQueries({ queryKey: ['frontdesk-dashboard'] });
-      toast.success('Status de governanca atualizado');
+      toast.success('Status de governança atualizado');
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Erro ao atualizar tarefa');
     },
   });
 }
+
