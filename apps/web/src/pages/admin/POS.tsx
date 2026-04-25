@@ -1,14 +1,14 @@
+import { Link } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import {
-  BarChart3,
   BedDouble,
-  ClipboardCheck,
-  ConciergeBell,
   Receipt,
-  ShoppingCart,
+  Search,
+  Store,
+  Trash2,
   Wallet,
-  Wrench,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,10 +16,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { useAddFolioEntry, useFolio } from '@/hooks/useFolios';
 import { useCheckIn, useCheckOut, useFrontdeskDashboard, useStays } from '@/hooks/useFrontdesk';
 import { useHousekeepingTasks, useUpdateHousekeepingStatus } from '@/hooks/useHousekeeping';
 import {
@@ -30,54 +28,78 @@ import {
 import {
   useActiveCashSession,
   useCancelPOSOrder,
-  useCashSessions,
   useCloseCashSession,
   useCreateCashMovement,
   useCreatePOSOrder,
-  useCreatePOSProduct,
   useOpenCashSession,
   usePOSOrders,
   usePOSProducts,
-  useRefundPOSPayment,
   useRegisterPOSPayment,
+  useRefundPOSPayment,
   useUpdatePOSOrderStatus,
 } from '@/hooks/usePOS';
 import { useOperationsReport } from '@/hooks/useReports';
 import { useRoomUnits } from '@/hooks/useRoomUnits';
 import type {
   CashMovementType,
-  FolioEntryType,
   HousekeepingTaskStatus,
   MaintenanceOrderPriority,
   MaintenanceOrderStatus,
   PaymentMethod,
+  POSOrder,
+  POSOrderOrigin,
   POSOrderStatus,
+  POSProduct,
   POSProductCategory,
   POSSettlementType,
   RoomUnit,
-  Stay,
 } from '@/types/pms';
 import type { Reservation } from '@/types/reservation';
 
-const currencyFormatter = new Intl.NumberFormat('pt-BR', {
+const currency = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
   currency: 'BRL',
 });
 
-const folioEntryLabels: Record<FolioEntryType, string> = {
-  DAILY_RATE: 'Diária',
-  EXTRA_BED: 'Cama extra',
-  SERVICE_FEE: 'Taxa de serviço',
-  TAX: 'Imposto',
-  DISCOUNT: 'Desconto',
-  PAYMENT: 'Pagamento',
-  REFUND: 'Reembolso',
-  ROOM_SERVICE: 'Room service',
-  POS: 'PDV',
-  ADJUSTMENT: 'Ajuste',
+const categoryLabels: Record<POSProductCategory | 'ALL', string> = {
+  ALL: 'Todos',
+  FOOD: 'Alimentos',
+  BEVERAGE: 'Bebidas',
+  SERVICE: 'Serviços',
+  CONVENIENCE: 'Conveniência',
+  OTHER: 'Outros',
 };
 
-const housekeepingLabels: Record<HousekeepingTaskStatus, string> = {
+const originLabels: Record<POSOrderOrigin, string> = {
+  FRONTDESK: 'Balcão',
+  ROOM_SERVICE: 'Room service',
+  RESTAURANT: 'Restaurante',
+  BAR: 'Bar',
+};
+
+const orderStatusLabels: Record<POSOrderStatus, string> = {
+  OPEN: 'Aberto',
+  PREPARING: 'Em preparo',
+  DELIVERED: 'Entregue',
+  CLOSED: 'Fechado',
+  CANCELLED: 'Cancelado',
+};
+
+const settlementLabels: Record<POSSettlementType, string> = {
+  DIRECT: 'Pagamento direto',
+  FOLIO: 'Lançar no fólio',
+};
+
+const paymentMethodLabels: Record<PaymentMethod, string> = {
+  CASH: 'Dinheiro',
+  PIX: 'PIX',
+  CREDIT_CARD: 'Cartão de crédito',
+  DEBIT_CARD: 'Cartão de débito',
+  BANK_TRANSFER: 'Transferência',
+  VOUCHER: 'Voucher',
+};
+
+const housekeepingStatusLabels: Record<HousekeepingTaskStatus, string> = {
   PENDING: 'Pendente',
   IN_PROGRESS: 'Em andamento',
   COMPLETED: 'Concluída',
@@ -99,135 +121,122 @@ const maintenanceStatusLabels: Record<MaintenanceOrderStatus, string> = {
   CANCELLED: 'Cancelada',
 };
 
-const posStatusLabels: Record<POSOrderStatus, string> = {
-  OPEN: 'Aberto',
-  PREPARING: 'Em preparo',
-  DELIVERED: 'Entregue',
-  CLOSED: 'Fechado',
-  CANCELLED: 'Cancelado',
-};
-
-const posCategoryLabels: Record<POSProductCategory, string> = {
-  FOOD: 'Alimentos',
-  BEVERAGE: 'Bebidas',
-  SERVICE: 'Serviços',
-  CONVENIENCE: 'Conveniência',
-  OTHER: 'Outros',
-};
-
-const settlementLabels: Record<POSSettlementType, string> = {
-  DIRECT: 'Pagamento direto',
-  FOLIO: 'Lançar no fólio',
-};
-
-const paymentMethodLabels: Record<PaymentMethod, string> = {
-  CASH: 'Dinheiro',
-  PIX: 'PIX',
-  CREDIT_CARD: 'Cartão de crédito',
-  DEBIT_CARD: 'Cartão de débito',
-  BANK_TRANSFER: 'Transferência',
-  VOUCHER: 'Voucher',
-};
-
-const cashMovementLabels: Record<Extract<CashMovementType, 'SUPPLY' | 'WITHDRAWAL' | 'CLOSING_ADJUSTMENT'>, string> = {
-  SUPPLY: 'Suprimento',
-  WITHDRAWAL: 'Sangria',
-  CLOSING_ADJUSTMENT: 'Ajuste',
+type CartItem = {
+  productId: string;
+  quantity: number;
 };
 
 export default function POS() {
+  const { data: report } = useOperationsReport();
   const { data: dashboard } = useFrontdeskDashboard();
   const { data: stays = [] } = useStays();
   const { data: roomUnits = [] } = useRoomUnits();
-  const { data: housekeepingTasks = [] } = useHousekeepingTasks();
-  const { data: maintenanceOrders = [] } = useMaintenanceOrders();
   const { data: products = [] } = usePOSProducts();
   const { data: orders = [] } = usePOSOrders();
   const { data: activeCashSession } = useActiveCashSession();
-  const { data: cashSessions = [] } = useCashSessions();
-  const { data: report } = useOperationsReport();
+  const { data: housekeepingTasks = [] } = useHousekeepingTasks();
+  const { data: maintenanceOrders = [] } = useMaintenanceOrders();
 
   const checkIn = useCheckIn();
   const checkOut = useCheckOut();
-  const addFolioEntry = useAddFolioEntry();
-  const updateHousekeeping = useUpdateHousekeepingStatus();
-  const createMaintenanceOrder = useCreateMaintenanceOrder();
-  const updateMaintenanceOrder = useUpdateMaintenanceOrder();
-  const createProduct = useCreatePOSProduct();
   const createOrder = useCreatePOSOrder();
+  const registerPayment = useRegisterPOSPayment();
   const updateOrderStatus = useUpdatePOSOrderStatus();
+  const cancelOrder = useCancelPOSOrder();
+  const refundPayment = useRefundPOSPayment();
   const openCashSession = useOpenCashSession();
   const closeCashSession = useCloseCashSession();
   const createCashMovement = useCreateCashMovement();
-  const registerPayment = useRegisterPOSPayment();
-  const refundPayment = useRefundPOSPayment();
-  const cancelOrder = useCancelPOSOrder();
+  const updateHousekeeping = useUpdateHousekeepingStatus();
+  const createMaintenanceOrder = useCreateMaintenanceOrder();
+  const updateMaintenanceOrder = useUpdateMaintenanceOrder();
 
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState<POSProductCategory | 'ALL'>('ALL');
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<string>('');
   const [selectedRooms, setSelectedRooms] = useState<Record<string, string>>({});
+  const [settlementType, setSettlementType] = useState<POSSettlementType>('DIRECT');
+  const [origin, setOrigin] = useState<POSOrderOrigin>('FRONTDESK');
+  const [customerName, setCustomerName] = useState('');
+  const [tableNumber, setTableNumber] = useState('');
   const [selectedStayId, setSelectedStayId] = useState('');
-  const [billingForm, setBillingForm] = useState({
-    type: 'PAYMENT' as FolioEntryType,
-    amount: '',
-    description: '',
-  });
-  const [cashSessionForm, setCashSessionForm] = useState({
-    openingFloat: '',
-    countedCashAmount: '',
-    notes: '',
-  });
-  const [cashMovementForm, setCashMovementForm] = useState({
-    type: 'SUPPLY' as Extract<CashMovementType, 'SUPPLY' | 'WITHDRAWAL' | 'CLOSING_ADJUSTMENT'>,
-    amount: '',
-    description: '',
-  });
-  const [maintenanceForm, setMaintenanceForm] = useState({
-    roomUnitId: '',
-    title: '',
-    description: '',
-    priority: 'MEDIUM' as MaintenanceOrderPriority,
-    estimatedCost: '',
-  });
-  const [productForm, setProductForm] = useState({
-    name: '',
-    category: 'FOOD' as POSProductCategory,
-    price: '',
-    description: '',
-  });
-  const [pendingItem, setPendingItem] = useState({
-    productId: '',
-    quantity: '1',
-    notes: '',
-  });
-  const [orderItems, setOrderItems] = useState<Array<{ productId: string; quantity: number; notes?: string }>>([]);
-  const [orderForm, setOrderForm] = useState({
-    stayId: 'none',
-    roomUnitId: 'none',
-    origin: 'FRONTDESK',
-    settlementType: 'DIRECT' as POSSettlementType,
-    customerName: '',
-    tableNumber: '',
-    serviceFeeAmount: '',
-    discountAmount: '',
-    notes: '',
-  });
-  const [selectedOrderId, setSelectedOrderId] = useState('none');
-  const [paymentForm, setPaymentForm] = useState({
-    amount: '',
-    method: 'PIX' as PaymentMethod,
-    reference: '',
-    notes: '',
-  });
-  const [refundForm, setRefundForm] = useState({
-    paymentId: 'none',
-    amount: '',
-    notes: '',
-  });
+  const [serviceFeeAmount, setServiceFeeAmount] = useState('');
+  const [discountAmount, setDiscountAmount] = useState('');
+  const [orderNotes, setOrderNotes] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('PIX');
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentReference, setPaymentReference] = useState('');
+  const [paymentNotes, setPaymentNotes] = useState('');
+  const [refundPaymentId, setRefundPaymentId] = useState('');
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundNotes, setRefundNotes] = useState('');
   const [cancelReason, setCancelReason] = useState('');
+  const [openingFloat, setOpeningFloat] = useState('');
+  const [cashNotes, setCashNotes] = useState('');
+  const [countedCashAmount, setCountedCashAmount] = useState('');
+  const [cashMovementType, setCashMovementType] = useState<Extract<CashMovementType, 'SUPPLY' | 'WITHDRAWAL'>>(
+    'SUPPLY'
+  );
+  const [cashMovementAmount, setCashMovementAmount] = useState('');
+  const [cashMovementDescription, setCashMovementDescription] = useState('');
+  const [maintenanceRoomUnitId, setMaintenanceRoomUnitId] = useState('');
+  const [maintenanceTitle, setMaintenanceTitle] = useState('');
+  const [maintenancePriority, setMaintenancePriority] = useState<MaintenanceOrderPriority>('MEDIUM');
+  const [maintenanceDescription, setMaintenanceDescription] = useState('');
 
-  const { data: folio } = useFolio(selectedStayId || undefined);
-
-  const arrivals = useMemo(() => dashboard?.arrivals ?? [], [dashboard]);
   const inHouseStays = useMemo(() => stays.filter((stay) => stay.status === 'IN_HOUSE'), [stays]);
+  const arrivals = useMemo(() => dashboard?.arrivals ?? [], [dashboard]);
+  const departures = useMemo(() => dashboard?.departures ?? [], [dashboard]);
+  const activeProducts = useMemo(() => products.filter((product) => product.isActive), [products]);
+  const openOrders = useMemo(
+    () => orders.filter((order) => order.status !== 'CLOSED' && order.status !== 'CANCELLED'),
+    [orders]
+  );
+
+  const filteredProducts = useMemo(() => {
+    return activeProducts.filter((product) => {
+      const matchesCategory = category === 'ALL' || product.category === category;
+      const matchesSearch =
+        !search ||
+        product.name.toLowerCase().includes(search.toLowerCase()) ||
+        product.description?.toLowerCase().includes(search.toLowerCase());
+
+      return matchesCategory && matchesSearch;
+    });
+  }, [activeProducts, category, search]);
+
+  const cartDetailedItems = useMemo(() => {
+    return cartItems
+      .map((item) => {
+        const product = activeProducts.find((candidate) => candidate.id === item.productId);
+        if (!product) return null;
+
+        return {
+          ...item,
+          product,
+          total: Number(product.price) * item.quantity,
+        };
+      })
+      .filter(Boolean) as Array<CartItem & { product: POSProduct; total: number }>;
+  }, [activeProducts, cartItems]);
+
+  const subtotal = useMemo(
+    () => cartDetailedItems.reduce((sum, item) => sum + item.total, 0),
+    [cartDetailedItems]
+  );
+
+  const total = useMemo(() => {
+    const service = Number(serviceFeeAmount || 0);
+    const discount = Number(discountAmount || 0);
+    return Math.max(subtotal + service - discount, 0);
+  }, [discountAmount, serviceFeeAmount, subtotal]);
+
+  const selectedOrder = useMemo(
+    () => openOrders.find((order) => order.id === selectedOrderId) ?? null,
+    [openOrders, selectedOrderId]
+  );
+
   const availableRoomUnitsByAccommodation = useMemo(() => {
     return roomUnits.reduce<Record<string, RoomUnit[]>>((accumulator, roomUnit) => {
       const availableStatuses = ['AVAILABLE', 'INSPECTED'];
@@ -250,1028 +259,815 @@ export default function POS() {
     }, {});
   }, [roomUnits]);
 
-  const activePOSProducts = useMemo(() => products.filter((product) => product.isActive), [products]);
-  const selectedStay = useMemo(
-    () => inHouseStays.find((stay) => stay.id === selectedStayId) ?? null,
-    [inHouseStays, selectedStayId]
-  );
-  const selectedOrder = useMemo(
-    () => orders.find((order) => order.id === selectedOrderId) ?? null,
-    [orders, selectedOrderId]
-  );
-  const pendingProduct = useMemo(
-    () => activePOSProducts.find((product) => product.id === pendingItem.productId) ?? null,
-    [activePOSProducts, pendingItem.productId]
-  );
-  const orderSubtotal = useMemo(
-    () =>
-      orderItems.reduce((sum, item) => {
-        const product = activePOSProducts.find((candidate) => candidate.id === item.productId);
-        return sum + Number(product?.price ?? 0) * item.quantity;
-      }, 0),
-    [activePOSProducts, orderItems]
-  );
-  const directOrders = useMemo(
-    () => orders.filter((order) => order.settlementType === 'DIRECT' && order.status !== 'CANCELLED'),
-    [orders]
-  );
+  const addProductToCart = (product: POSProduct) => {
+    setCartItems((current) => {
+      const existing = current.find((item) => item.productId === product.id);
+      if (existing) {
+        return current.map((item) =>
+          item.productId === product.id ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+
+      return [...current, { productId: product.id, quantity: 1 }];
+    });
+  };
+
+  const updateCartQuantity = (productId: string, nextQuantity: number) => {
+    if (nextQuantity <= 0) {
+      setCartItems((current) => current.filter((item) => item.productId !== productId));
+      return;
+    }
+
+    setCartItems((current) =>
+      current.map((item) => (item.productId === productId ? { ...item, quantity: nextQuantity } : item))
+    );
+  };
+
+  const clearDraft = () => {
+    setCartItems([]);
+    setCustomerName('');
+    setTableNumber('');
+    setSelectedStayId('');
+    setServiceFeeAmount('');
+    setDiscountAmount('');
+    setOrderNotes('');
+    setPaymentAmount('');
+    setPaymentReference('');
+    setPaymentNotes('');
+  };
 
   const handleCheckIn = (reservation: Reservation) => {
     const roomUnitId = selectedRooms[reservation.id];
-    if (!roomUnitId) return;
+    if (!roomUnitId) {
+      toast.error('Selecione um quarto para o check-in');
+      return;
+    }
     checkIn.mutate({ reservationId: reservation.id, roomUnitId });
   };
 
-  const handleCheckOut = (stay: Stay) => {
-    checkOut.mutate({ stayId: stay.id });
+  const handleFinalizeSale = async () => {
+    if (!cartDetailedItems.length) {
+      toast.error('Adicione itens ao carrinho');
+      return;
+    }
+
+    if (settlementType === 'FOLIO' && !selectedStayId) {
+      toast.error('Selecione uma hospedagem para lançar no fólio');
+      return;
+    }
+
+    if (settlementType === 'DIRECT' && paymentMethod === 'CASH' && !activeCashSession) {
+      toast.error('Abra o caixa antes de receber em dinheiro');
+      return;
+    }
+
+    try {
+      const order = await createOrder.mutateAsync({
+        stayId: settlementType === 'FOLIO' ? selectedStayId : undefined,
+        roomUnitId:
+          settlementType === 'FOLIO'
+            ? inHouseStays.find((stay) => stay.id === selectedStayId)?.roomUnitId ?? undefined
+            : undefined,
+        origin,
+        settlementType,
+        customerName: settlementType === 'DIRECT' ? customerName || undefined : undefined,
+        tableNumber: tableNumber || undefined,
+        serviceFeeAmount: Number(serviceFeeAmount || 0) || undefined,
+        discountAmount: Number(discountAmount || 0) || undefined,
+        notes: orderNotes || undefined,
+        items: cartDetailedItems.map((item) => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+        })),
+      });
+
+      if (settlementType === 'DIRECT') {
+        const amountToPay = Number(paymentAmount || total);
+
+        if (amountToPay > 0) {
+          await registerPayment.mutateAsync({
+            orderId: order.id,
+            amount: amountToPay,
+            method: paymentMethod,
+            cashSessionId: paymentMethod === 'CASH' ? activeCashSession?.id : undefined,
+            reference: paymentReference || undefined,
+            notes: paymentNotes || undefined,
+          });
+        }
+
+        if (amountToPay >= total) {
+          await updateOrderStatus.mutateAsync({ id: order.id, status: 'CLOSED' });
+        }
+      } else {
+        await updateOrderStatus.mutateAsync({ id: order.id, status: 'DELIVERED' });
+      }
+
+      setSelectedOrderId(order.id);
+      clearDraft();
+    } catch {
+      return;
+    }
   };
 
-  const handleBillingSubmit = () => {
-    if (!folio || !billingForm.amount || !billingForm.description) return;
-    addFolioEntry.mutate({
-      folioId: folio.id,
-      payload: {
-        type: billingForm.type,
-        source: 'MANUAL',
-        description: billingForm.description,
-        amount: Number(billingForm.amount),
-      },
-    });
-    setBillingForm({ type: 'PAYMENT', amount: '', description: '' });
+  const handleRegisterPayment = async () => {
+    if (!selectedOrder) {
+      toast.error('Selecione um pedido em aberto');
+      return;
+    }
+
+    const remainingAmount = Number(selectedOrder.totalAmount) - Number(selectedOrder.paidAmount);
+    const amount = Number(paymentAmount || remainingAmount);
+
+    if (amount <= 0) {
+      toast.error('Informe um valor de pagamento válido');
+      return;
+    }
+
+    if (paymentMethod === 'CASH' && !activeCashSession) {
+      toast.error('Abra o caixa antes de receber em dinheiro');
+      return;
+    }
+
+    try {
+      await registerPayment.mutateAsync({
+        orderId: selectedOrder.id,
+        amount,
+        method: paymentMethod,
+        cashSessionId: paymentMethod === 'CASH' ? activeCashSession?.id : undefined,
+        reference: paymentReference || undefined,
+        notes: paymentNotes || undefined,
+      });
+
+      if (amount >= remainingAmount) {
+        await updateOrderStatus.mutateAsync({ id: selectedOrder.id, status: 'CLOSED' });
+      }
+
+      setPaymentAmount('');
+      setPaymentReference('');
+      setPaymentNotes('');
+    } catch {
+      return;
+    }
   };
 
-  const handleMaintenanceCreate = () => {
-    if (!maintenanceForm.roomUnitId || !maintenanceForm.title) return;
-    createMaintenanceOrder.mutate({
-      roomUnitId: maintenanceForm.roomUnitId,
-      title: maintenanceForm.title,
-      description: maintenanceForm.description || undefined,
-      priority: maintenanceForm.priority,
-      estimatedCost: maintenanceForm.estimatedCost ? Number(maintenanceForm.estimatedCost) : undefined,
-      markRoomOutOfOrder: true,
-    });
-    setMaintenanceForm({
-      roomUnitId: '',
-      title: '',
-      description: '',
-      priority: 'MEDIUM',
-      estimatedCost: '',
-    });
+  const handleRefundPayment = async () => {
+    if (!refundPaymentId) {
+      toast.error('Selecione um pagamento para estornar');
+      return;
+    }
+
+    try {
+      await refundPayment.mutateAsync({
+        paymentId: refundPaymentId,
+        amount: refundAmount ? Number(refundAmount) : undefined,
+        notes: refundNotes || undefined,
+      });
+      setRefundPaymentId('');
+      setRefundAmount('');
+      setRefundNotes('');
+    } catch {
+      return;
+    }
   };
 
-  const handleProductCreate = () => {
-    if (!productForm.name || !productForm.price) return;
-    createProduct.mutate({
-      name: productForm.name,
-      category: productForm.category,
-      price: Number(productForm.price),
-      description: productForm.description || undefined,
-    });
-    setProductForm({ name: '', category: 'FOOD', price: '', description: '' });
+  const handleCancelOrder = async () => {
+    if (!selectedOrder || !cancelReason.trim()) {
+      toast.error('Informe o motivo do cancelamento');
+      return;
+    }
+
+    try {
+      await cancelOrder.mutateAsync({
+        id: selectedOrder.id,
+        reason: cancelReason,
+        refundPayments: true,
+      });
+      setCancelReason('');
+      setSelectedOrderId('');
+    } catch {
+      return;
+    }
   };
 
-  const handleAddOrderItem = () => {
-    if (!pendingItem.productId || !pendingItem.quantity) return;
-
-    setOrderItems((current) => [
-      ...current,
-      {
-        productId: pendingItem.productId,
-        quantity: Number(pendingItem.quantity),
-        notes: pendingItem.notes || undefined,
-      },
-    ]);
-
-    setPendingItem({
-      productId: '',
-      quantity: '1',
-      notes: '',
-    });
-  };
-
-  const handleRemoveOrderItem = (index: number) => {
-    setOrderItems((current) => current.filter((_, itemIndex) => itemIndex !== index));
-  };
-
-  const handlePOSOrderCreate = () => {
-    if (!orderItems.length) return;
-
-    createOrder.mutate({
-      stayId: orderForm.stayId !== 'none' ? orderForm.stayId : undefined,
-      roomUnitId: orderForm.roomUnitId !== 'none' ? orderForm.roomUnitId : undefined,
-      origin: orderForm.origin as any,
-      settlementType: orderForm.settlementType,
-      customerName: orderForm.customerName || undefined,
-      tableNumber: orderForm.tableNumber || undefined,
-      notes: orderForm.notes || undefined,
-      serviceFeeAmount: orderForm.serviceFeeAmount ? Number(orderForm.serviceFeeAmount) : undefined,
-      discountAmount: orderForm.discountAmount ? Number(orderForm.discountAmount) : undefined,
-      items: orderItems,
-    });
-    setOrderItems([]);
-    setOrderForm({
-      stayId: 'none',
-      roomUnitId: 'none',
-      origin: 'FRONTDESK',
-      settlementType: 'DIRECT',
-      customerName: '',
-      tableNumber: '',
-      serviceFeeAmount: '',
-      discountAmount: '',
-      notes: '',
-    });
-  };
-
-  const handleOpenCashSession = () => {
+  const handleOpenCash = () => {
     openCashSession.mutate({
-      openingFloat: cashSessionForm.openingFloat ? Number(cashSessionForm.openingFloat) : undefined,
-      notes: cashSessionForm.notes || undefined,
+      openingFloat: openingFloat ? Number(openingFloat) : undefined,
+      notes: cashNotes || undefined,
     });
-    setCashSessionForm((current) => ({ ...current, openingFloat: '', notes: '' }));
+    setOpeningFloat('');
+    setCashNotes('');
   };
 
-  const handleCloseCashSession = () => {
-    if (!cashSessionForm.countedCashAmount) return;
+  const handleCloseCash = () => {
+    if (!countedCashAmount) {
+      toast.error('Informe o valor contado no caixa');
+      return;
+    }
+
     closeCashSession.mutate({
-      countedCashAmount: Number(cashSessionForm.countedCashAmount),
-      notes: cashSessionForm.notes || undefined,
+      countedCashAmount: Number(countedCashAmount),
+      notes: cashNotes || undefined,
     });
-    setCashSessionForm((current) => ({ ...current, countedCashAmount: '', notes: '' }));
+    setCountedCashAmount('');
+    setCashNotes('');
   };
 
-  const handleCreateCashMovement = () => {
-    if (!cashMovementForm.amount || !cashMovementForm.description) return;
+  const handleCashMovement = () => {
+    if (!cashMovementAmount || !cashMovementDescription.trim()) {
+      toast.error('Informe valor e descrição da movimentação');
+      return;
+    }
+
     createCashMovement.mutate({
-      type: cashMovementForm.type,
-      amount: Number(cashMovementForm.amount),
-      description: cashMovementForm.description,
+      type: cashMovementType,
+      amount: Number(cashMovementAmount),
+      description: cashMovementDescription,
       method: 'CASH',
     });
-    setCashMovementForm({
-      type: 'SUPPLY',
-      amount: '',
-      description: '',
-    });
+
+    setCashMovementAmount('');
+    setCashMovementDescription('');
   };
 
-  const handleRegisterPayment = () => {
-    if (!selectedOrder || !paymentForm.amount) return;
-    registerPayment.mutate({
-      orderId: selectedOrder.id,
-      amount: Number(paymentForm.amount),
-      method: paymentForm.method,
-      cashSessionId: activeCashSession?.id,
-      reference: paymentForm.reference || undefined,
-      notes: paymentForm.notes || undefined,
-    });
-    setPaymentForm({
-      amount: '',
-      method: 'PIX',
-      reference: '',
-      notes: '',
-    });
-  };
+  const handleCreateMaintenance = () => {
+    if (!maintenanceRoomUnitId || !maintenanceTitle.trim()) {
+      toast.error('Informe quarto e título da manutenção');
+      return;
+    }
 
-  const handleRefundPayment = () => {
-    if (refundForm.paymentId === 'none') return;
-    refundPayment.mutate({
-      paymentId: refundForm.paymentId,
-      amount: refundForm.amount ? Number(refundForm.amount) : undefined,
-      notes: refundForm.notes || undefined,
+    createMaintenanceOrder.mutate({
+      roomUnitId: maintenanceRoomUnitId,
+      title: maintenanceTitle,
+      description: maintenanceDescription || undefined,
+      priority: maintenancePriority,
+      markRoomOutOfOrder: true,
     });
-    setRefundForm({
-      paymentId: 'none',
-      amount: '',
-      notes: '',
-    });
-  };
 
-  const handleCancelOrder = () => {
-    if (!selectedOrder || !cancelReason) return;
-    cancelOrder.mutate({
-      id: selectedOrder.id,
-      reason: cancelReason,
-      refundPayments: true,
-    });
-    setCancelReason('');
+    setMaintenanceRoomUnitId('');
+    setMaintenanceTitle('');
+    setMaintenancePriority('MEDIUM');
+    setMaintenanceDescription('');
   };
 
   return (
     <AdminLayout>
-      <div className="flex flex-col gap-6 p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="space-y-6 p-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Central PDV</h1>
-            <p className="mt-1 text-gray-600">
-              OperaÃ§Ã£o centralizada para faturamento, recepÃ§Ã£o, pedidos, governanÃ§a e manutenÃ§Ã£o.
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <Badge variant="outline">PDV</Badge>
+              <Badge variant="outline">Balcão</Badge>
+              <Badge variant="outline">Room service</Badge>
+            </div>
+            <h1 className="text-3xl font-semibold tracking-tight">PDV do hotel</h1>
+            <p className="mt-1 text-sm text-slate-600">
+              Tela de operação literal para vender, cobrar, abrir caixa e atuar no dia a dia do hotel.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <QuickMetric
-              label="Hospedados"
-              value={String(report?.frontdesk.inHouse ?? inHouseStays.length)}
-              icon={BedDouble}
-            />
-            <QuickMetric
-              label="Chegadas hoje"
-              value={String(report?.frontdesk.arrivalsToday ?? arrivals.length)}
-              icon={ConciergeBell}
-            />
-            <QuickMetric
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <TopMetric label="Caixa" value={activeCashSession ? activeCashSession.code : 'Fechado'} icon={Wallet} />
+            <TopMetric label="Pedidos abertos" value={String(openOrders.length)} icon={Receipt} />
+            <TopMetric label="Hospedados" value={String(report?.frontdesk.inHouse ?? inHouseStays.length)} icon={BedDouble} />
+            <TopMetric
               label="Receita do PDV"
-              value={currencyFormatter.format(report?.finance.posRevenueMonth ?? 0)}
-              icon={ShoppingCart}
-            />
-            <QuickMetric
-              label="FÃ³lios em aberto"
-              value={currencyFormatter.format(report?.finance.outstandingFolios ?? 0)}
-              icon={Wallet}
+              value={currency.format(report?.finance.posRevenueMonth ?? 0)}
+              icon={Store}
             />
           </div>
         </div>
 
-        <Tabs defaultValue="caixa" className="space-y-6">
-          <TabsList className="h-auto w-full justify-start overflow-auto rounded-xl bg-white p-1">
-            <TabsTrigger value="caixa">Caixa</TabsTrigger>
-            <TabsTrigger value="faturamento">Faturamento</TabsTrigger>
-            <TabsTrigger value="recepcao">RecepÃ§Ã£o</TabsTrigger>
-            <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
-            <TabsTrigger value="governanca">GovernanÃ§a</TabsTrigger>
-            <TabsTrigger value="manutencao">ManutenÃ§Ã£o</TabsTrigger>
-            <TabsTrigger value="indicadores">Indicadores</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="caixa" className="space-y-6">
-            <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Caixa do turno</CardTitle>
-                  <CardDescription>
-                    Abra, movimente e feche o caixa operacional do PDV.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {!activeCashSession ? (
-                    <>
-                      <div className="space-y-2">
-                        <Label>Fundo inicial</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={cashSessionForm.openingFloat}
-                          onChange={(event) =>
-                            setCashSessionForm((current) => ({ ...current, openingFloat: event.target.value }))
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>ObservaÃ§Ãµes</Label>
-                        <Textarea
-                          value={cashSessionForm.notes}
-                          onChange={(event) =>
-                            setCashSessionForm((current) => ({ ...current, notes: event.target.value }))
-                          }
-                        />
-                      </div>
-                      <Button className="w-full" onClick={handleOpenCashSession} disabled={openCashSession.isPending}>
-                        Abrir caixa
+        <div className="grid gap-6 xl:grid-cols-[1.45fr_440px]">
+          <div className="space-y-6">
+            <Card>
+              <CardContent className="flex flex-col gap-4 p-5">
+                <div className="flex flex-col gap-3 lg:flex-row">
+                  <div className="relative flex-1">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                      placeholder="Buscar produto, item ou serviço"
+                      className="pl-9"
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(categoryLabels).map(([value, label]) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant={category === value ? 'default' : 'outline'}
+                        onClick={() => setCategory(value as POSProductCategory | 'ALL')}
+                      >
+                        {label}
                       </Button>
-                    </>
-                  ) : (
-                    <>
-                      <div className="rounded-xl border bg-slate-50 p-4 text-sm">
-                        <div className="font-medium">Caixa {activeCashSession.code}</div>
-                        <div className="text-slate-600">
-                          Abertura: {new Date(activeCashSession.openedAt).toLocaleString('pt-BR')}
-                        </div>
-                        <div className="text-slate-600">
-                          Fundo: {currencyFormatter.format(Number(activeCashSession.openingFloat))}
-                        </div>
-                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                      <div className="space-y-2">
-                        <Label>MovimentaÃ§Ã£o manual</Label>
+            <Card>
+              <CardHeader>
+                <CardTitle>Catálogo de venda</CardTitle>
+                <CardDescription>Toque no item para adicionar ao carrinho.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!filteredProducts.length ? (
+                  <EmptyState
+                    title="Nenhum produto encontrado"
+                    description="Ajuste a busca ou cadastre itens nas telas de gestão."
+                    actionLabel="Abrir cadastros"
+                    actionTo="/admin/accommodations"
+                  />
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+                    {filteredProducts.map((product) => (
+                      <button
+                        key={product.id}
+                        type="button"
+                        onClick={() => addProductToCart(product)}
+                        className="rounded-2xl border bg-white p-4 text-left transition hover:border-slate-300 hover:shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="font-medium">{product.name}</div>
+                            <div className="mt-1 text-sm text-slate-500">
+                              {categoryLabels[product.category]}
+                              {product.trackStock ? ` • Estoque ${product.stockQuantity}` : ''}
+                            </div>
+                          </div>
+                          <Badge variant="outline">{currency.format(Number(product.price))}</Badge>
+                        </div>
+                        {product.description ? (
+                          <div className="mt-3 line-clamp-2 text-sm text-slate-500">{product.description}</div>
+                        ) : null}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Operação rápida do hotel</CardTitle>
+                <CardDescription>Recepção, governança, manutenção e fila de pedidos sem sair do PDV.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="pedidos" className="space-y-4">
+                  <TabsList className="flex h-auto flex-wrap justify-start">
+                    <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
+                    <TabsTrigger value="recepcao">Recepção</TabsTrigger>
+                    <TabsTrigger value="governanca">Governança</TabsTrigger>
+                    <TabsTrigger value="manutencao">Manutenção</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="pedidos" className="space-y-3">
+                    {!openOrders.length ? (
+                      <EmptyState title="Sem pedidos abertos" description="Todas as vendas do PDV estão fechadas." />
+                    ) : (
+                      <div className="space-y-3">
+                        {openOrders.slice(0, 8).map((order) => (
+                          <button
+                            key={order.id}
+                            type="button"
+                            onClick={() => setSelectedOrderId(order.id)}
+                            className={`w-full rounded-2xl border p-4 text-left transition ${
+                              selectedOrderId === order.id ? 'border-slate-900 bg-slate-50' : 'hover:border-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <div className="font-medium">{order.orderNumber}</div>
+                                <div className="mt-1 text-sm text-slate-500">
+                                  {originLabels[order.origin]} • {settlementLabels[order.settlementType]}
+                                </div>
+                              </div>
+                              <Badge variant="outline">{orderStatusLabels[order.status]}</Badge>
+                            </div>
+                            <div className="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-3">
+                              <span>Total {currency.format(Number(order.totalAmount))}</span>
+                              <span>Pago {currency.format(Number(order.paidAmount))}</span>
+                              <span>{new Date(order.createdAt).toLocaleString('pt-BR')}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="recepcao" className="grid gap-4 xl:grid-cols-2">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Chegadas de hoje</CardTitle>
+                        <CardDescription>{arrivals.length} reservas para check-in</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {!arrivals.length ? (
+                          <EmptyState title="Sem chegadas pendentes" description="Nenhuma reserva para check-in agora." />
+                        ) : (
+                          arrivals.slice(0, 6).map((reservation) => (
+                            <div key={reservation.id} className="rounded-2xl border p-4">
+                              <div className="font-medium">{reservation.guestName}</div>
+                              <div className="mt-1 text-sm text-slate-500">
+                                {reservation.reservationCode} • {reservation.accommodation?.name ?? 'Acomodação'}
+                              </div>
+                              <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+                                <Select
+                                  value={selectedRooms[reservation.id] ?? ''}
+                                  onValueChange={(value) =>
+                                    setSelectedRooms((current) => ({ ...current, [reservation.id]: value }))
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecionar quarto" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {(availableRoomUnitsByAccommodation[reservation.accommodationId] ?? []).map((roomUnit) => (
+                                      <SelectItem key={roomUnit.id} value={roomUnit.id}>
+                                        {roomUnit.code} • {roomUnit.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Button onClick={() => handleCheckIn(reservation)} disabled={checkIn.isPending}>
+                                  Check-in
+                                </Button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Saídas e hospedados</CardTitle>
+                        <CardDescription>
+                          {departures.length} saídas previstas • {inHouseStays.length} hospedagens ativas
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {!inHouseStays.length ? (
+                          <EmptyState title="Sem hospedagens ativas" description="Nenhum hóspede em casa agora." />
+                        ) : (
+                          inHouseStays.slice(0, 6).map((stay) => (
+                            <div key={stay.id} className="rounded-2xl border p-4">
+                              <div className="font-medium">{stay.reservation.guestName}</div>
+                              <div className="mt-1 text-sm text-slate-500">
+                                Quarto {stay.roomUnit?.code ?? 'Sem quarto'} • Saída{' '}
+                                {new Date(stay.reservation.checkOutDate).toLocaleDateString('pt-BR')}
+                              </div>
+                              <div className="mt-3 flex items-center justify-between">
+                                <span className="text-sm text-slate-500">
+                                  Saldo do fólio {currency.format(Number(stay.folio?.balance ?? 0))}
+                                </span>
+                                <Button variant="outline" onClick={() => checkOut.mutate({ stayId: stay.id })} disabled={checkOut.isPending}>
+                                  Check-out
+                                </Button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="governanca" className="space-y-3">
+                    {!housekeepingTasks.length ? (
+                      <EmptyState title="Sem tarefas" description="Nenhuma tarefa de governança aberta." />
+                    ) : (
+                      housekeepingTasks.slice(0, 8).map((task) => (
+                        <div key={task.id} className="rounded-2xl border p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="font-medium">
+                                {task.roomUnit.code} • {task.title}
+                              </div>
+                              <div className="mt-1 text-sm text-slate-500">
+                                {task.reservation?.guestName ?? 'Sem hóspede'} • {task.priority}
+                              </div>
+                            </div>
+                            <Select
+                              value={task.status}
+                              onValueChange={(value) =>
+                                updateHousekeeping.mutate({ id: task.id, status: value as HousekeepingTaskStatus })
+                              }
+                            >
+                              <SelectTrigger className="w-[180px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Object.entries(housekeepingStatusLabels).map(([value, label]) => (
+                                  <SelectItem key={value} value={value}>
+                                    {label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="manutencao" className="grid gap-4 xl:grid-cols-[340px_1fr]">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Nova manutenção</CardTitle>
+                        <CardDescription>Registre uma ordem sem sair do PDV.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <Select value={maintenanceRoomUnitId} onValueChange={setMaintenanceRoomUnitId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecionar quarto" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {roomUnits.map((roomUnit) => (
+                              <SelectItem key={roomUnit.id} value={roomUnit.id}>
+                                {roomUnit.code} • {roomUnit.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <Input
+                          value={maintenanceTitle}
+                          onChange={(event) => setMaintenanceTitle(event.target.value)}
+                          placeholder="Título da ocorrência"
+                        />
+
                         <Select
-                          value={cashMovementForm.type}
-                          onValueChange={(value) =>
-                            setCashMovementForm((current) => ({
-                              ...current,
-                              type: value as Extract<CashMovementType, 'SUPPLY' | 'WITHDRAWAL' | 'CLOSING_ADJUSTMENT'>,
-                            }))
-                          }
+                          value={maintenancePriority}
+                          onValueChange={(value) => setMaintenancePriority(value as MaintenanceOrderPriority)}
                         >
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {Object.entries(cashMovementLabels).map(([value, label]) => (
+                            {Object.entries(maintenancePriorityLabels).map(([value, label]) => (
                               <SelectItem key={value} value={value}>
                                 {label}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                      </div>
 
-                      <div className="space-y-2">
-                        <Label>Valor</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={cashMovementForm.amount}
-                          onChange={(event) =>
-                            setCashMovementForm((current) => ({ ...current, amount: event.target.value }))
-                          }
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>DescriÃ§Ã£o</Label>
                         <Textarea
-                          value={cashMovementForm.description}
-                          onChange={(event) =>
-                            setCashMovementForm((current) => ({ ...current, description: event.target.value }))
-                          }
+                          value={maintenanceDescription}
+                          onChange={(event) => setMaintenanceDescription(event.target.value)}
+                          placeholder="Descrição do problema"
                         />
-                      </div>
 
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={handleCreateCashMovement}
-                        disabled={createCashMovement.isPending}
-                      >
-                        Registrar movimentação
-                      </Button>
+                        <Button className="w-full" onClick={handleCreateMaintenance} disabled={createMaintenanceOrder.isPending}>
+                          Criar ordem
+                        </Button>
+                      </CardContent>
+                    </Card>
 
-                      <div className="space-y-2">
-                        <Label>Valor contado no fechamento</Label>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={cashSessionForm.countedCashAmount}
-                          onChange={(event) =>
-                            setCashSessionForm((current) => ({ ...current, countedCashAmount: event.target.value }))
-                          }
-                        />
-                      </div>
-
-                      <Button className="w-full" onClick={handleCloseCashSession} disabled={closeCashSession.isPending}>
-                        Fechar caixa
-                      </Button>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>HistÃ³rico do caixa</CardTitle>
-                  <CardDescription>
-                    Acompanhe sessÃµes abertas, fechadas e movimentaÃ§Ãµes recentes.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {!cashSessions.length ? (
-                    <div className="rounded-lg border border-dashed p-8 text-center text-slate-500">
-                      Nenhum caixa registrado ainda.
-                    </div>
-                  ) : (
-                    cashSessions.map((session) => (
-                      <div key={session.id} className="rounded-xl border p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-medium">{session.code}</div>
-                            <div className="text-sm text-slate-500">
-                              {new Date(session.openedAt).toLocaleString('pt-BR')}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Ordens abertas</CardTitle>
+                        <CardDescription>{maintenanceOrders.length} ordens registradas</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {!maintenanceOrders.length ? (
+                          <EmptyState title="Sem manutenção aberta" description="Nenhuma ordem cadastrada." />
+                        ) : (
+                          maintenanceOrders.slice(0, 8).map((order) => (
+                            <div key={order.id} className="rounded-2xl border p-4">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <div className="font-medium">
+                                    {order.roomUnit.code} • {order.title}
+                                  </div>
+                                  <div className="mt-1 text-sm text-slate-500">
+                                    {maintenancePriorityLabels[order.priority]} • {new Date(order.openedAt).toLocaleString('pt-BR')}
+                                  </div>
+                                </div>
+                                <Select
+                                  value={order.status}
+                                  onValueChange={(value) =>
+                                    updateMaintenanceOrder.mutate({
+                                      id: order.id,
+                                      data: { status: value as MaintenanceOrderStatus },
+                                    })
+                                  }
+                                >
+                                  <SelectTrigger className="w-[180px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {Object.entries(maintenanceStatusLabels).map(([value, label]) => (
+                                      <SelectItem key={value} value={value}>
+                                        {label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </div>
-                          </div>
-                          <Badge variant={session.status === 'OPEN' ? 'default' : 'outline'}>
-                            {session.status === 'OPEN' ? 'Aberto' : 'Fechado'}
-                          </Badge>
-                        </div>
-                        <div className="mt-3 grid gap-3 md:grid-cols-4">
-                          <MetricLine label="Fundo" value={currencyFormatter.format(Number(session.openingFloat))} />
-                          <MetricLine
-                            label="Esperado"
-                            value={currencyFormatter.format(Number(session.expectedCashAmount ?? 0))}
-                          />
-                          <MetricLine
-                            label="Contado"
-                            value={currencyFormatter.format(Number(session.countedCashAmount ?? 0))}
-                          />
-                          <MetricLine
-                            label="DiferenÃ§a"
-                            value={currencyFormatter.format(Number(session.differenceAmount ?? 0))}
-                          />
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="faturamento" className="space-y-6">
-            <div className="grid gap-6 xl:grid-cols-[320px_1fr]">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Receipt className="h-5 w-5" />
-                    Conta da hospedagem
-                  </CardTitle>
-                  <CardDescription>
-                    Selecione uma hospedagem ativa para operar o faturamento.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Select value={selectedStayId} onValueChange={setSelectedStayId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a hospedagem" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {inHouseStays.map((stay) => (
-                        <SelectItem key={stay.id} value={stay.id}>
-                          {(stay.roomUnit?.code || 'Sem quarto') + ' - ' + stay.reservation.guestName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {selectedStay ? (
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
-                      <div className="font-medium">{selectedStay.reservation.guestName}</div>
-                      <div className="text-slate-600">
-                        Quarto: {selectedStay.roomUnit?.code || 'NÃ£o atribuÃ­do'}
-                      </div>
-                      <div className="text-slate-600">
-                        Saída prevista: {new Date(selectedStay.reservation.checkOutDate).toLocaleDateString('pt-BR')}
-                      </div>
-                    </div>
-                  ) : null}
-
-                  <div className="space-y-2">
-                    <Label>Tipo de lanÃ§amento</Label>
-                    <Select
-                      value={billingForm.type}
-                      onValueChange={(value) => setBillingForm((current) => ({ ...current, type: value as FolioEntryType }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(['PAYMENT', 'POS', 'ROOM_SERVICE', 'ADJUSTMENT'] as FolioEntryType[]).map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {folioEntryLabels[type]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Valor</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={billingForm.amount}
-                      onChange={(event) => setBillingForm((current) => ({ ...current, amount: event.target.value }))}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>DescriÃ§Ã£o</Label>
-                    <Textarea
-                      value={billingForm.description}
-                      onChange={(event) => setBillingForm((current) => ({ ...current, description: event.target.value }))}
-                      placeholder="Ex.: pagamento em dinheiro, ajuste de consumo, taxa extra"
-                    />
-                  </div>
-
-                  <Button className="w-full" onClick={handleBillingSubmit} disabled={!folio || addFolioEntry.isPending}>
-                    Registrar lanÃ§amento
-                  </Button>
-
-                  {selectedStay ? (
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => handleCheckOut(selectedStay)}
-                      disabled={checkOut.isPending}
-                    >
-                      Finalizar check-out
-                    </Button>
-                  ) : null}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>FÃ³lio</CardTitle>
-                  <CardDescription>
-                    HistÃ³rico de lanÃ§amentos e saldo atual da hospedagem selecionada.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {!folio ? (
-                    <div className="rounded-lg border border-dashed p-8 text-center text-slate-500">
-                      Selecione uma hospedagem ativa para visualizar o fólio.
-                    </div>
-                  ) : (
-                    <>
-                      <div className="rounded-xl border bg-slate-50 p-4">
-                        <div className="text-sm text-slate-500">Saldo atual</div>
-                        <div className="mt-1 text-3xl font-semibold">
-                          {currencyFormatter.format(Number(folio.balance))}
-                        </div>
-                      </div>
-
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Tipo</TableHead>
-                            <TableHead>DescriÃ§Ã£o</TableHead>
-                            <TableHead className="text-right">Valor</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {folio.entries.length === 0 ? (
-                            <TableRow>
-                              <TableCell colSpan={4}>Nenhum lanÃ§amento registrado.</TableCell>
-                            </TableRow>
-                          ) : (
-                            folio.entries.map((entry) => (
-                              <TableRow key={entry.id}>
-                                <TableCell>{new Date(entry.postedAt).toLocaleString('pt-BR')}</TableCell>
-                                <TableCell>{folioEntryLabels[entry.type]}</TableCell>
-                                <TableCell>{entry.description}</TableCell>
-                                <TableCell className="text-right">
-                                  {currencyFormatter.format(Number(entry.amount))}
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          )}
-                        </TableBody>
-                      </Table>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="recepcao" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Chegadas previstas</CardTitle>
-                <CardDescription>OperaÃ§Ã£o de check-in centralizada no PDV.</CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Reserva</TableHead>
-                      <TableHead>HÃ³spede</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>PerÃ­odo</TableHead>
-                      <TableHead>Quarto</TableHead>
-                      <TableHead className="text-right">AÃ§Ã£o</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {!arrivals.length ? (
-                      <TableRow>
-                        <TableCell colSpan={6}>Nenhuma chegada pendente para hoje.</TableCell>
-                      </TableRow>
-                    ) : (
-                      arrivals.map((reservation) => {
-                        const candidateRooms =
-                          availableRoomUnitsByAccommodation[reservation.accommodationId] ?? [];
-
-                        return (
-                          <TableRow key={reservation.id}>
-                            <TableCell className="font-mono">{reservation.reservationCode}</TableCell>
-                            <TableCell>{reservation.guestName}</TableCell>
-                            <TableCell>{reservation.accommodation?.name || '-'}</TableCell>
-                            <TableCell>
-                              {new Date(reservation.checkInDate).toLocaleDateString('pt-BR')} atÃ©{' '}
-                              {new Date(reservation.checkOutDate).toLocaleDateString('pt-BR')}
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                value={selectedRooms[reservation.id] ?? ''}
-                                onValueChange={(value) =>
-                                  setSelectedRooms((current) => ({ ...current, [reservation.id]: value }))
-                                }
-                              >
-                                <SelectTrigger className="w-[220px]">
-                                  <SelectValue placeholder="Selecionar quarto" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {candidateRooms.map((roomUnit) => (
-                                    <SelectItem key={roomUnit.id} value={roomUnit.id}>
-                                      {roomUnit.code} - {roomUnit.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                onClick={() => handleCheckIn(reservation)}
-                                disabled={!selectedRooms[reservation.id] || checkIn.isPending}
-                              >
-                                Fazer check-in
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    )}
-                  </TableBody>
-                </Table>
+                          ))
+                        )}
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
+          </div>
 
+          <div className="space-y-6 xl:sticky xl:top-6 xl:self-start">
             <Card>
               <CardHeader>
-                <CardTitle>Hospedagens em andamento</CardTitle>
-                <CardDescription>
-                  Acompanhe saldo, consumo e saída prevista sem sair da central.
-                </CardDescription>
+                <CardTitle>Caixa</CardTitle>
+                <CardDescription>Controle rápido do turno atual.</CardDescription>
               </CardHeader>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Reserva</TableHead>
-                      <TableHead>HÃ³spede</TableHead>
-                      <TableHead>Quarto</TableHead>
-                      <TableHead>Saldo</TableHead>
-                      <TableHead>Saída prevista</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {!inHouseStays.length ? (
-                      <TableRow>
-                        <TableCell colSpan={5}>Nenhuma hospedagem ativa.</TableCell>
-                      </TableRow>
-                    ) : (
-                      inHouseStays.map((stay) => (
-                        <TableRow key={stay.id}>
-                          <TableCell className="font-mono">{stay.reservation.reservationCode}</TableCell>
-                          <TableCell>{stay.reservation.guestName}</TableCell>
-                          <TableCell>{stay.roomUnit?.code || 'Sem quarto'}</TableCell>
-                          <TableCell>
-                            <Badge variant={Number(stay.folio?.balance || 0) > 0 ? 'destructive' : 'default'}>
-                              {currencyFormatter.format(Number(stay.folio?.balance || 0))}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {new Date(stay.reservation.checkOutDate).toLocaleDateString('pt-BR')}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="pedidos" className="space-y-6">
-            <div className="grid gap-6 xl:grid-cols-[340px_420px_1fr]">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ShoppingCart className="h-5 w-5" />
-                    Produtos
-                  </CardTitle>
-                  <CardDescription>
-                    Cadastro rápido do cardápio interno e itens de conveniência.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Input
-                    placeholder="Nome do item"
-                    value={productForm.name}
-                    onChange={(event) => setProductForm((current) => ({ ...current, name: event.target.value }))}
-                  />
-
-                  <Select
-                    value={productForm.category}
-                    onValueChange={(value) =>
-                      setProductForm((current) => ({ ...current, category: value as POSProductCategory }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(posCategoryLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="PreÃ§o"
-                    value={productForm.price}
-                    onChange={(event) => setProductForm((current) => ({ ...current, price: event.target.value }))}
-                  />
-
-                  <Textarea
-                    placeholder="DescriÃ§Ã£o"
-                    value={productForm.description}
-                    onChange={(event) => setProductForm((current) => ({ ...current, description: event.target.value }))}
-                  />
-
-                  <Button className="w-full" onClick={handleProductCreate} disabled={createProduct.isPending}>
-                    Salvar produto
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ShoppingCart className="h-5 w-5" />
-                    Pedido
-                  </CardTitle>
-                  <CardDescription>
-                    Monte o carrinho, defina liquidaÃ§Ã£o e opere o pedido completo.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Select
-                    value={orderForm.stayId}
-                    onValueChange={(value) => setOrderForm((current) => ({ ...current, stayId: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Hospedagem" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Sem hospedagem</SelectItem>
-                      {inHouseStays.map((stay) => (
-                        <SelectItem key={stay.id} value={stay.id}>
-                          {(stay.roomUnit?.code || 'Sem quarto') + ' - ' + stay.reservation.guestName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select
-                    value={orderForm.roomUnitId}
-                    onValueChange={(value) => setOrderForm((current) => ({ ...current, roomUnitId: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Quarto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Sem quarto</SelectItem>
-                      {roomUnits.map((roomUnit) => (
-                        <SelectItem key={roomUnit.id} value={roomUnit.id}>
-                          {roomUnit.code} - {roomUnit.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select
-                    value={orderForm.origin}
-                    onValueChange={(value) => setOrderForm((current) => ({ ...current, origin: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="FRONTDESK">Balcão</SelectItem>
-                      <SelectItem value="RESTAURANT">Restaurante</SelectItem>
-                      <SelectItem value="BAR">Bar</SelectItem>
-                      <SelectItem value="ROOM_SERVICE">Room service</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select
-                    value={orderForm.settlementType}
-                    onValueChange={(value) =>
-                      setOrderForm((current) => ({ ...current, settlementType: value as POSSettlementType }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(settlementLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Input
-                    placeholder="Cliente no balcão"
-                    value={orderForm.customerName}
-                    onChange={(event) =>
-                      setOrderForm((current) => ({ ...current, customerName: event.target.value }))
-                    }
-                  />
-
-                  <Input
-                    placeholder="Mesa / comanda"
-                    value={orderForm.tableNumber}
-                    onChange={(event) =>
-                      setOrderForm((current) => ({ ...current, tableNumber: event.target.value }))
-                    }
-                  />
-
-                  <div className="grid grid-cols-[1fr_110px] gap-3">
-                    <Select
-                      value={pendingItem.productId}
-                      onValueChange={(value) => setPendingItem((current) => ({ ...current, productId: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Produto" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {activePOSProducts.map((product) => (
-                          <SelectItem key={product.id} value={product.id}>
-                            {product.name} - {currencyFormatter.format(Number(product.price))}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <Input
-                      type="number"
-                      min="1"
-                      step="1"
-                      placeholder="Qtd."
-                      value={pendingItem.quantity}
-                      onChange={(event) =>
-                        setPendingItem((current) => ({ ...current, quantity: event.target.value }))
-                      }
-                    />
-                  </div>
-
-                  <Textarea
-                    placeholder="ObservaÃ§Ãµes do item"
-                    value={pendingItem.notes}
-                    onChange={(event) => setPendingItem((current) => ({ ...current, notes: event.target.value }))}
-                  />
-
-                  <Button variant="outline" className="w-full" onClick={handleAddOrderItem} disabled={!pendingProduct}>
-                    Adicionar item
-                  </Button>
-
-                  <div className="rounded-lg border p-4">
-                    <div className="mb-3 flex items-center justify-between">
-                      <span className="font-medium">Carrinho</span>
-                      <span className="text-sm text-slate-500">{orderItems.length} item(ns)</span>
+              <CardContent className="space-y-4">
+                {!activeCashSession ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Fundo inicial</Label>
+                      <Input value={openingFloat} onChange={(event) => setOpeningFloat(event.target.value)} placeholder="0,00" />
                     </div>
                     <div className="space-y-2">
-                      {!orderItems.length ? (
-                        <div className="text-sm text-slate-500">Nenhum item adicionado.</div>
-                      ) : (
-                        orderItems.map((item, index) => {
-                          const product = activePOSProducts.find((candidate) => candidate.id === item.productId);
-                          return (
-                            <div key={index} className="flex items-center justify-between gap-3 rounded-md border p-2">
-                              <div>
-                                <div className="font-medium">{product?.name || 'Produto removido'}</div>
-                                <div className="text-sm text-slate-500">
-                                  {item.quantity} x {currencyFormatter.format(Number(product?.price ?? 0))}
-                                </div>
-                              </div>
-                              <Button variant="ghost" size="sm" onClick={() => handleRemoveOrderItem(index)}>
-                                Remover
-                              </Button>
-                            </div>
-                          );
-                        })
-                      )}
+                      <Label>Observações</Label>
+                      <Textarea value={cashNotes} onChange={(event) => setCashNotes(event.target.value)} />
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="Taxa de serviÃ§o"
-                      value={orderForm.serviceFeeAmount}
-                      onChange={(event) =>
-                        setOrderForm((current) => ({ ...current, serviceFeeAmount: event.target.value }))
-                      }
-                    />
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="Desconto"
-                      value={orderForm.discountAmount}
-                      onChange={(event) =>
-                        setOrderForm((current) => ({ ...current, discountAmount: event.target.value }))
-                      }
-                    />
-                  </div>
-
-                  <Textarea
-                    placeholder="ObservaÃ§Ãµes do pedido"
-                    value={orderForm.notes}
-                    onChange={(event) => setOrderForm((current) => ({ ...current, notes: event.target.value }))}
-                  />
-
-                  <div className="rounded-lg border bg-slate-50 p-4 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span>Subtotal</span>
-                      <span>{currencyFormatter.format(orderSubtotal)}</span>
+                    <Button className="w-full" onClick={handleOpenCash} disabled={openCashSession.isPending}>
+                      Abrir caixa
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div className="rounded-2xl border bg-slate-50 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="font-medium">{activeCashSession.code}</div>
+                          <div className="text-sm text-slate-500">
+                            Aberto em {new Date(activeCashSession.openedAt).toLocaleString('pt-BR')}
+                          </div>
+                        </div>
+                        <Badge>Aberto</Badge>
+                      </div>
+                      <div className="mt-4 grid gap-2 text-sm text-slate-600">
+                        <span>Fundo {currency.format(Number(activeCashSession.openingFloat))}</span>
+                        <span>Esperado {currency.format(Number(activeCashSession.expectedCashAmount ?? 0))}</span>
+                      </div>
                     </div>
-                    <div className="mt-2 flex items-center justify-between">
-                      <span>Total previsto</span>
-                      <span className="font-semibold">
-                        {currencyFormatter.format(
-                          Math.max(
-                            orderSubtotal +
-                              Number(orderForm.serviceFeeAmount || 0) -
-                              Number(orderForm.discountAmount || 0),
-                            0
-                          )
-                        )}
-                      </span>
-                    </div>
-                  </div>
 
-                  <Button className="w-full" onClick={handlePOSOrderCreate} disabled={createOrder.isPending || !orderItems.length}>
-                    Criar pedido
+                    <div className="grid gap-3">
+                      <Select value={cashMovementType} onValueChange={(value) => setCashMovementType(value as Extract<CashMovementType, 'SUPPLY' | 'WITHDRAWAL'>)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="SUPPLY">Suprimento</SelectItem>
+                          <SelectItem value="WITHDRAWAL">Sangria</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        value={cashMovementAmount}
+                        onChange={(event) => setCashMovementAmount(event.target.value)}
+                        placeholder="Valor da movimentação"
+                      />
+                      <Input
+                        value={cashMovementDescription}
+                        onChange={(event) => setCashMovementDescription(event.target.value)}
+                        placeholder="Descrição"
+                      />
+                      <Button variant="outline" onClick={handleCashMovement} disabled={createCashMovement.isPending}>
+                        Registrar movimentação
+                      </Button>
+                    </div>
+
+                    <div className="grid gap-3 rounded-2xl border p-4">
+                      <Label>Fechamento do caixa</Label>
+                      <Input
+                        value={countedCashAmount}
+                        onChange={(event) => setCountedCashAmount(event.target.value)}
+                        placeholder="Valor contado"
+                      />
+                      <Textarea
+                        value={cashNotes}
+                        onChange={(event) => setCashNotes(event.target.value)}
+                        placeholder="Observações do fechamento"
+                      />
+                      <Button onClick={handleCloseCash} disabled={closeCashSession.isPending}>
+                        Fechar caixa
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Venda atual</CardTitle>
+                <CardDescription>Monte o carrinho e finalize sem trocar de tela.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button type="button" variant={settlementType === 'DIRECT' ? 'default' : 'outline'} onClick={() => setSettlementType('DIRECT')}>
+                    Pagamento direto
                   </Button>
-                </CardContent>
-              </Card>
+                  <Button type="button" variant={settlementType === 'FOLIO' ? 'default' : 'outline'} onClick={() => setSettlementType('FOLIO')}>
+                    Lançar no fólio
+                  </Button>
+                </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Fila de pedidos</CardTitle>
-                  <CardDescription>
-                    Controle o preparo, a entrega e o fechamento sem sair da central.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <Select value={selectedOrderId} onValueChange={setSelectedOrderId}>
+                <div className="grid gap-3">
+                  <Select value={origin} onValueChange={(value) => setOrigin(value as POSOrderOrigin)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(originLabels).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {settlementType === 'DIRECT' ? (
+                    <>
+                      <Input value={customerName} onChange={(event) => setCustomerName(event.target.value)} placeholder="Nome do cliente" />
+                      <Input value={tableNumber} onChange={(event) => setTableNumber(event.target.value)} placeholder="Mesa, comanda ou referência" />
+                    </>
+                  ) : (
+                    <Select value={selectedStayId || 'none'} onValueChange={(value) => setSelectedStayId(value === 'none' ? '' : value)}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecionar pedido" />
+                        <SelectValue placeholder="Selecionar hospedagem" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">Nenhum pedido</SelectItem>
-                        {directOrders.map((order) => (
-                          <SelectItem key={order.id} value={order.id}>
-                            {order.orderNumber} - {currencyFormatter.format(Number(order.totalAmount))}
+                        <SelectItem value="none">Selecionar hospedagem</SelectItem>
+                        {inHouseStays.map((stay) => (
+                          <SelectItem key={stay.id} value={stay.id}>
+                            {stay.reservation.guestName} • Quarto {stay.roomUnit?.code ?? 'Sem quarto'}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <div className="rounded-lg border bg-slate-50 p-3 text-sm">
-                      <div className="text-slate-500">Pedido selecionado</div>
-                      <div className="font-medium">{selectedOrder?.orderNumber || '-'}</div>
-                      <div className="text-slate-500">
-                        Saldo:{' '}
-                        {selectedOrder
-                          ? currencyFormatter.format(Number(selectedOrder.totalAmount) - Number(selectedOrder.paidAmount))
-                          : '-'}
-                      </div>
-                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3 rounded-2xl border p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Carrinho</span>
+                    <Badge variant="outline">{cartDetailedItems.length} item(ns)</Badge>
                   </div>
 
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="Valor do pagamento"
-                      value={paymentForm.amount}
-                      onChange={(event) =>
-                        setPaymentForm((current) => ({ ...current, amount: event.target.value }))
-                      }
-                    />
-                    <Select
-                      value={paymentForm.method}
-                      onValueChange={(value) =>
-                        setPaymentForm((current) => ({ ...current, method: value as PaymentMethod }))
-                      }
-                    >
+                  {!cartDetailedItems.length ? (
+                    <div className="rounded-xl border border-dashed p-4 text-sm text-slate-500">
+                      Toque nos produtos para começar a venda.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {cartDetailedItems.map((item) => (
+                        <div key={item.productId} className="rounded-xl border p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="font-medium">{item.product.name}</div>
+                              <div className="text-sm text-slate-500">
+                                {currency.format(Number(item.product.price))} por unidade
+                              </div>
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={() => updateCartQuantity(item.productId, 0)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="mt-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Button variant="outline" size="sm" onClick={() => updateCartQuantity(item.productId, item.quantity - 1)}>
+                                -
+                              </Button>
+                              <span className="min-w-8 text-center font-medium">{item.quantity}</span>
+                              <Button variant="outline" size="sm" onClick={() => updateCartQuantity(item.productId, item.quantity + 1)}>
+                                +
+                              </Button>
+                            </div>
+                            <span className="font-semibold">{currency.format(item.total)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Input value={serviceFeeAmount} onChange={(event) => setServiceFeeAmount(event.target.value)} placeholder="Taxa de serviço" />
+                  <Input value={discountAmount} onChange={(event) => setDiscountAmount(event.target.value)} placeholder="Desconto" />
+                </div>
+
+                <Textarea value={orderNotes} onChange={(event) => setOrderNotes(event.target.value)} placeholder="Observações do pedido" />
+
+                {settlementType === 'DIRECT' ? (
+                  <div className="grid gap-3 rounded-2xl border p-4">
+                    <div className="font-medium">Cobrança</div>
+                    <Select value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -1283,472 +1079,204 @@ export default function POS() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <Input value={paymentAmount} onChange={(event) => setPaymentAmount(event.target.value)} placeholder={`Valor recebido • padrão ${currency.format(total)}`} />
+                    <Input value={paymentReference} onChange={(event) => setPaymentReference(event.target.value)} placeholder="NSU, referência ou identificador" />
+                    <Textarea value={paymentNotes} onChange={(event) => setPaymentNotes(event.target.value)} placeholder="Observações do pagamento" />
                   </div>
+                ) : null}
 
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <Input
-                      placeholder="ReferÃªncia / NSU"
-                      value={paymentForm.reference}
-                      onChange={(event) =>
-                        setPaymentForm((current) => ({ ...current, reference: event.target.value }))
-                      }
-                    />
-                    <Input
-                      placeholder="ObservaÃ§Ãµes do pagamento"
-                      value={paymentForm.notes}
-                      onChange={(event) =>
-                        setPaymentForm((current) => ({ ...current, notes: event.target.value }))
-                      }
-                    />
+                <div className="rounded-2xl bg-slate-950 p-4 text-white">
+                  <div className="flex items-center justify-between text-sm text-slate-300">
+                    <span>Subtotal</span>
+                    <span>{currency.format(subtotal)}</span>
                   </div>
-
-                  <div className="flex flex-wrap gap-3">
-                    <Button onClick={handleRegisterPayment} disabled={!selectedOrder || registerPayment.isPending}>
-                      Registrar pagamento
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        selectedOrder && updateOrderStatus.mutate({ id: selectedOrder.id, status: 'CLOSED' })
-                      }
-                      disabled={!selectedOrder || updateOrderStatus.isPending}
-                    >
-                      Fechar pedido
-                    </Button>
+                  <div className="mt-2 flex items-center justify-between text-sm text-slate-300">
+                    <span>Taxa / desconto</span>
+                    <span>{currency.format(Number(serviceFeeAmount || 0) - Number(discountAmount || 0))}</span>
                   </div>
-
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <Select
-                      value={refundForm.paymentId}
-                      onValueChange={(value) => setRefundForm((current) => ({ ...current, paymentId: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Pagamento para estorno" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Nenhum pagamento</SelectItem>
-                        {(selectedOrder?.payments || []).map((payment) => (
-                          <SelectItem key={payment.id} value={payment.id}>
-                            {paymentMethodLabels[payment.method]} - {currencyFormatter.format(Number(payment.amount))}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="Valor do estorno"
-                      value={refundForm.amount}
-                      onChange={(event) =>
-                        setRefundForm((current) => ({ ...current, amount: event.target.value }))
-                      }
-                    />
+                  <div className="mt-4 flex items-center justify-between text-xl font-semibold">
+                    <span>Total</span>
+                    <span>{currency.format(total)}</span>
                   </div>
+                </div>
 
-                  <div className="flex flex-wrap gap-3">
-                    <Button variant="outline" onClick={handleRefundPayment} disabled={refundPayment.isPending}>
-                      Estornar pagamento
-                    </Button>
-                    <Input
-                      className="max-w-sm"
-                      placeholder="Motivo do cancelamento"
-                      value={cancelReason}
-                      onChange={(event) => setCancelReason(event.target.value)}
-                    />
-                    <Button
-                      variant="destructive"
-                      onClick={handleCancelOrder}
-                      disabled={!selectedOrder || cancelOrder.isPending || !cancelReason}
-                    >
-                      Cancelar pedido
-                    </Button>
-                  </div>
+                <Button className="h-12 w-full text-base" onClick={handleFinalizeSale} disabled={createOrder.isPending || registerPayment.isPending || updateOrderStatus.isPending}>
+                  {settlementType === 'DIRECT' ? 'Finalizar venda' : 'Lançar consumo no fólio'}
+                </Button>
+              </CardContent>
+            </Card>
 
-                  <div className="rounded-lg border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Pedido</TableHead>
-                          <TableHead>Liquidação</TableHead>
-                          <TableHead>Total</TableHead>
-                          <TableHead>Pago</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Criado em</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {!orders.length ? (
-                          <TableRow>
-                            <TableCell colSpan={6}>Nenhum pedido registrado.</TableCell>
-                          </TableRow>
-                        ) : (
-                          orders.map((order) => (
-                            <TableRow key={order.id}>
-                              <TableCell className="font-mono">{order.orderNumber}</TableCell>
-                              <TableCell>{settlementLabels[order.settlementType]}</TableCell>
-                              <TableCell>{currencyFormatter.format(Number(order.totalAmount))}</TableCell>
-                              <TableCell>{currencyFormatter.format(Number(order.paidAmount))}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <Badge
-                                    variant={
-                                      order.status === 'CANCELLED'
-                                        ? 'destructive'
-                                        : order.status === 'DELIVERED'
-                                          ? 'default'
-                                          : 'outline'
-                                    }
-                                  >
-                                    {posStatusLabels[order.status]}
-                                  </Badge>
-                                  <Select
-                                    value={order.status}
-                                    onValueChange={(value) =>
-                                      updateOrderStatus.mutate({ id: order.id, status: value as POSOrderStatus })
-                                    }
-                                  >
-                                    <SelectTrigger className="w-[160px]">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {Object.entries(posStatusLabels).map(([value, label]) => (
-                                        <SelectItem key={value} value={value}>
-                                          {label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </TableCell>
-                              <TableCell>{new Date(order.createdAt).toLocaleString('pt-BR')}</TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="governanca" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ClipboardCheck className="h-5 w-5" />
-                  GovernanÃ§a operacional
-                </CardTitle>
-                <CardDescription>
-                  Atualize limpeza e liberação dos quartos direto do PDV.
-                </CardDescription>
+                <CardTitle>Pedido selecionado</CardTitle>
+                <CardDescription>Receba, feche, estorne ou cancele um pedido aberto.</CardDescription>
               </CardHeader>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Quarto</TableHead>
-                      <TableHead>Reserva</TableHead>
-                      <TableHead>Tarefa</TableHead>
-                      <TableHead>Prioridade</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {!housekeepingTasks.length ? (
-                      <TableRow>
-                        <TableCell colSpan={5}>Nenhuma tarefa de governanÃ§a encontrada.</TableCell>
-                      </TableRow>
-                    ) : (
-                      housekeepingTasks.map((task) => (
-                        <TableRow key={task.id}>
-                          <TableCell>{task.roomUnit.code + ' - ' + task.roomUnit.name}</TableCell>
-                          <TableCell>{task.reservation?.reservationCode || '-'}</TableCell>
-                          <TableCell>{task.title}</TableCell>
-                          <TableCell>
-                            <Badge variant={task.priority === 'URGENT' ? 'destructive' : 'outline'}>
-                              {maintenancePriorityLabels[task.priority]}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Select
-                              value={task.status}
-                              onValueChange={(value) =>
-                                updateHousekeeping.mutate({ id: task.id, status: value as HousekeepingTaskStatus })
-                              }
-                            >
-                              <SelectTrigger className="w-[190px]">
-                                <SelectValue />
+              <CardContent className="space-y-4">
+                {!selectedOrder ? (
+                  <div className="rounded-xl border border-dashed p-4 text-sm text-slate-500">
+                    Selecione um pedido aberto na fila operacional.
+                  </div>
+                ) : (
+                  <>
+                    <div className="rounded-2xl border p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="font-medium">{selectedOrder.orderNumber}</div>
+                          <div className="mt-1 text-sm text-slate-500">
+                            {originLabels[selectedOrder.origin]} • {settlementLabels[selectedOrder.settlementType]}
+                          </div>
+                        </div>
+                        <Badge variant="outline">{orderStatusLabels[selectedOrder.status]}</Badge>
+                      </div>
+                      <div className="mt-4 grid gap-2 text-sm text-slate-600">
+                        <span>Total {currency.format(Number(selectedOrder.totalAmount))}</span>
+                        <span>Pago {currency.format(Number(selectedOrder.paidAmount))}</span>
+                        <span>Saldo {currency.format(Number(selectedOrder.totalAmount) - Number(selectedOrder.paidAmount))}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      {selectedOrder.items.map((item) => (
+                        <div key={item.id} className="flex items-center justify-between rounded-xl border p-3 text-sm">
+                          <span>
+                            {item.quantity}x {item.productName}
+                          </span>
+                          <span>{currency.format(Number(item.totalPrice))}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {selectedOrder.settlementType === 'DIRECT' ? (
+                      <>
+                        <div className="grid gap-3">
+                          <Select value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(paymentMethodLabels).map(([value, label]) => (
+                                <SelectItem key={value} value={value}>
+                                  {label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Input value={paymentAmount} onChange={(event) => setPaymentAmount(event.target.value)} placeholder="Valor do pagamento" />
+                          <Input value={paymentReference} onChange={(event) => setPaymentReference(event.target.value)} placeholder="Referência do pagamento" />
+                          <Textarea value={paymentNotes} onChange={(event) => setPaymentNotes(event.target.value)} placeholder="Observações" />
+                          <Button onClick={handleRegisterPayment} disabled={registerPayment.isPending}>
+                            Receber pagamento
+                          </Button>
+                        </div>
+
+                        {!!selectedOrder.payments.length ? (
+                          <div className="grid gap-3 rounded-2xl border p-4">
+                            <Label>Estorno</Label>
+                            <Select value={refundPaymentId || 'none'} onValueChange={(value) => setRefundPaymentId(value === 'none' ? '' : value)}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecionar pagamento" />
                               </SelectTrigger>
                               <SelectContent>
-                                {Object.entries(housekeepingLabels).map(([value, label]) => (
-                                  <SelectItem key={value} value={value}>
-                                    {label}
+                                <SelectItem value="none">Selecionar pagamento</SelectItem>
+                                {selectedOrder.payments.map((payment) => (
+                                  <SelectItem key={payment.id} value={payment.id}>
+                                    {paymentMethodLabels[payment.method]} • {currency.format(Number(payment.amount))}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                            <Input value={refundAmount} onChange={(event) => setRefundAmount(event.target.value)} placeholder="Valor do estorno" />
+                            <Textarea value={refundNotes} onChange={(event) => setRefundNotes(event.target.value)} placeholder="Motivo do estorno" />
+                            <Button variant="outline" onClick={handleRefundPayment} disabled={refundPayment.isPending}>
+                              Estornar pagamento
+                            </Button>
+                          </div>
+                        ) : null}
+                      </>
+                    ) : (
+                      <div className="rounded-xl border bg-slate-50 p-4 text-sm text-slate-600">
+                        Este pedido está configurado para lançamento em fólio.
+                      </div>
                     )}
-                  </TableBody>
-                </Table>
+
+                    <div className="grid gap-3">
+                      <Select
+                        value={selectedOrder.status}
+                        onValueChange={(value) =>
+                          updateOrderStatus.mutate({ id: selectedOrder.id, status: value as POSOrderStatus })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(orderStatusLabels).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Motivo do cancelamento" />
+                      <Button variant="destructive" onClick={handleCancelOrder} disabled={cancelOrder.isPending}>
+                        Cancelar pedido
+                      </Button>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="manutencao" className="space-y-6">
-            <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Wrench className="h-5 w-5" />
-                    Nova ordem
-                  </CardTitle>
-                  <CardDescription>
-                    Registre ocorrÃªncias tÃ©cnicas sem sair da central PDV.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Select
-                    value={maintenanceForm.roomUnitId}
-                    onValueChange={(value) => setMaintenanceForm((current) => ({ ...current, roomUnitId: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Quarto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roomUnits.map((roomUnit) => (
-                        <SelectItem key={roomUnit.id} value={roomUnit.id}>
-                          {roomUnit.code} - {roomUnit.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Input
-                    placeholder="TÃ­tulo"
-                    value={maintenanceForm.title}
-                    onChange={(event) => setMaintenanceForm((current) => ({ ...current, title: event.target.value }))}
-                  />
-
-                  <Select
-                    value={maintenanceForm.priority}
-                    onValueChange={(value) =>
-                      setMaintenanceForm((current) => ({ ...current, priority: value as MaintenanceOrderPriority }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(maintenancePriorityLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="Custo estimado"
-                    value={maintenanceForm.estimatedCost}
-                    onChange={(event) =>
-                      setMaintenanceForm((current) => ({ ...current, estimatedCost: event.target.value }))
-                    }
-                  />
-
-                  <Textarea
-                    placeholder="DescriÃ§Ã£o do problema"
-                    value={maintenanceForm.description}
-                    onChange={(event) =>
-                      setMaintenanceForm((current) => ({ ...current, description: event.target.value }))
-                    }
-                  />
-
-                  <Button className="w-full" onClick={handleMaintenanceCreate} disabled={createMaintenanceOrder.isPending}>
-                    Criar ordem de manutenÃ§Ã£o
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Ordens abertas</CardTitle>
-                  <CardDescription>
-                    Acompanhe andamento e devoluÃ§Ã£o do quarto para a operaÃ§Ã£o.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Quarto</TableHead>
-                        <TableHead>TÃ­tulo</TableHead>
-                        <TableHead>Prioridade</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Abertura</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {!maintenanceOrders.length ? (
-                        <TableRow>
-                          <TableCell colSpan={5}>Nenhuma ordem de manutenÃ§Ã£o cadastrada.</TableCell>
-                        </TableRow>
-                      ) : (
-                        maintenanceOrders.map((order) => (
-                          <TableRow key={order.id}>
-                            <TableCell>{order.roomUnit.code}</TableCell>
-                            <TableCell>{order.title}</TableCell>
-                            <TableCell>
-                              <Badge variant={order.priority === 'URGENT' ? 'destructive' : 'outline'}>
-                                {maintenancePriorityLabels[order.priority]}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                value={order.status}
-                                onValueChange={(value) =>
-                                  updateMaintenanceOrder.mutate({ id: order.id, data: { status: value as MaintenanceOrderStatus } })
-                                }
-                              >
-                                <SelectTrigger className="w-[190px]">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {Object.entries(maintenanceStatusLabels).map(([value, label]) => (
-                                    <SelectItem key={value} value={value}>
-                                      {label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell>{new Date(order.openedAt).toLocaleString('pt-BR')}</TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="indicadores" className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-3">
-              <SummaryCard
-                title="Taxa de ocupaÃ§Ã£o"
-                value={`${report?.rooms.occupancyRate ?? 0}%`}
-                subtitle={`${report?.rooms.occupied ?? 0} de ${report?.rooms.total ?? 0} quartos ocupados`}
-                icon={BedDouble}
-              />
-              <SummaryCard
-                title="Receita de reservas no mÃªs"
-                value={currencyFormatter.format(report?.finance.reservationRevenueMonth ?? 0)}
-                subtitle={`${report?.finance.reservationCountMonth ?? 0} reservas no perÃ­odo`}
-                icon={Wallet}
-              />
-              <SummaryCard
-                title="Receita de PDV no mÃªs"
-                value={currencyFormatter.format(report?.finance.posRevenueMonth ?? 0)}
-                subtitle={`${report?.finance.posOrdersMonth ?? 0} pedidos faturados`}
-                icon={BarChart3}
-              />
-            </div>
-
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>RecepÃ§Ã£o</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <MetricLine label="Chegadas hoje" value={String(report?.frontdesk.arrivalsToday ?? 0)} />
-                  <MetricLine label="SaÃ­das hoje" value={String(report?.frontdesk.departuresToday ?? 0)} />
-                  <MetricLine label="Hospedados" value={String(report?.frontdesk.inHouse ?? 0)} />
-                  <MetricLine label="FÃ³lios em aberto" value={currencyFormatter.format(report?.finance.outstandingFolios ?? 0)} />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>OperaÃ§Ã£o</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <MetricLine label="Tarefas de governanÃ§a" value={String(report?.operations.pendingHousekeeping ?? 0)} />
-                  <MetricLine label="ManutenÃ§Ãµes abertas" value={String(report?.operations.openMaintenance ?? 0)} />
-                  <MetricLine label="Data de referÃªncia" value={report?.referenceDate ?? '-'} />
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
     </AdminLayout>
   );
 }
 
-function QuickMetric({
+function TopMetric({
   label,
   value,
   icon: Icon,
 }: {
   label: string;
   value: string;
-  icon: typeof BedDouble;
+  icon: typeof Wallet;
 }) {
   return (
     <Card>
       <CardContent className="flex items-center gap-3 p-4">
-        <div className="rounded-full bg-blue-50 p-2 text-blue-600">
+        <div className="rounded-full bg-slate-100 p-2 text-slate-700">
           <Icon className="h-4 w-4" />
         </div>
-        <div className="min-w-0">
-          <div className="truncate text-xs text-slate-500">{label}</div>
-          <div className="truncate text-sm font-semibold">{value}</div>
+        <div>
+          <div className="text-xs text-slate-500">{label}</div>
+          <div className="text-sm font-semibold">{value}</div>
         </div>
       </CardContent>
     </Card>
   );
 }
 
-function SummaryCard({
+function EmptyState({
   title,
-  value,
-  subtitle,
-  icon: Icon,
+  description,
+  actionLabel,
+  actionTo,
 }: {
   title: string;
-  value: string;
-  subtitle: string;
-  icon: typeof BedDouble;
+  description: string;
+  actionLabel?: string;
+  actionTo?: string;
 }) {
   return (
-    <Card>
-      <CardContent className="flex items-start justify-between p-5">
-        <div>
-          <div className="text-sm text-slate-500">{title}</div>
-          <div className="mt-1 text-2xl font-semibold">{value}</div>
-          <div className="mt-2 text-sm text-slate-500">{subtitle}</div>
-        </div>
-        <div className="rounded-full bg-blue-50 p-3 text-blue-600">
-          <Icon className="h-5 w-5" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function MetricLine({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between border-b pb-3 last:border-b-0 last:pb-0">
-      <span className="text-slate-600">{label}</span>
-      <span className="font-medium">{value}</span>
+    <div className="rounded-2xl border border-dashed p-6 text-center">
+      <div className="font-medium">{title}</div>
+      <div className="mt-1 text-sm text-slate-500">{description}</div>
+      {actionLabel && actionTo ? (
+        <Button asChild variant="outline" className="mt-4">
+          <Link to={actionTo}>{actionLabel}</Link>
+        </Button>
+      ) : null}
     </div>
   );
 }
