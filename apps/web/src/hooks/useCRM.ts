@@ -99,10 +99,10 @@ export function useCreateFeedback() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['feedbacks'] });
-      toast.success('Avaliação registrada com sucesso');
+      toast.success('AvaliaÃ§Ã£o registrada com sucesso');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Erro ao registrar avaliação');
+      toast.error(error.response?.data?.message || 'Erro ao registrar avaliaÃ§Ã£o');
     },
   });
 }
@@ -128,10 +128,10 @@ export function useIssuePreCheckIn() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pre-check-ins'] });
       queryClient.invalidateQueries({ queryKey: ['admin-reservations'] });
-      toast.success('Pré-check-in gerado com sucesso');
+      toast.success('PrÃ©-check-in gerado com sucesso');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Erro ao gerar pré-check-in');
+      toast.error(error.response?.data?.message || 'Erro ao gerar prÃ©-check-in');
     },
   });
 }
@@ -146,10 +146,10 @@ export function useApprovePreCheckIn() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pre-check-ins'] });
-      toast.success('Pré-check-in aprovado com sucesso');
+      toast.success('PrÃ©-check-in aprovado com sucesso');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Erro ao aprovar pré-check-in');
+      toast.error(error.response?.data?.message || 'Erro ao aprovar prÃ©-check-in');
     },
   });
 }
@@ -226,10 +226,10 @@ export function useSubmitPublicPreCheckIn() {
       return data.data;
     },
     onSuccess: () => {
-      toast.success('Pré-check-in enviado com sucesso');
+      toast.success('PrÃ©-check-in enviado com sucesso');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Erro ao enviar pré-check-in');
+      toast.error(error.response?.data?.message || 'Erro ao enviar prÃ©-check-in');
     },
   });
 }

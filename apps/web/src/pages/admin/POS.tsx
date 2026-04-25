@@ -463,7 +463,7 @@ export default function POS() {
           <div>
             <h1 className="text-3xl font-bold">Central PDV</h1>
             <p className="mt-1 text-gray-600">
-              Operação centralizada para faturamento, recepção, pedidos, governança e manutenção.
+              OperaÃ§Ã£o centralizada para faturamento, recepÃ§Ã£o, pedidos, governanÃ§a e manutenÃ§Ã£o.
             </p>
           </div>
 
@@ -484,7 +484,7 @@ export default function POS() {
               icon={ShoppingCart}
             />
             <QuickMetric
-              label="Fólios em aberto"
+              label="FÃ³lios em aberto"
               value={currencyFormatter.format(report?.finance.outstandingFolios ?? 0)}
               icon={Wallet}
             />
@@ -495,10 +495,10 @@ export default function POS() {
           <TabsList className="h-auto w-full justify-start overflow-auto rounded-xl bg-white p-1">
             <TabsTrigger value="caixa">Caixa</TabsTrigger>
             <TabsTrigger value="faturamento">Faturamento</TabsTrigger>
-            <TabsTrigger value="recepcao">Recepção</TabsTrigger>
+            <TabsTrigger value="recepcao">RecepÃ§Ã£o</TabsTrigger>
             <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
-            <TabsTrigger value="governanca">Governança</TabsTrigger>
-            <TabsTrigger value="manutencao">Manutenção</TabsTrigger>
+            <TabsTrigger value="governanca">GovernanÃ§a</TabsTrigger>
+            <TabsTrigger value="manutencao">ManutenÃ§Ã£o</TabsTrigger>
             <TabsTrigger value="indicadores">Indicadores</TabsTrigger>
           </TabsList>
 
@@ -527,7 +527,7 @@ export default function POS() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Observações</Label>
+                        <Label>ObservaÃ§Ãµes</Label>
                         <Textarea
                           value={cashSessionForm.notes}
                           onChange={(event) =>
@@ -552,7 +552,7 @@ export default function POS() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Movimentação manual</Label>
+                        <Label>MovimentaÃ§Ã£o manual</Label>
                         <Select
                           value={cashMovementForm.type}
                           onValueChange={(value) =>
@@ -589,7 +589,7 @@ export default function POS() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Descrição</Label>
+                        <Label>DescriÃ§Ã£o</Label>
                         <Textarea
                           value={cashMovementForm.description}
                           onChange={(event) =>
@@ -630,9 +630,9 @@ export default function POS() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Histórico do caixa</CardTitle>
+                  <CardTitle>HistÃ³rico do caixa</CardTitle>
                   <CardDescription>
-                    Acompanhe sessões abertas, fechadas e movimentações recentes.
+                    Acompanhe sessÃµes abertas, fechadas e movimentaÃ§Ãµes recentes.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -665,7 +665,7 @@ export default function POS() {
                             value={currencyFormatter.format(Number(session.countedCashAmount ?? 0))}
                           />
                           <MetricLine
-                            label="Diferença"
+                            label="DiferenÃ§a"
                             value={currencyFormatter.format(Number(session.differenceAmount ?? 0))}
                           />
                         </div>
@@ -707,7 +707,7 @@ export default function POS() {
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
                       <div className="font-medium">{selectedStay.reservation.guestName}</div>
                       <div className="text-slate-600">
-                        Quarto: {selectedStay.roomUnit?.code || 'Não atribuído'}
+                        Quarto: {selectedStay.roomUnit?.code || 'NÃ£o atribuÃ­do'}
                       </div>
                       <div className="text-slate-600">
                         Saída prevista: {new Date(selectedStay.reservation.checkOutDate).toLocaleDateString('pt-BR')}
@@ -716,7 +716,7 @@ export default function POS() {
                   ) : null}
 
                   <div className="space-y-2">
-                    <Label>Tipo de lançamento</Label>
+                    <Label>Tipo de lanÃ§amento</Label>
                     <Select
                       value={billingForm.type}
                       onValueChange={(value) => setBillingForm((current) => ({ ...current, type: value as FolioEntryType }))}
@@ -746,7 +746,7 @@ export default function POS() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Descrição</Label>
+                    <Label>DescriÃ§Ã£o</Label>
                     <Textarea
                       value={billingForm.description}
                       onChange={(event) => setBillingForm((current) => ({ ...current, description: event.target.value }))}
@@ -755,7 +755,7 @@ export default function POS() {
                   </div>
 
                   <Button className="w-full" onClick={handleBillingSubmit} disabled={!folio || addFolioEntry.isPending}>
-                    Registrar lançamento
+                    Registrar lanÃ§amento
                   </Button>
 
                   {selectedStay ? (
@@ -773,9 +773,9 @@ export default function POS() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Fólio</CardTitle>
+                  <CardTitle>FÃ³lio</CardTitle>
                   <CardDescription>
-                    Histórico de lançamentos e saldo atual da hospedagem selecionada.
+                    HistÃ³rico de lanÃ§amentos e saldo atual da hospedagem selecionada.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -797,14 +797,14 @@ export default function POS() {
                           <TableRow>
                             <TableHead>Data</TableHead>
                             <TableHead>Tipo</TableHead>
-                            <TableHead>Descrição</TableHead>
+                            <TableHead>DescriÃ§Ã£o</TableHead>
                             <TableHead className="text-right">Valor</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {folio.entries.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={4}>Nenhum lançamento registrado.</TableCell>
+                              <TableCell colSpan={4}>Nenhum lanÃ§amento registrado.</TableCell>
                             </TableRow>
                           ) : (
                             folio.entries.map((entry) => (
@@ -831,18 +831,18 @@ export default function POS() {
             <Card>
               <CardHeader>
                 <CardTitle>Chegadas previstas</CardTitle>
-                <CardDescription>Operação de check-in centralizada no PDV.</CardDescription>
+                <CardDescription>OperaÃ§Ã£o de check-in centralizada no PDV.</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Reserva</TableHead>
-                      <TableHead>Hóspede</TableHead>
+                      <TableHead>HÃ³spede</TableHead>
                       <TableHead>Categoria</TableHead>
-                      <TableHead>Período</TableHead>
+                      <TableHead>PerÃ­odo</TableHead>
                       <TableHead>Quarto</TableHead>
-                      <TableHead className="text-right">Ação</TableHead>
+                      <TableHead className="text-right">AÃ§Ã£o</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -861,7 +861,7 @@ export default function POS() {
                             <TableCell>{reservation.guestName}</TableCell>
                             <TableCell>{reservation.accommodation?.name || '-'}</TableCell>
                             <TableCell>
-                              {new Date(reservation.checkInDate).toLocaleDateString('pt-BR')} até{' '}
+                              {new Date(reservation.checkInDate).toLocaleDateString('pt-BR')} atÃ©{' '}
                               {new Date(reservation.checkOutDate).toLocaleDateString('pt-BR')}
                             </TableCell>
                             <TableCell>
@@ -912,7 +912,7 @@ export default function POS() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Reserva</TableHead>
-                      <TableHead>Hóspede</TableHead>
+                      <TableHead>HÃ³spede</TableHead>
                       <TableHead>Quarto</TableHead>
                       <TableHead>Saldo</TableHead>
                       <TableHead>Saída prevista</TableHead>
@@ -987,13 +987,13 @@ export default function POS() {
                     type="number"
                     min="0"
                     step="0.01"
-                    placeholder="Preço"
+                    placeholder="PreÃ§o"
                     value={productForm.price}
                     onChange={(event) => setProductForm((current) => ({ ...current, price: event.target.value }))}
                   />
 
                   <Textarea
-                    placeholder="Descrição"
+                    placeholder="DescriÃ§Ã£o"
                     value={productForm.description}
                     onChange={(event) => setProductForm((current) => ({ ...current, description: event.target.value }))}
                   />
@@ -1011,7 +1011,7 @@ export default function POS() {
                     Pedido
                   </CardTitle>
                   <CardDescription>
-                    Monte o carrinho, defina liquidação e opere o pedido completo.
+                    Monte o carrinho, defina liquidaÃ§Ã£o e opere o pedido completo.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1128,7 +1128,7 @@ export default function POS() {
                   </div>
 
                   <Textarea
-                    placeholder="Observações do item"
+                    placeholder="ObservaÃ§Ãµes do item"
                     value={pendingItem.notes}
                     onChange={(event) => setPendingItem((current) => ({ ...current, notes: event.target.value }))}
                   />
@@ -1171,7 +1171,7 @@ export default function POS() {
                       type="number"
                       min="0"
                       step="0.01"
-                      placeholder="Taxa de serviço"
+                      placeholder="Taxa de serviÃ§o"
                       value={orderForm.serviceFeeAmount}
                       onChange={(event) =>
                         setOrderForm((current) => ({ ...current, serviceFeeAmount: event.target.value }))
@@ -1190,7 +1190,7 @@ export default function POS() {
                   </div>
 
                   <Textarea
-                    placeholder="Observações do pedido"
+                    placeholder="ObservaÃ§Ãµes do pedido"
                     value={orderForm.notes}
                     onChange={(event) => setOrderForm((current) => ({ ...current, notes: event.target.value }))}
                   />
@@ -1287,14 +1287,14 @@ export default function POS() {
 
                   <div className="grid gap-3 md:grid-cols-2">
                     <Input
-                      placeholder="Referência / NSU"
+                      placeholder="ReferÃªncia / NSU"
                       value={paymentForm.reference}
                       onChange={(event) =>
                         setPaymentForm((current) => ({ ...current, reference: event.target.value }))
                       }
                     />
                     <Input
-                      placeholder="Observações do pagamento"
+                      placeholder="ObservaÃ§Ãµes do pagamento"
                       value={paymentForm.notes}
                       onChange={(event) =>
                         setPaymentForm((current) => ({ ...current, notes: event.target.value }))
@@ -1438,7 +1438,7 @@ export default function POS() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ClipboardCheck className="h-5 w-5" />
-                  Governança operacional
+                  GovernanÃ§a operacional
                 </CardTitle>
                 <CardDescription>
                   Atualize limpeza e liberação dos quartos direto do PDV.
@@ -1458,7 +1458,7 @@ export default function POS() {
                   <TableBody>
                     {!housekeepingTasks.length ? (
                       <TableRow>
-                        <TableCell colSpan={5}>Nenhuma tarefa de governança encontrada.</TableCell>
+                        <TableCell colSpan={5}>Nenhuma tarefa de governanÃ§a encontrada.</TableCell>
                       </TableRow>
                     ) : (
                       housekeepingTasks.map((task) => (
@@ -1508,7 +1508,7 @@ export default function POS() {
                     Nova ordem
                   </CardTitle>
                   <CardDescription>
-                    Registre ocorrências técnicas sem sair da central PDV.
+                    Registre ocorrÃªncias tÃ©cnicas sem sair da central PDV.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1529,7 +1529,7 @@ export default function POS() {
                   </Select>
 
                   <Input
-                    placeholder="Título"
+                    placeholder="TÃ­tulo"
                     value={maintenanceForm.title}
                     onChange={(event) => setMaintenanceForm((current) => ({ ...current, title: event.target.value }))}
                   />
@@ -1564,7 +1564,7 @@ export default function POS() {
                   />
 
                   <Textarea
-                    placeholder="Descrição do problema"
+                    placeholder="DescriÃ§Ã£o do problema"
                     value={maintenanceForm.description}
                     onChange={(event) =>
                       setMaintenanceForm((current) => ({ ...current, description: event.target.value }))
@@ -1572,7 +1572,7 @@ export default function POS() {
                   />
 
                   <Button className="w-full" onClick={handleMaintenanceCreate} disabled={createMaintenanceOrder.isPending}>
-                    Criar ordem de manutenção
+                    Criar ordem de manutenÃ§Ã£o
                   </Button>
                 </CardContent>
               </Card>
@@ -1581,7 +1581,7 @@ export default function POS() {
                 <CardHeader>
                   <CardTitle>Ordens abertas</CardTitle>
                   <CardDescription>
-                    Acompanhe andamento e devolução do quarto para a operação.
+                    Acompanhe andamento e devoluÃ§Ã£o do quarto para a operaÃ§Ã£o.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -1589,7 +1589,7 @@ export default function POS() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Quarto</TableHead>
-                        <TableHead>Título</TableHead>
+                        <TableHead>TÃ­tulo</TableHead>
                         <TableHead>Prioridade</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Abertura</TableHead>
@@ -1598,7 +1598,7 @@ export default function POS() {
                     <TableBody>
                       {!maintenanceOrders.length ? (
                         <TableRow>
-                          <TableCell colSpan={5}>Nenhuma ordem de manutenção cadastrada.</TableCell>
+                          <TableCell colSpan={5}>Nenhuma ordem de manutenÃ§Ã£o cadastrada.</TableCell>
                         </TableRow>
                       ) : (
                         maintenanceOrders.map((order) => (
@@ -1643,19 +1643,19 @@ export default function POS() {
           <TabsContent value="indicadores" className="space-y-6">
             <div className="grid gap-4 md:grid-cols-3">
               <SummaryCard
-                title="Taxa de ocupação"
+                title="Taxa de ocupaÃ§Ã£o"
                 value={`${report?.rooms.occupancyRate ?? 0}%`}
                 subtitle={`${report?.rooms.occupied ?? 0} de ${report?.rooms.total ?? 0} quartos ocupados`}
                 icon={BedDouble}
               />
               <SummaryCard
-                title="Receita de reservas no mês"
+                title="Receita de reservas no mÃªs"
                 value={currencyFormatter.format(report?.finance.reservationRevenueMonth ?? 0)}
-                subtitle={`${report?.finance.reservationCountMonth ?? 0} reservas no período`}
+                subtitle={`${report?.finance.reservationCountMonth ?? 0} reservas no perÃ­odo`}
                 icon={Wallet}
               />
               <SummaryCard
-                title="Receita de PDV no mês"
+                title="Receita de PDV no mÃªs"
                 value={currencyFormatter.format(report?.finance.posRevenueMonth ?? 0)}
                 subtitle={`${report?.finance.posOrdersMonth ?? 0} pedidos faturados`}
                 icon={BarChart3}
@@ -1665,24 +1665,24 @@ export default function POS() {
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Recepção</CardTitle>
+                  <CardTitle>RecepÃ§Ã£o</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <MetricLine label="Chegadas hoje" value={String(report?.frontdesk.arrivalsToday ?? 0)} />
-                  <MetricLine label="Saídas hoje" value={String(report?.frontdesk.departuresToday ?? 0)} />
+                  <MetricLine label="SaÃ­das hoje" value={String(report?.frontdesk.departuresToday ?? 0)} />
                   <MetricLine label="Hospedados" value={String(report?.frontdesk.inHouse ?? 0)} />
-                  <MetricLine label="Fólios em aberto" value={currencyFormatter.format(report?.finance.outstandingFolios ?? 0)} />
+                  <MetricLine label="FÃ³lios em aberto" value={currencyFormatter.format(report?.finance.outstandingFolios ?? 0)} />
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Operação</CardTitle>
+                  <CardTitle>OperaÃ§Ã£o</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <MetricLine label="Tarefas de governança" value={String(report?.operations.pendingHousekeeping ?? 0)} />
-                  <MetricLine label="Manutenções abertas" value={String(report?.operations.openMaintenance ?? 0)} />
-                  <MetricLine label="Data de referência" value={report?.referenceDate ?? '-'} />
+                  <MetricLine label="Tarefas de governanÃ§a" value={String(report?.operations.pendingHousekeeping ?? 0)} />
+                  <MetricLine label="ManutenÃ§Ãµes abertas" value={String(report?.operations.openMaintenance ?? 0)} />
+                  <MetricLine label="Data de referÃªncia" value={report?.referenceDate ?? '-'} />
                 </CardContent>
               </Card>
             </div>

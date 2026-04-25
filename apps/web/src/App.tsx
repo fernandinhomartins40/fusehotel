@@ -84,6 +84,14 @@ const App = () => {
                 path="/admin"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <PMSCentral />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
                     <AdminDashboard />
                   </ProtectedRoute>
                 }
@@ -145,10 +153,18 @@ const App = () => {
                 }
               />
               <Route
-                path="/admin/pos"
+                path="/admin/central"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
                     <PMSCentral />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/pos"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <POS />
                   </ProtectedRoute>
                 }
               />

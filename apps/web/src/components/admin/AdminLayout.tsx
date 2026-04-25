@@ -46,13 +46,20 @@ interface MenuItem {
   activeClassName: string;
 }
 
-const centralOperations: MenuItem[] = [
+const operationItems: MenuItem[] = [
   {
-    path: '/admin/pos',
-    label: 'Central operacional',
-    icon: ShoppingCart,
+    path: '/admin',
+    label: 'Central do Hotel',
+    icon: LayoutDashboard,
     activeClassName:
       'data-[active=true]:bg-lime-50 data-[active=true]:text-lime-700 data-[active=true]:border-r-2 data-[active=true]:border-lime-600',
+  },
+  {
+    path: '/admin/pos',
+    label: 'PDV',
+    icon: ShoppingCart,
+    activeClassName:
+      'data-[active=true]:bg-cyan-50 data-[active=true]:text-cyan-700 data-[active=true]:border-r-2 data-[active=true]:border-cyan-600',
   },
   {
     path: '/admin/frontdesk',
@@ -70,7 +77,7 @@ const centralOperations: MenuItem[] = [
   },
   {
     path: '/admin/schedule',
-    label: 'Mapa de reservas',
+    label: 'Mapa de Reservas',
     icon: CalendarDays,
     activeClassName:
       'data-[active=true]:bg-indigo-50 data-[active=true]:text-indigo-700 data-[active=true]:border-r-2 data-[active=true]:border-indigo-600',
@@ -84,7 +91,7 @@ const centralOperations: MenuItem[] = [
   },
 ];
 
-const hotelOperations: MenuItem[] = [
+const hotelItems: MenuItem[] = [
   {
     path: '/admin/room-units',
     label: 'Quartos',
@@ -111,14 +118,14 @@ const hotelOperations: MenuItem[] = [
     label: 'Hóspedes',
     icon: Users,
     activeClassName:
-      'data-[active=true]:bg-cyan-50 data-[active=true]:text-cyan-700 data-[active=true]:border-r-2 data-[active=true]:border-cyan-600',
+      'data-[active=true]:bg-orange-50 data-[active=true]:text-orange-700 data-[active=true]:border-r-2 data-[active=true]:border-orange-600',
   },
 ];
 
-const commercialItems: MenuItem[] = [
+const catalogItems: MenuItem[] = [
   {
-    path: '/admin',
-    label: 'Dashboard',
+    path: '/admin/dashboard',
+    label: 'Dashboard Administrativo',
     icon: LayoutDashboard,
     activeClassName:
       'data-[active=true]:bg-blue-50 data-[active=true]:text-blue-700 data-[active=true]:border-r-2 data-[active=true]:border-blue-600',
@@ -132,24 +139,24 @@ const commercialItems: MenuItem[] = [
   },
   {
     path: '/admin/packages-promotions',
-    label: 'Pacotes e promoções',
+    label: 'Pacotes e Promoções',
     icon: Tag,
     activeClassName:
-      'data-[active=true]:bg-orange-50 data-[active=true]:text-orange-700 data-[active=true]:border-r-2 data-[active=true]:border-orange-600',
+      'data-[active=true]:bg-pink-50 data-[active=true]:text-pink-700 data-[active=true]:border-r-2 data-[active=true]:border-pink-600',
   },
 ];
 
 const siteItems: MenuItem[] = [
   {
     path: '/admin/landing-customizer',
-    label: 'Página inicial',
+    label: 'Página Inicial',
     icon: Home,
     activeClassName:
       'data-[active=true]:bg-pink-50 data-[active=true]:text-pink-700 data-[active=true]:border-r-2 data-[active=true]:border-pink-600',
   },
   {
     path: '/admin/about-customizer',
-    label: 'Sobre nós',
+    label: 'Sobre Nós',
     icon: FileText,
     activeClassName:
       'data-[active=true]:bg-purple-50 data-[active=true]:text-purple-700 data-[active=true]:border-r-2 data-[active=true]:border-purple-600',
@@ -214,23 +221,23 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
           <SidebarContent className="bg-white">
             <SidebarGroup>
-              <SidebarGroupLabel className="font-medium text-slate-500">Operação central</SidebarGroupLabel>
+              <SidebarGroupLabel className="font-medium text-slate-500">Operação</SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>{renderMenuItems(centralOperations)}</SidebarMenu>
+                <SidebarMenu>{renderMenuItems(operationItems)}</SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
             <SidebarGroup>
               <SidebarGroupLabel className="font-medium text-slate-500">Hotel</SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>{renderMenuItems(hotelOperations)}</SidebarMenu>
+                <SidebarMenu>{renderMenuItems(hotelItems)}</SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
             <SidebarGroup>
-              <SidebarGroupLabel className="font-medium text-slate-500">Comercial</SidebarGroupLabel>
+              <SidebarGroupLabel className="font-medium text-slate-500">Cadastros</SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>{renderMenuItems(commercialItems)}</SidebarMenu>
+                <SidebarMenu>{renderMenuItems(catalogItems)}</SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
