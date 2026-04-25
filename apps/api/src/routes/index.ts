@@ -17,6 +17,10 @@ import faqCategoriesRoutes from './faq-categories.routes';
 import faqItemsRoutes from './faq-items.routes';
 import scheduleRoutes from './schedule.routes';
 import systemSettingsRoutes from './system-settings.routes';
+import roomUnitsRoutes from './room-units.routes';
+import frontdeskRoutes from './frontdesk.routes';
+import housekeepingRoutes from './housekeeping.routes';
+import foliosRoutes from './folios.routes';
 
 const router = Router();
 
@@ -38,5 +42,9 @@ router.use('/about', awardsRoutes);
 router.use('/faq', faqCategoriesRoutes);
 router.use('/faq', faqItemsRoutes);
 router.use('/schedule', scheduleRoutes);
+router.use('/room-units', roomUnitsRoutes);
+router.use('/frontdesk', frontdeskRoutes);
+router.use('/housekeeping', housekeepingRoutes);
+router.use('/folios', foliosRoutes);
 
 export default router;

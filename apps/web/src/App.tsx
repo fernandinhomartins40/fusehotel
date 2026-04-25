@@ -27,6 +27,9 @@ import AboutCustomizer from "./pages/admin/AboutCustomizer";
 import FAQCustomizer from "./pages/admin/FAQCustomizer";
 import ContactCustomizer from "./pages/admin/ContactCustomizer";
 import Schedule from "./pages/admin/Schedule";
+import Frontdesk from "./pages/admin/Frontdesk";
+import RoomUnits from "./pages/admin/RoomUnits";
+import Housekeeping from "./pages/admin/Housekeeping";
 import AboutUs from "./pages/AboutUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import FAQ from "./pages/FAQ";
@@ -88,6 +91,14 @@ const App = () => {
                 }
               />
               <Route
+                path="/admin/frontdesk"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <Frontdesk />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/admin/reservations"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
@@ -96,10 +107,26 @@ const App = () => {
                 }
               />
               <Route
+                path="/admin/room-units"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <RoomUnits />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/admin/schedule"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
                     <Schedule />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/housekeeping"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <Housekeeping />
                   </ProtectedRoute>
                 }
               />

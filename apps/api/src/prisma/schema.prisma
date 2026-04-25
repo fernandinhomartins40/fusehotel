@@ -37,6 +37,7 @@ model User {
   reservations      Reservation[]
   reviews           Review[]
   auditLogs         AuditLog[]
+  stayGuests        StayGuest[]
 
   @@index([email])
   @@index([cpf])
@@ -110,6 +111,7 @@ model Accommodation {
   amenities    AccommodationAmenity[]
   reservations Reservation[]
   reviews      Review[]
+  roomUnits    RoomUnit[]
 
   @@index([slug])
   @@index([type])
@@ -194,6 +196,68 @@ enum PaymentMethod {
   VOUCHER
 }
 
+enum RoomUnitStatus {
+  AVAILABLE
+  OCCUPIED
+  DIRTY
+  CLEANING
+  INSPECTED
+  OUT_OF_ORDER
+  OUT_OF_SERVICE
+  BLOCKED
+}
+
+enum HousekeepingStatus {
+  CLEAN
+  DIRTY
+  IN_PROGRESS
+  INSPECTED
+}
+
+enum StayStatus {
+  RESERVED
+  IN_HOUSE
+  CHECKED_OUT
+  CANCELLED
+  NO_SHOW
+}
+
+enum FolioEntryType {
+  DAILY_RATE
+  EXTRA_BED
+  SERVICE_FEE
+  TAX
+  DISCOUNT
+  PAYMENT
+  REFUND
+  ROOM_SERVICE
+  POS
+  ADJUSTMENT
+}
+
+enum FolioEntrySource {
+  RESERVATION
+  STAY
+  POS
+  MANUAL
+  SYSTEM
+}
+
+enum HousekeepingTaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  INSPECTED
+  CANCELLED
+}
+
+enum HousekeepingTaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
 model Reservation {
   id                String            @id @default(uuid())
   reservationCode   String            @unique
@@ -231,6 +295,8 @@ model Reservation {
   user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   payments      Payment[]
   review        Review?
+  stay          Stay?
+  housekeepingTasks HousekeepingTask[]
 
   @@index([reservationCode])
   @@index([userId])
@@ -238,6 +304,135 @@ model Reservation {
   @@index([status])
   @@index([checkInDate])
   @@index([checkOutDate])
+}
+
+model RoomUnit {
+  id                 String             @id @default(uuid())
+  accommodationId    String
+  name               String
+  code               String             @unique
+  floor              Int?
+  status             RoomUnitStatus     @default(AVAILABLE)
+  housekeepingStatus HousekeepingStatus @default(CLEAN)
+  isActive           Boolean            @default(true)
+  notes              String?            @db.Text
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  accommodation      Accommodation      @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  stays              Stay[]
+  housekeepingTasks  HousekeepingTask[]
+
+  @@index([accommodationId])
+  @@index([status])
+  @@index([housekeepingStatus])
+  @@index([isActive])
+}
+
+model Stay {
+  id                 String      @id @default(uuid())
+  reservationId      String      @unique
+  roomUnitId         String?
+  status             StayStatus  @default(RESERVED)
+  adults             Int
+  children           Int         @default(0)
+  notes              String?     @db.Text
+  expectedCheckInAt  DateTime?
+  expectedCheckOutAt DateTime?
+  actualCheckInAt    DateTime?
+  actualCheckOutAt   DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  reservation        Reservation        @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  roomUnit           RoomUnit?          @relation(fields: [roomUnitId], references: [id], onDelete: SetNull)
+  guests             StayGuest[]
+  folio              Folio?
+  housekeepingTasks  HousekeepingTask[]
+
+  @@index([roomUnitId])
+  @@index([status])
+}
+
+model StayGuest {
+  id         String   @id @default(uuid())
+  stayId      String
+  userId      String?
+  name        String
+  email       String?
+  phone       String?
+  cpf         String?
+  isPrimary   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  stay        Stay     @relation(fields: [stayId], references: [id], onDelete: Cascade)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([stayId])
+  @@index([userId])
+}
+
+model Folio {
+  id         String       @id @default(uuid())
+  stayId      String       @unique
+  balance     Decimal      @default(0) @db.Decimal(10, 2)
+  isClosed    Boolean      @default(false)
+  openedAt    DateTime     @default(now())
+  closedAt    DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  stay        Stay         @relation(fields: [stayId], references: [id], onDelete: Cascade)
+  entries     FolioEntry[]
+}
+
+model FolioEntry {
+  id          String           @id @default(uuid())
+  folioId      String
+  type         FolioEntryType
+  source       FolioEntrySource
+  description  String
+  amount       Decimal          @db.Decimal(10, 2)
+  quantity     Int              @default(1)
+  referenceId  String?
+  metadata     Json?
+  postedAt     DateTime         @default(now())
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  folio        Folio            @relation(fields: [folioId], references: [id], onDelete: Cascade)
+
+  @@index([folioId])
+  @@index([type])
+  @@index([source])
+}
+
+model HousekeepingTask {
+  id            String                   @id @default(uuid())
+  roomUnitId     String
+  stayId         String?
+  reservationId  String?
+  status         HousekeepingTaskStatus   @default(PENDING)
+  priority       HousekeepingTaskPriority @default(MEDIUM)
+  title          String
+  notes          String?                  @db.Text
+  scheduledFor   DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  inspectedAt    DateTime?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  roomUnit       RoomUnit                 @relation(fields: [roomUnitId], references: [id], onDelete: Cascade)
+  stay           Stay?                    @relation(fields: [stayId], references: [id], onDelete: SetNull)
+  reservation    Reservation?             @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+
+  @@index([roomUnitId])
+  @@index([stayId])
+  @@index([reservationId])
+  @@index([status])
+  @@index([priority])
 }
 
 model Payment {

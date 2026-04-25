@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Calendar, Home, Settings, Tag, Users, Palette, FileText, HelpCircle, Mail, CalendarDays } from 'lucide-react';
+import { LayoutDashboard, Calendar, Home, Settings, Tag, Users, Palette, FileText, HelpCircle, Mail, CalendarDays, ConciergeBell, BedDouble, ClipboardCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sidebar,
@@ -59,6 +59,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   </SidebarMenuItem>
 
                   <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={isActive('/admin/frontdesk')} className="data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-700 data-[active=true]:border-r-2 data-[active=true]:border-emerald-600">
+                      <Link to="/admin/frontdesk">
+                        <ConciergeBell />
+                        <span>Recepcao</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+
+                  <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={isActive('/admin/reservations')} className="data-[active=true]:bg-purple-50 data-[active=true]:text-purple-700 data-[active=true]:border-r-2 data-[active=true]:border-purple-600">
                       <Link to="/admin/reservations">
                         <Calendar />
@@ -77,10 +86,28 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   </SidebarMenuItem>
 
                   <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={isActive('/admin/room-units')} className="data-[active=true]:bg-sky-50 data-[active=true]:text-sky-700 data-[active=true]:border-r-2 data-[active=true]:border-sky-600">
+                      <Link to="/admin/room-units">
+                        <BedDouble />
+                        <span>Quartos</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+
+                  <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={isActive('/admin/customers')} className="data-[active=true]:bg-cyan-50 data-[active=true]:text-cyan-700 data-[active=true]:border-r-2 data-[active=true]:border-cyan-600">
                       <Link to="/admin/customers">
                         <Users />
                         <span>Clientes</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={isActive('/admin/housekeeping')} className="data-[active=true]:bg-amber-50 data-[active=true]:text-amber-700 data-[active=true]:border-r-2 data-[active=true]:border-amber-600">
+                      <Link to="/admin/housekeeping">
+                        <ClipboardCheck />
+                        <span>Governanca</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

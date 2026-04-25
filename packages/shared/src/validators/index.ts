@@ -13,3 +13,4 @@ export * from './settings.validators';
 export * from './common.validators';
 export * from './newsletter.validators';
 export * from './contact.validators';
+export * from './pms.validators';
