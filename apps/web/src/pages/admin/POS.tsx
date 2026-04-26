@@ -1009,222 +1009,199 @@ export default function POS() {
   return (
     <AdminLayout>
       <div className="space-y-4 p-4 md:p-6 lg:flex lg:h-[calc(100dvh-4rem)] lg:flex-col lg:gap-4 lg:space-y-0 lg:overflow-hidden">
-        <div className="rounded-3xl bg-gradient-to-r from-sky-700 via-blue-700 to-slate-900 p-5 text-white shadow-sm">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div className="mb-2 flex flex-wrap items-center gap-2">
+        <div className="rounded-3xl bg-gradient-to-r from-sky-700 via-blue-700 to-slate-900 p-4 text-white shadow-sm">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge className="bg-white/10 text-white hover:bg-white/10">PDV</Badge>
-                <Badge className="bg-white/10 text-white hover:bg-white/10">Operação touch</Badge>
+                <Badge className="bg-white/10 text-white hover:bg-white/10">Opera??o touch</Badge>
                 <Badge className="bg-white/10 text-white hover:bg-white/10">Hotel</Badge>
               </div>
-              <h1 className="text-3xl font-semibold tracking-tight">PDV do hotel</h1>
-              <p className="mt-1 text-sm text-sky-100">
-                Venda, cobrança e operação diária em uma interface única de balcão.
-              </p>
+              <div>
+                <h1 className="text-2xl font-semibold tracking-tight lg:text-3xl">PDV do hotel</h1>
+                <p className="mt-1 text-sm text-sky-100">
+                  Venda r?pida, room service e opera??o di?ria em um fluxo ?nico.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-sky-100">
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2">
+                  <Keyboard className="h-3.5 w-3.5" />
+                  F1 pedidos ? F2 caixa ? Ctrl + Enter finalizar
+                </span>
+                <span className="rounded-full bg-white/10 px-3 py-2">F5 balc?o ? F7 comanda ? Ctrl + B c?digo</span>
+              </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <TopMetric label="Caixa" value={activeCashSession ? activeCashSession.code : 'Fechado'} icon={Wallet} />
-              <TopMetric label="Pedidos" value={String(openOrders.length)} icon={Receipt} />
-              <TopMetric label="Hospedados" value={String(report?.frontdesk.inHouse ?? inHouseStays.length)} icon={Hotel} />
-              <TopMetric label="Receita PDV" value={currency.format(report?.finance.posRevenueMonth ?? 0)} icon={CreditCard} />
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs text-sky-100">
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2">
-                <Keyboard className="h-3.5 w-3.5" />
-                Atalhos
-              </span>
-              <ShortcutHint label="F1" description="Pedidos" />
-              <ShortcutHint label="F2" description="Caixa" />
-              <ShortcutHint label="F3" description="Recepção" />
-              <ShortcutHint label="F4" description="Governança" />
-              <ShortcutHint label="F5" description="Balcão" />
-              <ShortcutHint label="F6" description="Mesa" />
-              <ShortcutHint label="F7" description="Comanda" />
-              <ShortcutHint label="F8" description="Quarto" />
-              <ShortcutHint label="F9" description="Pré-venda" />
-              <ShortcutHint label="F10" description="Suspender" />
-              <ShortcutHint label="F11" description="Retomar" />
-              <ShortcutHint label="Ctrl + B" description="Código" />
-              <ShortcutHint label="Ctrl + R" description="Referências" />
-              <ShortcutHint label="Ctrl + S" description="Salvar" />
-              <ShortcutHint label="Ctrl + Enter" description="Finalizar" />
-              <ShortcutHint label="Esc" description="Fechar / limpar" />
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                className="border-white/20 bg-white/10 text-white hover:bg-white/15"
-                onClick={() => setIsCompactMode((current) => !current)}
-              >
-                <TabletSmartphone className="mr-2 h-4 w-4" />
-                {isCompactMode ? 'Modo amplo' : 'Modo compacto'}
-              </Button>
-              <Button
-                variant="outline"
-                className="border-white/20 bg-white/10 text-white hover:bg-white/15"
-                onClick={() => void toggleFullscreen()}
-              >
-                {isFullscreen ? <Minimize2 className="mr-2 h-4 w-4" /> : <Maximize2 className="mr-2 h-4 w-4" />}
-                {isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
-              </Button>
+            <div className="flex flex-col gap-3 xl:min-w-[540px]">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <TopMetric label="Caixa" value={activeCashSession ? activeCashSession.code : 'Fechado'} icon={Wallet} />
+                <TopMetric label="Pedidos" value={String(openOrders.length)} icon={Receipt} />
+                <TopMetric label="Hospedados" value={String(report?.frontdesk.inHouse ?? inHouseStays.length)} icon={Hotel} />
+                <TopMetric label="Receita PDV" value={currency.format(report?.finance.posRevenueMonth ?? 0)} icon={CreditCard} />
+              </div>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button
+                  variant="outline"
+                  className="border-white/20 bg-white/10 text-white hover:bg-white/15"
+                  onClick={() => setIsCompactMode((current) => !current)}
+                >
+                  <TabletSmartphone className="mr-2 h-4 w-4" />
+                  {isCompactMode ? 'Modo amplo' : 'Modo compacto'}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-white/20 bg-white/10 text-white hover:bg-white/15"
+                  onClick={() => void toggleFullscreen()}
+                >
+                  {isFullscreen ? <Minimize2 className="mr-2 h-4 w-4" /> : <Maximize2 className="mr-2 h-4 w-4" />}
+                  {isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
 
-        <div
-          className={`grid gap-4 lg:min-h-0 lg:flex-1 lg:overflow-hidden ${
-            isCompactMode
-              ? 'lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[88px_minmax(0,1fr)_360px] 2xl:grid-cols-[88px_minmax(0,1fr)_380px]'
-              : 'lg:grid-cols-[minmax(0,1fr)_400px] xl:grid-cols-[96px_minmax(0,1fr)_400px] 2xl:grid-cols-[96px_minmax(0,1fr)_430px]'
-          }`}
-        >
-          <div className="rounded-3xl bg-slate-950 p-3 text-white shadow-sm lg:col-span-2 xl:col-span-1 xl:min-h-0">
-            <div className="flex gap-3 overflow-x-auto xl:h-full xl:flex-col xl:overflow-x-visible xl:overflow-y-auto">
-              <SideAction icon={ShoppingCart} label="Pedidos" active={activeDialog === 'orders'} onClick={() => setActiveDialog('orders')} />
-              <SideAction icon={Wallet} label="Caixa" active={activeDialog === 'cash'} onClick={() => setActiveDialog('cash')} />
-              <SideAction icon={UserCheck} label="Recepção" active={activeDialog === 'frontdesk'} onClick={() => setActiveDialog('frontdesk')} />
-              <SideAction icon={ClipboardCheck} label="Governança" active={activeDialog === 'housekeeping'} onClick={() => setActiveDialog('housekeeping')} />
-              <SideAction icon={Hammer} label="Manutenção" active={activeDialog === 'maintenance'} onClick={() => setActiveDialog('maintenance')} />
-              <SideAction icon={Receipt} label="Pré-venda" active={activeDialog === 'drafts'} onClick={() => setActiveDialog('drafts')} />
-              <SideAction icon={Search} label="Referências" active={activeDialog === 'references'} onClick={() => setActiveDialog('references')} />
-              <div className="min-w-[110px] rounded-2xl bg-white/5 p-3 text-center text-xs text-slate-300 xl:mt-auto xl:min-w-0">
-                <div>{openOrders.length} em aberto</div>
-                <div>{arrivals.length} chegadas</div>
+        <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px] lg:overflow-hidden">
+          <div className="space-y-4 lg:min-h-0 lg:flex lg:flex-col">
+            <div className="rounded-3xl bg-slate-950 p-3 text-white shadow-sm">
+              <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-7">
+                <SideAction icon={ShoppingCart} label="Pedidos" active={activeDialog === 'orders'} onClick={() => setActiveDialog('orders')} />
+                <SideAction icon={Wallet} label="Caixa" active={activeDialog === 'cash'} onClick={() => setActiveDialog('cash')} />
+                <SideAction icon={UserCheck} label="Recep??o" active={activeDialog === 'frontdesk'} onClick={() => setActiveDialog('frontdesk')} />
+                <SideAction icon={ClipboardCheck} label="Governan?a" active={activeDialog === 'housekeeping'} onClick={() => setActiveDialog('housekeeping')} />
+                <SideAction icon={Hammer} label="Manuten??o" active={activeDialog === 'maintenance'} onClick={() => setActiveDialog('maintenance')} />
+                <SideAction icon={Receipt} label="Pr?-venda" active={activeDialog === 'drafts'} onClick={() => setActiveDialog('drafts')} />
+                <SideAction icon={Search} label="Refer?ncias" active={activeDialog === 'references'} onClick={() => setActiveDialog('references')} />
               </div>
             </div>
-          </div>
 
-          <div className="space-y-4 rounded-3xl bg-white p-4 shadow-sm lg:min-h-0 lg:overflow-hidden lg:flex lg:flex-col">
-            <div className="flex flex-col gap-3 lg:flex-row">
-              <div className="relative flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <Input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Buscar item, produto ou serviço"
-                  className="h-12 rounded-2xl border-slate-200 pl-9 text-base"
-                />
-              </div>
-              <Button
-                variant="outline"
-                className="h-12 rounded-2xl border-slate-200 px-5"
-                onClick={() => {
-                  setCategory('ALL');
-                  setSearch('');
-                }}
-              >
-                Limpar busca
-              </Button>
-            </div>
-
-            <div className={`grid gap-3 md:grid-cols-3 ${isCompactMode ? 'xl:grid-cols-4' : 'xl:grid-cols-6'}`}>
-              {Object.entries(categoryLabels).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setCategory(value as POSProductCategory | 'ALL')}
-                  className={`rounded-2xl border p-4 text-left transition ${
-                    category === value
-                      ? 'border-sky-700 bg-sky-700 text-white shadow-sm'
-                      : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
-                  }`}
+            <div className="rounded-3xl bg-white p-4 shadow-sm lg:min-h-0 lg:flex lg:flex-col lg:overflow-hidden">
+              <div className="flex flex-col gap-3 xl:flex-row">
+                <div className="relative flex-1">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Buscar item, produto ou servi?o"
+                    className="h-12 rounded-2xl border-slate-200 pl-9 text-base"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  className="h-12 rounded-2xl border-slate-200 px-5"
+                  onClick={() => {
+                    setCategory('ALL');
+                    setSearch('');
+                  }}
                 >
-                  <div className="text-xs uppercase tracking-wide opacity-80">Categoria</div>
-                  <div className="mt-2 font-semibold">{label}</div>
-                </button>
-              ))}
-            </div>
-
-            <div className="grid gap-3 xl:grid-cols-[1.2fr_1fr]">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                <div className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">Modo de venda</div>
-                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                  <PresetButton label="Balcão" shortcut="F5" active={salePreset === 'BALCAO'} onClick={() => applySalePreset('BALCAO')} />
-                  <PresetButton label="Mesa" shortcut="F6" active={salePreset === 'MESA'} onClick={() => applySalePreset('MESA')} />
-                  <PresetButton label="Comanda" shortcut="F7" active={salePreset === 'COMANDA'} onClick={() => applySalePreset('COMANDA')} />
-                  <PresetButton label="Quarto" shortcut="F8" active={salePreset === 'QUARTO'} onClick={() => applySalePreset('QUARTO')} />
-                </div>
+                  Limpar busca
+                </Button>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                <div className="mb-3 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-slate-500">
-                  <span>Leitura rápida</span>
-                  <span>Ctrl + B</span>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-[1fr_90px_120px]">
-                  <Input
-                    id="pos-quick-code"
-                    value={quickCode}
-                    onChange={(event) => setQuickCode(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault();
-                        handleQuickAdd();
-                      }
-                    }}
-                    placeholder="Código, SKU ou nome"
-                    className="h-11 rounded-xl bg-white"
-                  />
-                  <Input
-                    value={quickQuantity}
-                    onChange={(event) => setQuickQuantity(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault();
-                        handleQuickAdd();
-                      }
-                    }}
-                    placeholder="Qtd"
-                    className="h-11 rounded-xl bg-white"
-                  />
-                  <Button className="h-11 rounded-xl" onClick={handleQuickAdd}>
-                    Adicionar
-                  </Button>
-                </div>
+              <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+                {Object.entries(categoryLabels).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setCategory(value as POSProductCategory | 'ALL')}
+                    className={`min-w-[150px] rounded-2xl border px-4 py-3 text-left transition ${
+                      category === value
+                        ? 'border-sky-700 bg-sky-700 text-white shadow-sm'
+                        : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
+                    }`}
+                  >
+                    <div className="text-[11px] uppercase tracking-wide opacity-80">Categoria</div>
+                    <div className="mt-2 font-semibold">{label}</div>
+                  </button>
+                ))}
               </div>
-            </div>
 
-            <ScrollArea className="rounded-2xl border border-slate-200 lg:min-h-0 lg:flex-1">
-              <div className={`grid gap-3 p-3 sm:grid-cols-2 ${isCompactMode ? 'xl:grid-cols-3' : 'xl:grid-cols-4'}`}>
-                {!filteredProducts.length ? (
-                  <div className="col-span-full rounded-2xl border border-dashed p-8 text-center text-slate-500">
-                    Nenhum item encontrado.
+              <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_340px]">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Modo de venda</div>
+                  <div className="grid grid-cols-2 gap-2 2xl:grid-cols-4">
+                    <PresetButton label="Balc?o" shortcut="F5" active={salePreset === 'BALCAO'} onClick={() => applySalePreset('BALCAO')} />
+                    <PresetButton label="Mesa" shortcut="F6" active={salePreset === 'MESA'} onClick={() => applySalePreset('MESA')} />
+                    <PresetButton label="Comanda" shortcut="F7" active={salePreset === 'COMANDA'} onClick={() => applySalePreset('COMANDA')} />
+                    <PresetButton label="Quarto" shortcut="F8" active={salePreset === 'QUARTO'} onClick={() => applySalePreset('QUARTO')} />
                   </div>
-                ) : (
-                  filteredProducts.map((product) => (
-                    <button
-                      key={product.id}
-                      type="button"
-                      onClick={() => addProductToCart(product)}
-                      className="rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-sky-400 hover:bg-sky-50"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="line-clamp-2 font-medium text-slate-900">{product.name}</div>
-                          <div className="mt-1 text-xs text-slate-500">{categoryLabels[product.category]}</div>
-                        </div>
-                        <Grid2x2 className="h-4 w-4 shrink-0 text-slate-400" />
-                      </div>
-                      <div className="mt-4 flex items-center justify-between">
-                        <span className="text-lg font-semibold text-slate-900">{currency.format(Number(product.price))}</span>
-                        <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">
-                          {product.trackStock ? `Estoque ${product.stockQuantity}` : 'Livre'}
-                        </span>
-                      </div>
-                    </button>
-                  ))
-                )}
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="mb-2 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-slate-500">
+                    <span>Leitura r?pida</span>
+                    <span>Ctrl + B</span>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_80px_120px]">
+                    <Input
+                      id="pos-quick-code"
+                      value={quickCode}
+                      onChange={(event) => setQuickCode(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          handleQuickAdd();
+                        }
+                      }}
+                      placeholder="C?digo, SKU ou nome"
+                      className="h-11 rounded-xl bg-white"
+                    />
+                    <Input
+                      value={quickQuantity}
+                      onChange={(event) => setQuickQuantity(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          handleQuickAdd();
+                        }
+                      }}
+                      placeholder="Qtd"
+                      className="h-11 rounded-xl bg-white"
+                    />
+                    <Button className="h-11 rounded-xl" onClick={handleQuickAdd}>
+                      Adicionar
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </ScrollArea>
+
+              <ScrollArea className="mt-4 rounded-2xl border border-slate-200 lg:min-h-0 lg:flex-1">
+                <div className={`grid gap-3 p-3 sm:grid-cols-2 xl:grid-cols-3 ${isCompactMode ? '2xl:grid-cols-3' : '2xl:grid-cols-4'}`}>
+                  {!filteredProducts.length ? (
+                    <div className="col-span-full rounded-2xl border border-dashed p-8 text-center text-slate-500">
+                      Nenhum item encontrado.
+                    </div>
+                  ) : (
+                    filteredProducts.map((product) => (
+                      <button
+                        key={product.id}
+                        type="button"
+                        onClick={() => addProductToCart(product)}
+                        className="rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-sky-400 hover:bg-sky-50"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="line-clamp-2 font-medium text-slate-900">{product.name}</div>
+                            <div className="mt-1 text-xs text-slate-500">{categoryLabels[product.category]}</div>
+                          </div>
+                          <Grid2x2 className="h-4 w-4 shrink-0 text-slate-400" />
+                        </div>
+                        <div className="mt-4 flex items-center justify-between">
+                          <span className="text-lg font-semibold text-slate-900">{currency.format(Number(product.price))}</span>
+                          <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">
+                            {product.trackStock ? `Estoque ${product.stockQuantity}` : 'Livre'}
+                          </span>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
           </div>
 
-          <div className="space-y-4 rounded-3xl bg-slate-950 p-4 text-white shadow-sm lg:min-h-0 lg:overflow-hidden lg:flex lg:flex-col">
-            <div className="flex items-center justify-between">
+          <div className="rounded-3xl bg-slate-950 p-4 text-white shadow-sm lg:min-h-0 lg:flex lg:flex-col lg:overflow-hidden">
+            <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-xs uppercase tracking-[0.18em] text-slate-400">Venda atual</div>
                 <div className="mt-1 text-2xl font-semibold">Carrinho</div>
@@ -1235,7 +1212,7 @@ export default function POS() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="mt-4 grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setSettlementType('DIRECT')}
@@ -1252,11 +1229,11 @@ export default function POS() {
                   settlementType === 'FOLIO' ? 'bg-sky-600 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
                 }`}
               >
-                Fólio
+                F?lio
               </button>
             </div>
 
-            <div className="grid gap-3 rounded-2xl bg-white/5 p-3">
+            <div className="mt-4 space-y-3 rounded-2xl bg-white/5 p-3">
               <Select value={origin} onValueChange={(value) => setOrigin(value as POSOrderOrigin)}>
                 <SelectTrigger className="border-white/10 bg-white/5 text-white">
                   <SelectValue />
@@ -1281,7 +1258,7 @@ export default function POS() {
                   <Input
                     value={tableNumber}
                     onChange={(event) => setTableNumber(event.target.value)}
-                    placeholder="Mesa, quarto ou referência"
+                    placeholder="Mesa, quarto ou refer?ncia"
                     className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
                   />
                 </>
@@ -1294,7 +1271,7 @@ export default function POS() {
                     <SelectItem value="none">Selecionar hospedagem</SelectItem>
                     {inHouseStays.map((stay) => (
                       <SelectItem key={stay.id} value={stay.id}>
-                        {stay.reservation.guestName} • Quarto {stay.roomUnit?.code ?? 'Sem quarto'}
+                        {stay.reservation.guestName} ? Quarto {stay.roomUnit?.code ?? 'Sem quarto'}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1302,18 +1279,18 @@ export default function POS() {
               )}
             </div>
 
-            <div className="grid gap-2 rounded-2xl border border-white/10 bg-white/5 p-3">
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-3">
               <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-400">
-                <span>Mesa / comanda / pré-venda</span>
+                <span>Mesa / comanda / pr?-venda</span>
                 <span>{salePreset}</span>
               </div>
               <Input
                 value={draftReference}
                 onChange={(event) => setDraftReference(event.target.value)}
-                placeholder="Número da mesa, comanda ou referência"
-                className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
+                placeholder="N?mero da mesa, comanda ou refer?ncia"
+                className="mt-3 border-white/10 bg-white/5 text-white placeholder:text-slate-400"
               />
-              <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 <Button variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={saveCurrentDraft}>
                   Salvar
                 </Button>
@@ -1324,19 +1301,19 @@ export default function POS() {
                   Suspender
                 </Button>
                 <Button variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={resumeLatestDraft}>
-                  Retomar última
+                  Retomar ?ltima
                 </Button>
               </div>
               <Button
                 variant="outline"
-                className="border-dashed border-white/10 bg-transparent text-slate-300 hover:bg-white/5"
+                className="mt-3 w-full border-dashed border-white/10 bg-transparent text-slate-300 hover:bg-white/5"
                 onClick={() => setActiveDialog('references')}
               >
                 Consultar mesa, comanda ou pedido
               </Button>
             </div>
 
-            <ScrollArea className="rounded-2xl border border-white/10 bg-white/5 lg:min-h-[180px] lg:flex-1">
+            <ScrollArea className="mt-4 rounded-2xl border border-white/10 bg-white/5 lg:min-h-[160px] lg:flex-1">
               <div className="space-y-3 p-3">
                 {!cartDetailedItems.length ? (
                   <div className="rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-slate-400">
@@ -1384,100 +1361,102 @@ export default function POS() {
               </div>
             </ScrollArea>
 
-            <div className="grid gap-2">
-              <FieldButton label="Taxa" value={serviceFeeAmount} active={activeNumericField === 'serviceFee'} onClick={() => setActiveNumericField('serviceFee')} />
-              <FieldButton label="Desconto" value={discountAmount} active={activeNumericField === 'discount'} onClick={() => setActiveNumericField('discount')} />
-              <FieldButton label="Pagamento" value={paymentAmount} active={activeNumericField === 'payment'} onClick={() => setActiveNumericField('payment')} />
-            </div>
+            <div className="mt-4 grid gap-3 xl:grid-cols-[1fr_170px]">
+              <div className="space-y-3">
+                <div className="grid gap-2">
+                  <FieldButton label="Taxa" value={serviceFeeAmount} active={activeNumericField === 'serviceFee'} onClick={() => setActiveNumericField('serviceFee')} />
+                  <FieldButton label="Desconto" value={discountAmount} active={activeNumericField === 'discount'} onClick={() => setActiveNumericField('discount')} />
+                  <FieldButton label="Pagamento" value={paymentAmount} active={activeNumericField === 'payment'} onClick={() => setActiveNumericField('payment')} />
+                </div>
 
-            <div className="grid grid-cols-4 gap-2">
-              {['7', '8', '9', 'clear', '4', '5', '6', 'back', '1', '2', '3', '.', '00', '0'].map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => applyKeypad(key)}
-                  className={`rounded-2xl py-3 text-base font-semibold transition sm:text-lg ${
-                    key === 'clear'
-                      ? 'bg-red-500 text-white'
-                      : key === 'back'
-                        ? 'bg-amber-400 text-slate-950'
-                        : 'bg-sky-700 text-white hover:bg-sky-600'
-                  }`}
-                >
-                  {key === 'clear' ? 'C' : key === 'back' ? '⌫' : key}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={clearDraft}
-                className="rounded-2xl bg-white/5 py-3 text-sm font-semibold text-slate-300 hover:bg-white/10"
-              >
-                Limpar venda
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveDialog('orders')}
-                className="rounded-2xl bg-white/5 py-3 text-sm font-semibold text-slate-300 hover:bg-white/10"
-              >
-                Pedidos
-              </button>
-            </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('PIX')}
+                    className={`rounded-2xl py-3 text-sm font-semibold transition ${
+                      paymentMethod === 'PIX' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                    }`}
+                  >
+                    PIX
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('CASH')}
+                    className={`rounded-2xl py-3 text-sm font-semibold transition ${
+                      paymentMethod === 'CASH' ? 'bg-lime-500 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                    }`}
+                  >
+                    Dinheiro
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('CREDIT_CARD')}
+                    className={`rounded-2xl py-3 text-sm font-semibold transition ${
+                      paymentMethod === 'CREDIT_CARD' ? 'bg-orange-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                    }`}
+                  >
+                    Cr?dito
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('DEBIT_CARD')}
+                    className={`rounded-2xl py-3 text-sm font-semibold transition ${
+                      paymentMethod === 'DEBIT_CARD' ? 'bg-cyan-500 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                    }`}
+                  >
+                    D?bito
+                  </button>
+                </div>
 
-            <div className="grid gap-2">
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('PIX')}
-                  className={`rounded-2xl py-3 text-sm font-semibold transition ${
-                    paymentMethod === 'PIX' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                  }`}
-                >
-                  PIX
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('CASH')}
-                  className={`rounded-2xl py-3 text-sm font-semibold transition ${
-                    paymentMethod === 'CASH' ? 'bg-lime-500 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                  }`}
-                >
-                  Dinheiro
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('CREDIT_CARD')}
-                  className={`rounded-2xl py-3 text-sm font-semibold transition ${
-                    paymentMethod === 'CREDIT_CARD' ? 'bg-orange-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                  }`}
-                >
-                  Crédito
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('DEBIT_CARD')}
-                  className={`rounded-2xl py-3 text-sm font-semibold transition ${
-                    paymentMethod === 'DEBIT_CARD' ? 'bg-cyan-500 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                  }`}
-                >
-                  Débito
-                </button>
+                <Input
+                  value={paymentReference}
+                  onChange={(event) => setPaymentReference(event.target.value)}
+                  placeholder="NSU ou refer?ncia"
+                  className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
+                />
+                <Textarea
+                  value={orderNotes}
+                  onChange={(event) => setOrderNotes(event.target.value)}
+                  placeholder="Observa??es"
+                  className="min-h-20 border-white/10 bg-white/5 text-white placeholder:text-slate-400"
+                />
               </div>
 
-              <Input
-                value={paymentReference}
-                onChange={(event) => setPaymentReference(event.target.value)}
-                placeholder="NSU ou referência"
-                className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
-              />
-              <Textarea
-                value={orderNotes}
-                onChange={(event) => setOrderNotes(event.target.value)}
-                placeholder="Observações"
-                className="min-h-20 border-white/10 bg-white/5 text-white placeholder:text-slate-400"
-              />
+              <div className="grid grid-cols-4 gap-2 xl:grid-cols-3">
+                {['7', '8', '9', 'clear', '4', '5', '6', 'back', '1', '2', '3', '.', '00', '0'].map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => applyKeypad(key)}
+                    className={`rounded-2xl py-3 text-base font-semibold transition ${
+                      key === 'clear'
+                        ? 'bg-red-500 text-white'
+                        : key === 'back'
+                          ? 'bg-amber-400 text-slate-950'
+                          : 'bg-sky-700 text-white hover:bg-sky-600'
+                    }`}
+                  >
+                    {key === 'clear' ? 'C' : key === 'back' ? '?' : key}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={clearDraft}
+                  className="col-span-2 rounded-2xl bg-white/5 py-3 text-sm font-semibold text-slate-300 hover:bg-white/10 xl:col-span-3"
+                >
+                  Limpar venda
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveDialog('orders')}
+                  className="col-span-2 rounded-2xl bg-white/5 py-3 text-sm font-semibold text-slate-300 hover:bg-white/10 xl:col-span-3"
+                >
+                  Pedidos
+                </button>
+              </div>
             </div>
 
-            <div className="rounded-3xl bg-white px-4 py-5 text-slate-950">
+            <div className="mt-4 rounded-3xl bg-white px-4 py-5 text-slate-950">
               <div className="flex items-center justify-between text-sm text-slate-500">
                 <span>Subtotal</span>
                 <span>{currency.format(subtotal)}</span>
@@ -1493,7 +1472,7 @@ export default function POS() {
             </div>
 
             <Button
-              className="h-14 rounded-2xl bg-emerald-500 text-base font-semibold text-white hover:bg-emerald-600"
+              className="mt-4 h-14 rounded-2xl bg-emerald-500 text-base font-semibold text-white hover:bg-emerald-600"
               onClick={handleFinalizeSale}
               disabled={createOrder.isPending || updateOrder.isPending || registerPayment.isPending || updateOrderStatus.isPending}
             >
@@ -1502,10 +1481,10 @@ export default function POS() {
                   ? Number(paymentAmount || 0) > 0
                     ? 'Salvar e receber'
                     : 'Salvar comanda'
-                  : 'Atualizar e lançar consumo'
+                  : 'Atualizar e lan?ar consumo'
                 : settlementType === 'DIRECT'
                   ? 'Receber e finalizar'
-                  : 'Lançar consumo'}
+                  : 'Lan?ar consumo'}
             </Button>
           </div>
         </div>
