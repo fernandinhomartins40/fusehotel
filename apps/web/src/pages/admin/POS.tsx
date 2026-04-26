@@ -1014,21 +1014,21 @@ export default function POS() {
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge className="bg-white/10 text-white hover:bg-white/10">PDV</Badge>
-                <Badge className="bg-white/10 text-white hover:bg-white/10">Opera??o touch</Badge>
+                <Badge className="bg-white/10 text-white hover:bg-white/10">Operação touch</Badge>
                 <Badge className="bg-white/10 text-white hover:bg-white/10">Hotel</Badge>
               </div>
               <div>
                 <h1 className="text-2xl font-semibold tracking-tight lg:text-3xl">PDV do hotel</h1>
                 <p className="mt-1 text-sm text-sky-100">
-                  Venda r?pida, room service e opera??o di?ria em um fluxo ?nico.
+                  Venda rápida, room service e operação diária em um fluxo único.
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs text-sky-100">
                 <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2">
                   <Keyboard className="h-3.5 w-3.5" />
-                  F1 pedidos ? F2 caixa ? Ctrl + Enter finalizar
+                  F1 pedidos • F2 caixa • Ctrl + Enter finalizar
                 </span>
-                <span className="rounded-full bg-white/10 px-3 py-2">F5 balc?o ? F7 comanda ? Ctrl + B c?digo</span>
+                <span className="rounded-full bg-white/10 px-3 py-2">F5 balcão • F7 comanda • Ctrl + B código</span>
               </div>
             </div>
 
@@ -1067,11 +1067,11 @@ export default function POS() {
               <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-7">
                 <SideAction icon={ShoppingCart} label="Pedidos" active={activeDialog === 'orders'} onClick={() => setActiveDialog('orders')} />
                 <SideAction icon={Wallet} label="Caixa" active={activeDialog === 'cash'} onClick={() => setActiveDialog('cash')} />
-                <SideAction icon={UserCheck} label="Recep??o" active={activeDialog === 'frontdesk'} onClick={() => setActiveDialog('frontdesk')} />
-                <SideAction icon={ClipboardCheck} label="Governan?a" active={activeDialog === 'housekeeping'} onClick={() => setActiveDialog('housekeeping')} />
-                <SideAction icon={Hammer} label="Manuten??o" active={activeDialog === 'maintenance'} onClick={() => setActiveDialog('maintenance')} />
-                <SideAction icon={Receipt} label="Pr?-venda" active={activeDialog === 'drafts'} onClick={() => setActiveDialog('drafts')} />
-                <SideAction icon={Search} label="Refer?ncias" active={activeDialog === 'references'} onClick={() => setActiveDialog('references')} />
+                <SideAction icon={UserCheck} label="Recepção" active={activeDialog === 'frontdesk'} onClick={() => setActiveDialog('frontdesk')} />
+                <SideAction icon={ClipboardCheck} label="Governança" active={activeDialog === 'housekeeping'} onClick={() => setActiveDialog('housekeeping')} />
+                <SideAction icon={Hammer} label="Manutenção" active={activeDialog === 'maintenance'} onClick={() => setActiveDialog('maintenance')} />
+                <SideAction icon={Receipt} label="Pré-venda" active={activeDialog === 'drafts'} onClick={() => setActiveDialog('drafts')} />
+                <SideAction icon={Search} label="Referências" active={activeDialog === 'references'} onClick={() => setActiveDialog('references')} />
               </div>
             </div>
 
@@ -1082,7 +1082,7 @@ export default function POS() {
                   <Input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Buscar item, produto ou servi?o"
+                    placeholder="Buscar item, produto ou serviço"
                     className="h-12 rounded-2xl border-slate-200 pl-9 text-base"
                   />
                 </div>
@@ -1120,7 +1120,7 @@ export default function POS() {
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                   <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Modo de venda</div>
                   <div className="grid grid-cols-2 gap-2 2xl:grid-cols-4">
-                    <PresetButton label="Balc?o" shortcut="F5" active={salePreset === 'BALCAO'} onClick={() => applySalePreset('BALCAO')} />
+                    <PresetButton label="Balcão" shortcut="F5" active={salePreset === 'BALCAO'} onClick={() => applySalePreset('BALCAO')} />
                     <PresetButton label="Mesa" shortcut="F6" active={salePreset === 'MESA'} onClick={() => applySalePreset('MESA')} />
                     <PresetButton label="Comanda" shortcut="F7" active={salePreset === 'COMANDA'} onClick={() => applySalePreset('COMANDA')} />
                     <PresetButton label="Quarto" shortcut="F8" active={salePreset === 'QUARTO'} onClick={() => applySalePreset('QUARTO')} />
@@ -1129,7 +1129,7 @@ export default function POS() {
 
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                   <div className="mb-2 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-slate-500">
-                    <span>Leitura r?pida</span>
+                    <span>Leitura rápida</span>
                     <span>Ctrl + B</span>
                   </div>
                   <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_80px_120px]">
@@ -1143,7 +1143,7 @@ export default function POS() {
                           handleQuickAdd();
                         }
                       }}
-                      placeholder="C?digo, SKU ou nome"
+                      placeholder="Código, SKU ou nome"
                       className="h-11 rounded-xl bg-white"
                     />
                     <Input
@@ -1258,7 +1258,7 @@ export default function POS() {
                   <Input
                     value={tableNumber}
                     onChange={(event) => setTableNumber(event.target.value)}
-                    placeholder="Mesa, quarto ou refer?ncia"
+                    placeholder="Mesa, quarto ou referência"
                     className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
                   />
                 </>
@@ -1271,7 +1271,7 @@ export default function POS() {
                     <SelectItem value="none">Selecionar hospedagem</SelectItem>
                     {inHouseStays.map((stay) => (
                       <SelectItem key={stay.id} value={stay.id}>
-                        {stay.reservation.guestName} ? Quarto {stay.roomUnit?.code ?? 'Sem quarto'}
+                        {stay.reservation.guestName} • Quarto {stay.roomUnit?.code ?? 'Sem quarto'}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1281,13 +1281,13 @@ export default function POS() {
 
             <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-3">
               <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-400">
-                <span>Mesa / comanda / pr?-venda</span>
+                <span>Mesa / comanda / pré-venda</span>
                 <span>{salePreset}</span>
               </div>
               <Input
                 value={draftReference}
                 onChange={(event) => setDraftReference(event.target.value)}
-                placeholder="N?mero da mesa, comanda ou refer?ncia"
+                placeholder="Número da mesa, comanda ou referência"
                 className="mt-3 border-white/10 bg-white/5 text-white placeholder:text-slate-400"
               />
               <div className="mt-3 grid grid-cols-2 gap-2">
@@ -1301,7 +1301,7 @@ export default function POS() {
                   Suspender
                 </Button>
                 <Button variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={resumeLatestDraft}>
-                  Retomar ?ltima
+                  Retomar última
                 </Button>
               </div>
               <Button
@@ -1411,13 +1411,13 @@ export default function POS() {
                 <Input
                   value={paymentReference}
                   onChange={(event) => setPaymentReference(event.target.value)}
-                  placeholder="NSU ou refer?ncia"
+                  placeholder="NSU ou referência"
                   className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
                 />
                 <Textarea
                   value={orderNotes}
                   onChange={(event) => setOrderNotes(event.target.value)}
-                  placeholder="Observa??es"
+                  placeholder="Observações"
                   className="min-h-20 border-white/10 bg-white/5 text-white placeholder:text-slate-400"
                 />
               </div>
