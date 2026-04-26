@@ -1032,7 +1032,7 @@ export default function POS() {
           </div>
 
           <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-sky-100">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs text-sky-100">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2">
                 <Keyboard className="h-3.5 w-3.5" />
                 Atalhos
@@ -1079,12 +1079,12 @@ export default function POS() {
         <div
           className={`grid gap-4 lg:min-h-0 lg:flex-1 lg:overflow-hidden ${
             isCompactMode
-              ? 'lg:grid-cols-[88px_minmax(0,1fr)] 2xl:grid-cols-[88px_minmax(0,1fr)_380px]'
-              : 'lg:grid-cols-[96px_minmax(0,1fr)] 2xl:grid-cols-[96px_minmax(0,1fr)_430px]'
+              ? 'lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[88px_minmax(0,1fr)_360px] 2xl:grid-cols-[88px_minmax(0,1fr)_380px]'
+              : 'lg:grid-cols-[minmax(0,1fr)_400px] xl:grid-cols-[96px_minmax(0,1fr)_400px] 2xl:grid-cols-[96px_minmax(0,1fr)_430px]'
           }`}
         >
-          <div className="rounded-3xl bg-slate-950 p-3 text-white shadow-sm lg:min-h-0">
-            <div className="flex gap-3 overflow-x-auto lg:h-full lg:flex-col lg:overflow-x-visible lg:overflow-y-auto">
+          <div className="rounded-3xl bg-slate-950 p-3 text-white shadow-sm lg:col-span-2 xl:col-span-1 xl:min-h-0">
+            <div className="flex gap-3 overflow-x-auto xl:h-full xl:flex-col xl:overflow-x-visible xl:overflow-y-auto">
               <SideAction icon={ShoppingCart} label="Pedidos" active={activeDialog === 'orders'} onClick={() => setActiveDialog('orders')} />
               <SideAction icon={Wallet} label="Caixa" active={activeDialog === 'cash'} onClick={() => setActiveDialog('cash')} />
               <SideAction icon={UserCheck} label="Recepção" active={activeDialog === 'frontdesk'} onClick={() => setActiveDialog('frontdesk')} />
@@ -1092,7 +1092,7 @@ export default function POS() {
               <SideAction icon={Hammer} label="Manutenção" active={activeDialog === 'maintenance'} onClick={() => setActiveDialog('maintenance')} />
               <SideAction icon={Receipt} label="Pré-venda" active={activeDialog === 'drafts'} onClick={() => setActiveDialog('drafts')} />
               <SideAction icon={Search} label="Referências" active={activeDialog === 'references'} onClick={() => setActiveDialog('references')} />
-              <div className="min-w-[110px] rounded-2xl bg-white/5 p-3 text-center text-xs text-slate-300 lg:mt-auto lg:min-w-0">
+              <div className="min-w-[110px] rounded-2xl bg-white/5 p-3 text-center text-xs text-slate-300 xl:mt-auto xl:min-w-0">
                 <div>{openOrders.length} em aberto</div>
                 <div>{arrivals.length} chegadas</div>
               </div>
@@ -1223,7 +1223,7 @@ export default function POS() {
             </ScrollArea>
           </div>
 
-          <div className="space-y-4 rounded-3xl bg-slate-950 p-4 text-white shadow-sm lg:col-span-2 lg:min-h-0 lg:overflow-hidden lg:flex lg:flex-col 2xl:col-span-1">
+          <div className="space-y-4 rounded-3xl bg-slate-950 p-4 text-white shadow-sm lg:min-h-0 lg:overflow-hidden lg:flex lg:flex-col">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-xs uppercase tracking-[0.18em] text-slate-400">Venda atual</div>
