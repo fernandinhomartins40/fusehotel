@@ -1010,30 +1010,21 @@ export default function POS() {
     <AdminLayout>
       <div className="space-y-4 p-4 md:p-6 lg:min-h-[calc(100dvh-4rem)]">
         <div className="rounded-3xl bg-gradient-to-r from-sky-700 via-blue-700 to-slate-900 p-4 text-white shadow-sm">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="min-w-0">
+              <div className="mb-2 flex items-center gap-2">
                 <Badge className="bg-white/10 text-white hover:bg-white/10">PDV</Badge>
-                <Badge className="bg-white/10 text-white hover:bg-white/10">Operação touch</Badge>
                 <Badge className="bg-white/10 text-white hover:bg-white/10">Hotel</Badge>
               </div>
-              <div>
-                <h1 className="text-2xl font-semibold tracking-tight lg:text-3xl">PDV do hotel</h1>
-                <p className="mt-1 text-sm text-sky-100">
-                  Venda rápida, room service e operação diária em um fluxo único.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 text-xs text-sky-100">
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2">
-                  <Keyboard className="h-3.5 w-3.5" />
-                  F1 pedidos • F2 caixa • Ctrl + Enter finalizar
-                </span>
-                <span className="rounded-full bg-white/10 px-3 py-2">F5 balcão • F7 comanda • Ctrl + B código</span>
+              <h1 className="truncate text-2xl font-semibold tracking-tight">PDV do hotel</h1>
+              <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs text-sky-100">
+                <Keyboard className="h-3.5 w-3.5" />
+                F1 pedidos • F2 caixa • Ctrl + Enter finalizar
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 xl:min-w-[540px]">
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="flex flex-col gap-2 xl:min-w-[540px]">
+              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
                 <TopMetric label="Caixa" value={activeCashSession ? activeCashSession.code : 'Fechado'} icon={Wallet} />
                 <TopMetric label="Pedidos" value={String(openOrders.length)} icon={Receipt} />
                 <TopMetric label="Hospedados" value={String(report?.frontdesk.inHouse ?? inHouseStays.length)} icon={Hotel} />
@@ -2109,14 +2100,14 @@ function TopMetric({
   icon: typeof Wallet;
 }) {
   return (
-    <div className="rounded-2xl bg-white/10 px-4 py-3 backdrop-blur">
-      <div className="flex items-center gap-3">
+    <div className="rounded-2xl bg-white/10 px-3 py-2 backdrop-blur">
+      <div className="flex items-center gap-2">
         <div className="rounded-xl bg-white/10 p-2">
-          <Icon className="h-4 w-4" />
+          <Icon className="h-3.5 w-3.5" />
         </div>
         <div>
-          <div className="text-xs text-sky-100">{label}</div>
-          <div className="text-sm font-semibold text-white">{value}</div>
+          <div className="text-[11px] text-sky-100">{label}</div>
+          <div className="text-sm font-semibold leading-tight text-white">{value}</div>
         </div>
       </div>
     </div>
