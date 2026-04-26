@@ -106,6 +106,45 @@ export function useCreatePOSOrder() {
   });
 }
 
+export function useUpdatePOSOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: {
+        stayId?: string;
+        roomUnitId?: string;
+        origin: POSOrderOrigin;
+        settlementType?: POSSettlementType;
+        customerName?: string;
+        tableNumber?: string;
+        notes?: string;
+        serviceFeeAmount?: number;
+        discountAmount?: number;
+        items: Array<{
+          productId: string;
+          quantity: number;
+          notes?: string;
+        }>;
+      };
+    }) => {
+      const { data } = await apiClient.patch(`/pos/orders/${id}`, payload);
+      return data.data;
+    },
+    onSuccess: () => {
+      invalidatePOSQueries(queryClient);
+      toast.success('Pedido atualizado com sucesso');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao atualizar pedido');
+    },
+  });
+}
+
 export function useUpdatePOSOrderStatus() {
   const queryClient = useQueryClient();
 

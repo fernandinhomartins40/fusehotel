@@ -12,6 +12,7 @@ import {
   openCashSessionSchema,
   refundPOSPaymentSchema,
   registerPOSPaymentSchema,
+  updatePOSOrderSchema,
   updatePOSOrderStatusSchema,
 } from '../validators/pms.validators';
 
@@ -23,6 +24,7 @@ router.get('/products', POSController.listProducts);
 router.post('/products', validateBody(createPOSProductSchema), POSController.createProduct);
 router.get('/orders', POSController.listOrders);
 router.post('/orders', validateBody(createPOSOrderSchema), POSController.createOrder);
+router.patch('/orders/:id', validateBody(updatePOSOrderSchema), POSController.updateOrder);
 router.patch('/orders/:id/status', validateBody(updatePOSOrderStatusSchema), POSController.updateOrderStatus);
 router.post('/orders/:id/cancel', validateBody(cancelPOSOrderSchema), POSController.cancelOrder);
 router.get('/cash-sessions/active', POSController.getActiveCashSession);

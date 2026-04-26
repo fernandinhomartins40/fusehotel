@@ -136,6 +136,23 @@ export interface CreatePOSOrderDto {
   }>;
 }
 
+export interface UpdatePOSOrderDto {
+  stayId?: string;
+  roomUnitId?: string;
+  origin: POSOrderOrigin;
+  settlementType?: POSSettlementType;
+  customerName?: string;
+  tableNumber?: string;
+  notes?: string;
+  serviceFeeAmount?: number;
+  discountAmount?: number;
+  items: Array<{
+    productId: string;
+    quantity: number;
+    notes?: string;
+  }>;
+}
+
 export interface UpdatePOSOrderStatusDto {
   status: POSOrderStatus;
 }

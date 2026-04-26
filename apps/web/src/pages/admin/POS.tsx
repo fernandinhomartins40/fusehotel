@@ -55,6 +55,7 @@ import {
   usePOSProducts,
   useRegisterPOSPayment,
   useRefundPOSPayment,
+  useUpdatePOSOrder,
   useUpdatePOSOrderStatus,
 } from '@/hooks/usePOS';
 import { useOperationsReport } from '@/hooks/useReports';
@@ -181,6 +182,7 @@ export default function POS() {
   const checkIn = useCheckIn();
   const checkOut = useCheckOut();
   const createOrder = useCreatePOSOrder();
+  const updateOrder = useUpdatePOSOrder();
   const registerPayment = useRegisterPOSPayment();
   const updateOrderStatus = useUpdatePOSOrderStatus();
   const cancelOrder = useCancelPOSOrder();
@@ -195,6 +197,7 @@ export default function POS() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<POSProductCategory | 'ALL'>('ALL');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [editingOrderId, setEditingOrderId] = useState('');
   const [activeDialog, setActiveDialog] = useState<DialogKey>(null);
   const [selectedOrderId, setSelectedOrderId] = useState('');
   const [selectedRooms, setSelectedRooms] = useState<Record<string, string>>({});
@@ -288,6 +291,11 @@ export default function POS() {
     [openOrders, selectedOrderId]
   );
 
+  const editingOrder = useMemo(
+    () => orders.find((order) => order.id === editingOrderId) ?? null,
+    [editingOrderId, orders]
+  );
+
   const normalizedReferenceLookup = useMemo(() => referenceLookup.trim().toLowerCase(), [referenceLookup]);
 
   const referencedOpenOrders = useMemo(() => {
@@ -299,6 +307,17 @@ export default function POS() {
         .some((value) => value!.toLowerCase().includes(normalizedReferenceLookup))
     );
   }, [normalizedReferenceLookup, openOrders]);
+
+  const canEditSelectedOrder = useMemo(() => {
+    if (!selectedOrder) return false;
+
+    return (
+      (selectedOrder.status === 'OPEN' || selectedOrder.status === 'PREPARING') &&
+      Number(selectedOrder.paidAmount) === 0 &&
+      !selectedOrder.postedToFolioAt &&
+      selectedOrder.payments.length === 0
+    );
+  }, [selectedOrder]);
 
   const availableRoomUnitsByAccommodation = useMemo(() => {
     return roomUnits.reduce<Record<string, RoomUnit[]>>((accumulator, roomUnit) => {
@@ -367,6 +386,7 @@ export default function POS() {
 
   const clearDraft = () => {
     setCartItems([]);
+    setEditingOrderId('');
     setCustomerName('');
     setTableNumber('');
     setSelectedStayId('');
@@ -542,6 +562,44 @@ export default function POS() {
   const selectReferencedOrder = (orderId: string) => {
     setSelectedOrderId(orderId);
     setActiveDialog('orders');
+  };
+
+  const reopenOrderInCart = (order: typeof orders[number]) => {
+    if (
+      (order.status !== 'OPEN' && order.status !== 'PREPARING') ||
+      Number(order.paidAmount) > 0 ||
+      order.postedToFolioAt ||
+      order.payments.length > 0
+    ) {
+      toast.error('Este pedido não pode mais ser reaberto para edição');
+      return;
+    }
+
+    setEditingOrderId(order.id);
+    setSelectedOrderId(order.id);
+    setCartItems(order.items.map((item) => ({ productId: item.productId, quantity: Number(item.quantity) })));
+    setSettlementType(order.settlementType);
+    setOrigin(order.origin);
+    setCustomerName(order.customerName ?? '');
+    setTableNumber(order.tableNumber ?? '');
+    setDraftReference(order.tableNumber ?? order.customerName ?? order.orderNumber);
+    setSelectedStayId(order.stayId ?? '');
+    setServiceFeeAmount(String(Number(order.serviceFeeAmount || 0) || ''));
+    setDiscountAmount(String(Number(order.discountAmount || 0) || ''));
+    setPaymentAmount('');
+    setPaymentReference('');
+    setOrderNotes(order.notes ?? '');
+
+    if (order.settlementType === 'FOLIO' || order.origin === 'ROOM_SERVICE') {
+      setSalePreset('QUARTO');
+    } else if (order.tableNumber) {
+      setSalePreset('COMANDA');
+    } else {
+      setSalePreset('BALCAO');
+    }
+
+    setActiveDialog(null);
+    toast.success(`Pedido ${order.orderNumber} carregado no carrinho`);
   };
 
   const handleQuickAdd = (customCode?: string, customQuantity?: number) => {
@@ -742,7 +800,7 @@ export default function POS() {
     }
 
     try {
-      const order = await createOrder.mutateAsync({
+      const payload = {
         stayId: settlementType === 'FOLIO' ? selectedStayId : undefined,
         roomUnitId:
           settlementType === 'FOLIO'
@@ -759,10 +817,18 @@ export default function POS() {
           productId: item.product.id,
           quantity: item.quantity,
         })),
-      });
+      };
+
+      const order = editingOrderId
+        ? await updateOrder.mutateAsync({
+            id: editingOrderId,
+            payload,
+          })
+        : await createOrder.mutateAsync(payload);
 
       if (settlementType === 'DIRECT') {
-        const amountToPay = Number(paymentAmount || total);
+        const remainingAmount = Math.max(Number(order.totalAmount) - Number(order.paidAmount), 0);
+        const amountToPay = editingOrderId ? Number(paymentAmount || 0) : Number(paymentAmount || total);
 
         if (amountToPay > 0) {
           await registerPayment.mutateAsync({
@@ -774,7 +840,7 @@ export default function POS() {
           });
         }
 
-        if (amountToPay >= total) {
+        if (amountToPay >= remainingAmount && remainingAmount > 0) {
           await updateOrderStatus.mutateAsync({ id: order.id, status: 'CLOSED' });
         }
       } else {
@@ -942,7 +1008,7 @@ export default function POS() {
 
   return (
     <AdminLayout>
-      <div className="space-y-4 p-4 md:p-6">
+      <div className="space-y-4 p-4 md:p-6 lg:flex lg:h-[calc(100dvh-4rem)] lg:flex-col lg:gap-4 lg:space-y-0 lg:overflow-hidden">
         <div className="rounded-3xl bg-gradient-to-r from-sky-700 via-blue-700 to-slate-900 p-5 text-white shadow-sm">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -1011,12 +1077,14 @@ export default function POS() {
         </div>
 
         <div
-          className={`grid min-h-[calc(100vh-12rem)] gap-4 ${
-            isCompactMode ? 'xl:grid-cols-[88px_1fr_380px]' : 'xl:grid-cols-[96px_1fr_430px]'
+          className={`grid gap-4 lg:min-h-0 lg:flex-1 lg:overflow-hidden ${
+            isCompactMode
+              ? 'lg:grid-cols-[88px_minmax(0,1fr)] 2xl:grid-cols-[88px_minmax(0,1fr)_380px]'
+              : 'lg:grid-cols-[96px_minmax(0,1fr)] 2xl:grid-cols-[96px_minmax(0,1fr)_430px]'
           }`}
         >
-          <div className="rounded-3xl bg-slate-950 p-3 text-white shadow-sm">
-            <div className="flex h-full flex-col gap-3">
+          <div className="rounded-3xl bg-slate-950 p-3 text-white shadow-sm lg:min-h-0">
+            <div className="flex gap-3 overflow-x-auto lg:h-full lg:flex-col lg:overflow-x-visible lg:overflow-y-auto">
               <SideAction icon={ShoppingCart} label="Pedidos" active={activeDialog === 'orders'} onClick={() => setActiveDialog('orders')} />
               <SideAction icon={Wallet} label="Caixa" active={activeDialog === 'cash'} onClick={() => setActiveDialog('cash')} />
               <SideAction icon={UserCheck} label="Recepção" active={activeDialog === 'frontdesk'} onClick={() => setActiveDialog('frontdesk')} />
@@ -1024,14 +1092,14 @@ export default function POS() {
               <SideAction icon={Hammer} label="Manutenção" active={activeDialog === 'maintenance'} onClick={() => setActiveDialog('maintenance')} />
               <SideAction icon={Receipt} label="Pré-venda" active={activeDialog === 'drafts'} onClick={() => setActiveDialog('drafts')} />
               <SideAction icon={Search} label="Referências" active={activeDialog === 'references'} onClick={() => setActiveDialog('references')} />
-              <div className="mt-auto rounded-2xl bg-white/5 p-3 text-center text-xs text-slate-300">
+              <div className="min-w-[110px] rounded-2xl bg-white/5 p-3 text-center text-xs text-slate-300 lg:mt-auto lg:min-w-0">
                 <div>{openOrders.length} em aberto</div>
                 <div>{arrivals.length} chegadas</div>
               </div>
             </div>
           </div>
 
-          <div className="space-y-4 rounded-3xl bg-white p-4 shadow-sm">
+          <div className="space-y-4 rounded-3xl bg-white p-4 shadow-sm lg:min-h-0 lg:overflow-hidden lg:flex lg:flex-col">
             <div className="flex flex-col gap-3 lg:flex-row">
               <div className="relative flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -1121,7 +1189,7 @@ export default function POS() {
               </div>
             </div>
 
-            <ScrollArea className={`rounded-2xl border border-slate-200 ${isCompactMode ? 'h-[calc(100vh-22rem)]' : 'h-[calc(100vh-25rem)]'}`}>
+            <ScrollArea className="rounded-2xl border border-slate-200 lg:min-h-0 lg:flex-1">
               <div className={`grid gap-3 p-3 sm:grid-cols-2 ${isCompactMode ? 'xl:grid-cols-3' : 'xl:grid-cols-4'}`}>
                 {!filteredProducts.length ? (
                   <div className="col-span-full rounded-2xl border border-dashed p-8 text-center text-slate-500">
@@ -1155,13 +1223,16 @@ export default function POS() {
             </ScrollArea>
           </div>
 
-          <div className="space-y-4 rounded-3xl bg-slate-950 p-4 text-white shadow-sm">
+          <div className="space-y-4 rounded-3xl bg-slate-950 p-4 text-white shadow-sm lg:col-span-2 lg:min-h-0 lg:overflow-hidden lg:flex lg:flex-col 2xl:col-span-1">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-xs uppercase tracking-[0.18em] text-slate-400">Venda atual</div>
                 <div className="mt-1 text-2xl font-semibold">Carrinho</div>
               </div>
-              <Badge className="bg-white/10 text-white hover:bg-white/10">{cartDetailedItems.length} itens</Badge>
+              <div className="flex items-center gap-2">
+                {editingOrder && <Badge className="bg-amber-500/20 text-amber-200 hover:bg-amber-500/20">Editando {editingOrder.orderNumber}</Badge>}
+                <Badge className="bg-white/10 text-white hover:bg-white/10">{cartDetailedItems.length} itens</Badge>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -1265,7 +1336,7 @@ export default function POS() {
               </Button>
             </div>
 
-            <ScrollArea className={`rounded-2xl border border-white/10 bg-white/5 ${isCompactMode ? 'h-[220px]' : 'h-[280px]'}`}>
+            <ScrollArea className="rounded-2xl border border-white/10 bg-white/5 lg:min-h-[180px] lg:flex-1">
               <div className="space-y-3 p-3">
                 {!cartDetailedItems.length ? (
                   <div className="rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-slate-400">
@@ -1325,7 +1396,7 @@ export default function POS() {
                   key={key}
                   type="button"
                   onClick={() => applyKeypad(key)}
-                  className={`rounded-2xl py-4 text-lg font-semibold transition ${
+                  className={`rounded-2xl py-3 text-base font-semibold transition sm:text-lg ${
                     key === 'clear'
                       ? 'bg-red-500 text-white'
                       : key === 'back'
@@ -1339,14 +1410,14 @@ export default function POS() {
               <button
                 type="button"
                 onClick={clearDraft}
-                className="rounded-2xl bg-white/5 py-4 text-sm font-semibold text-slate-300 hover:bg-white/10"
+                className="rounded-2xl bg-white/5 py-3 text-sm font-semibold text-slate-300 hover:bg-white/10"
               >
                 Limpar venda
               </button>
               <button
                 type="button"
                 onClick={() => setActiveDialog('orders')}
-                className="rounded-2xl bg-white/5 py-4 text-sm font-semibold text-slate-300 hover:bg-white/10"
+                className="rounded-2xl bg-white/5 py-3 text-sm font-semibold text-slate-300 hover:bg-white/10"
               >
                 Pedidos
               </button>
@@ -1424,16 +1495,24 @@ export default function POS() {
             <Button
               className="h-14 rounded-2xl bg-emerald-500 text-base font-semibold text-white hover:bg-emerald-600"
               onClick={handleFinalizeSale}
-              disabled={createOrder.isPending || registerPayment.isPending || updateOrderStatus.isPending}
+              disabled={createOrder.isPending || updateOrder.isPending || registerPayment.isPending || updateOrderStatus.isPending}
             >
-              {settlementType === 'DIRECT' ? 'Receber e finalizar' : 'Lançar consumo'}
+              {editingOrder
+                ? settlementType === 'DIRECT'
+                  ? Number(paymentAmount || 0) > 0
+                    ? 'Salvar e receber'
+                    : 'Salvar comanda'
+                  : 'Atualizar e lançar consumo'
+                : settlementType === 'DIRECT'
+                  ? 'Receber e finalizar'
+                  : 'Lançar consumo'}
             </Button>
           </div>
         </div>
       </div>
 
       <Dialog open={activeDialog === 'cash'} onOpenChange={(open) => setActiveDialog(open ? 'cash' : null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Operações de caixa</DialogTitle>
             <DialogDescription>Abertura, sangria, suprimento e fechamento.</DialogDescription>
@@ -1496,7 +1575,7 @@ export default function POS() {
       </Dialog>
 
       <Dialog open={activeDialog === 'frontdesk'} onOpenChange={(open) => setActiveDialog(open ? 'frontdesk' : null)}>
-        <DialogContent className="max-w-5xl">
+        <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Recepção rápida</DialogTitle>
             <DialogDescription>Check-in e check-out sem sair do PDV.</DialogDescription>
@@ -1572,7 +1651,7 @@ export default function POS() {
       </Dialog>
 
       <Dialog open={activeDialog === 'housekeeping'} onOpenChange={(open) => setActiveDialog(open ? 'housekeeping' : null)}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-h-[90dvh] max-w-4xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Governança</DialogTitle>
             <DialogDescription>Atualize rapidamente limpeza e inspeção dos quartos.</DialogDescription>
@@ -1618,7 +1697,7 @@ export default function POS() {
       </Dialog>
 
       <Dialog open={activeDialog === 'maintenance'} onOpenChange={(open) => setActiveDialog(open ? 'maintenance' : null)}>
-        <DialogContent className="max-w-5xl">
+        <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Manutenção</DialogTitle>
             <DialogDescription>Cadastre e atualize ordens sem sair do fluxo de venda.</DialogDescription>
@@ -1707,7 +1786,7 @@ export default function POS() {
       </Dialog>
 
       <Dialog open={activeDialog === 'drafts'} onOpenChange={(open) => setActiveDialog(open ? 'drafts' : null)}>
-        <DialogContent className="max-w-5xl">
+        <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Pré-vendas e comandas salvas</DialogTitle>
             <DialogDescription>Retome vendas suspensas, mesas e comandas em aberto.</DialogDescription>
@@ -1765,7 +1844,7 @@ export default function POS() {
       </Dialog>
 
       <Dialog open={activeDialog === 'references'} onOpenChange={(open) => setActiveDialog(open ? 'references' : null)}>
-        <DialogContent className="max-w-5xl">
+        <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Referências rápidas</DialogTitle>
             <DialogDescription>Encontre mesas, comandas, nomes ou pedidos sem sair do caixa.</DialogDescription>
@@ -1803,11 +1882,18 @@ export default function POS() {
                     <EmptyInline text="Nenhum pedido aberto para esta referência." />
                   ) : (
                     referencedOpenOrders.map((order) => (
-                      <button
+                      <div
                         key={order.id}
-                        type="button"
                         onClick={() => selectReferencedOrder(order.id)}
                         className="w-full rounded-2xl border p-4 text-left transition hover:border-slate-400 hover:bg-slate-50"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            selectReferencedOrder(order.id);
+                          }
+                        }}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
@@ -1821,7 +1907,28 @@ export default function POS() {
                         <div className="mt-3 text-sm font-medium text-slate-900">
                           Total {currency.format(Number(order.totalAmount))} • Pago {currency.format(Number(order.paidAmount))}
                         </div>
-                      </button>
+                        <div className="mt-3 flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              reopenOrderInCart(order);
+                            }}
+                            disabled={
+                              !(
+                                (order.status === 'OPEN' || order.status === 'PREPARING') &&
+                                Number(order.paidAmount) === 0 &&
+                                !order.postedToFolioAt &&
+                                order.payments.length === 0
+                              )
+                            }
+                          >
+                            Editar no carrinho
+                          </Button>
+                        </div>
+                      </div>
                     ))
                   )}
                 </CardContent>
@@ -1867,7 +1974,7 @@ export default function POS() {
       </Dialog>
 
       <Dialog open={activeDialog === 'orders'} onOpenChange={(open) => setActiveDialog(open ? 'orders' : null)}>
-        <DialogContent className="max-w-5xl">
+        <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Pedidos e recebimento</DialogTitle>
             <DialogDescription>Gerencie pedidos abertos, recebimentos, estornos e cancelamentos.</DialogDescription>
@@ -1921,6 +2028,16 @@ export default function POS() {
                         <span>Total {currency.format(Number(selectedOrder.totalAmount))}</span>
                         <span>Pago {currency.format(Number(selectedOrder.paidAmount))}</span>
                         <span>Saldo {currency.format(Number(selectedOrder.totalAmount) - Number(selectedOrder.paidAmount))}</span>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Button variant="outline" onClick={() => reopenOrderInCart(selectedOrder)} disabled={!canEditSelectedOrder}>
+                          Editar no carrinho
+                        </Button>
+                        {!canEditSelectedOrder && (
+                          <span className="self-center text-xs text-slate-500">
+                            Disponível apenas para pedidos abertos sem pagamento.
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -2042,7 +2159,7 @@ function SideAction({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-2xl p-3 text-center transition ${
+      className={`min-w-[88px] rounded-2xl p-3 text-center transition lg:min-w-0 ${
         active ? 'bg-sky-600 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
       }`}
     >

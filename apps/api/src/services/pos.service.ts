@@ -20,10 +20,42 @@ import {
   OpenCashSessionDto,
   RefundPOSPaymentDto,
   RegisterPOSPaymentDto,
+  UpdatePOSOrderDto,
   UpdatePOSOrderStatusDto,
 } from '../types/pms';
 
 const prismaPms = prisma as any;
+
+const posOrderInclude = {
+  stay: {
+    include: {
+      reservation: {
+        select: {
+          reservationCode: true,
+          guestName: true,
+        },
+      },
+      folio: {
+        select: {
+          id: true,
+          balance: true,
+          isClosed: true,
+        },
+      },
+    },
+  },
+  roomUnit: {
+    select: {
+      id: true,
+      code: true,
+      name: true,
+    },
+  },
+  items: true,
+  payments: {
+    orderBy: { createdAt: 'desc' as const },
+  },
+};
 
 function buildOrderNumber() {
   return `POS-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
@@ -38,6 +70,92 @@ function buildCashSessionCode() {
 
 function toDecimal(value?: number | null) {
   return Number(value ?? 0);
+}
+
+async function resolveOrderPayload(tx: any, data: CreatePOSOrderDto | UpdatePOSOrderDto) {
+  let stayId = data.stayId;
+  let roomUnitId = data.roomUnitId;
+
+  if (stayId) {
+    const stay = await tx.stay.findUnique({
+      where: { id: stayId },
+      include: { roomUnit: true, folio: true },
+    });
+
+    if (!stay || stay.status !== StayStatus.IN_HOUSE) {
+      throw new BadRequestError('Hospedagem não disponível para lançamento');
+    }
+
+    roomUnitId = roomUnitId ?? stay.roomUnitId ?? undefined;
+  }
+
+  if (!stayId && roomUnitId && data.origin === 'ROOM_SERVICE') {
+    const activeStay = await tx.stay.findFirst({
+      where: {
+        roomUnitId,
+        status: StayStatus.IN_HOUSE,
+      },
+    });
+
+    if (!activeStay) {
+      throw new BadRequestError('Room service exige uma hospedagem ativa no quarto');
+    }
+
+    stayId = activeStay.id;
+  }
+
+  const settlementType =
+    data.settlementType ??
+    (data.origin === 'ROOM_SERVICE' || stayId ? POSSettlementType.FOLIO : POSSettlementType.DIRECT);
+
+  if (settlementType === POSSettlementType.FOLIO && !stayId) {
+    throw new BadRequestError('Pedidos lançados em fólio exigem uma hospedagem ativa');
+  }
+
+  const products = await tx.posProduct.findMany({
+    where: {
+      id: {
+        in: data.items.map((item) => item.productId),
+      },
+      isActive: true,
+    },
+  });
+
+  if (products.length !== data.items.length) {
+    throw new NotFoundError('Um ou mais produtos do pedido não foram encontrados');
+  }
+
+  const itemsPayload = data.items.map((item) => {
+    const product = products.find((candidate: any) => candidate.id === item.productId)!;
+    const quantity = Number(item.quantity);
+    const unitPrice = Number(product.price);
+    const totalPrice = quantity * unitPrice;
+
+    return {
+      productId: product.id,
+      productName: product.name,
+      quantity,
+      unitPrice,
+      totalPrice,
+      notes: item.notes?.trim(),
+    };
+  });
+
+  const subtotalAmount = itemsPayload.reduce((sum, item) => sum + item.totalPrice, 0);
+  const serviceFeeAmount = toDecimal(data.serviceFeeAmount);
+  const discountAmount = toDecimal(data.discountAmount);
+  const totalAmount = Math.max(subtotalAmount + serviceFeeAmount - discountAmount, 0);
+
+  return {
+    stayId,
+    roomUnitId,
+    settlementType,
+    itemsPayload,
+    subtotalAmount,
+    serviceFeeAmount,
+    discountAmount,
+    totalAmount,
+  };
 }
 
 function calculateExpectedCash(movements: Array<{ type: CashMovementType; amount: any; method?: PaymentMethod | null }>) {
@@ -207,36 +325,7 @@ export class POSService {
 
   static async listOrders() {
     return prismaPms.posOrder.findMany({
-      include: {
-        stay: {
-          include: {
-            reservation: {
-              select: {
-                reservationCode: true,
-                guestName: true,
-              },
-            },
-            folio: {
-              select: {
-                id: true,
-                balance: true,
-                isClosed: true,
-              },
-            },
-          },
-        },
-        roomUnit: {
-          select: {
-            id: true,
-            code: true,
-            name: true,
-          },
-        },
-        items: true,
-        payments: {
-          orderBy: { createdAt: 'desc' },
-        },
-      },
+      include: posOrderInclude,
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -404,78 +493,16 @@ export class POSService {
   static async createOrder(data: CreatePOSOrderDto) {
     return prisma.$transaction(async (tx) => {
       const txPms = tx as any;
-      let stayId = data.stayId;
-      let roomUnitId = data.roomUnitId;
-
-      if (stayId) {
-        const stay = await tx.stay.findUnique({
-          where: { id: stayId },
-          include: { roomUnit: true, folio: true },
-        });
-
-        if (!stay || stay.status !== StayStatus.IN_HOUSE) {
-          throw new BadRequestError('Hospedagem não disponível para lançamento');
-        }
-
-        roomUnitId = roomUnitId ?? stay.roomUnitId ?? undefined;
-      }
-
-      if (!stayId && roomUnitId && data.origin === 'ROOM_SERVICE') {
-        const activeStay = await tx.stay.findFirst({
-          where: {
-            roomUnitId,
-            status: StayStatus.IN_HOUSE,
-          },
-        });
-
-        if (!activeStay) {
-          throw new BadRequestError('Room service exige uma hospedagem ativa no quarto');
-        }
-
-        stayId = activeStay.id;
-      }
-
-      const settlementType =
-        data.settlementType ??
-        (data.origin === 'ROOM_SERVICE' || stayId ? POSSettlementType.FOLIO : POSSettlementType.DIRECT);
-
-      if (settlementType === POSSettlementType.FOLIO && !stayId) {
-        throw new BadRequestError('Pedidos lançados em fólio exigem uma hospedagem ativa');
-      }
-
-      const products = await txPms.posProduct.findMany({
-        where: {
-          id: {
-            in: data.items.map((item) => item.productId),
-          },
-          isActive: true,
-        },
-      });
-
-      if (products.length !== data.items.length) {
-        throw new NotFoundError('Um ou mais produtos do pedido não foram encontrados');
-      }
-
-      const itemsPayload = data.items.map((item) => {
-        const product = products.find((candidate: any) => candidate.id === item.productId)!;
-        const quantity = Number(item.quantity);
-        const unitPrice = Number(product.price);
-        const totalPrice = quantity * unitPrice;
-
-        return {
-          productId: product.id,
-          productName: product.name,
-          quantity,
-          unitPrice,
-          totalPrice,
-          notes: item.notes?.trim(),
-        };
-      });
-
-      const subtotalAmount = itemsPayload.reduce((sum, item) => sum + item.totalPrice, 0);
-      const serviceFeeAmount = toDecimal(data.serviceFeeAmount);
-      const discountAmount = toDecimal(data.discountAmount);
-      const totalAmount = Math.max(subtotalAmount + serviceFeeAmount - discountAmount, 0);
+      const {
+        stayId,
+        roomUnitId,
+        settlementType,
+        itemsPayload,
+        subtotalAmount,
+        serviceFeeAmount,
+        discountAmount,
+        totalAmount,
+      } = await resolveOrderPayload(txPms, data);
 
       return txPms.posOrder.create({
         data: {
@@ -495,34 +522,78 @@ export class POSService {
             create: itemsPayload,
           },
         },
+        include: posOrderInclude,
+      });
+    });
+  }
+
+  static async updateOrder(id: string, data: UpdatePOSOrderDto) {
+    return prisma.$transaction(async (tx) => {
+      const txPms = tx as any;
+      const order = await txPms.posOrder.findUnique({
+        where: { id },
         include: {
-          stay: {
-            include: {
-              reservation: {
-                select: {
-                  reservationCode: true,
-                  guestName: true,
-                },
-              },
-              folio: {
-                select: {
-                  id: true,
-                  balance: true,
-                  isClosed: true,
-                },
-              },
-            },
-          },
-          roomUnit: {
-            select: {
-              id: true,
-              code: true,
-              name: true,
-            },
-          },
           items: true,
           payments: true,
+          stay: {
+            include: {
+              folio: true,
+            },
+          },
         },
+      });
+
+      if (!order) {
+        throw new NotFoundError('Pedido n?o encontrado');
+      }
+
+      if (order.status === POSOrderStatus.CANCELLED || order.status === POSOrderStatus.CLOSED) {
+        throw new BadRequestError('Somente pedidos em aberto podem ser editados');
+      }
+
+      if (order.status === POSOrderStatus.DELIVERED) {
+        throw new BadRequestError('Pedidos j? entregues n?o podem ser reabertos para edi??o');
+      }
+
+      if (Number(order.paidAmount) > 0 || order.payments.length > 0) {
+        throw new BadRequestError('Pedidos com pagamento registrado n?o podem ser editados');
+      }
+
+      if (order.postedToFolioAt) {
+        throw new BadRequestError('Pedidos j? lan?ados em f?lio n?o podem ser editados');
+      }
+
+      const {
+        stayId,
+        roomUnitId,
+        settlementType,
+        itemsPayload,
+        subtotalAmount,
+        serviceFeeAmount,
+        discountAmount,
+        totalAmount,
+      } = await resolveOrderPayload(txPms, data);
+
+      return txPms.posOrder.update({
+        where: { id },
+        data: {
+          stayId,
+          roomUnitId,
+          origin: data.origin,
+          settlementType,
+          customerName: data.customerName?.trim(),
+          tableNumber: data.tableNumber?.trim(),
+          notes: data.notes?.trim(),
+          subtotalAmount,
+          serviceFeeAmount,
+          discountAmount,
+          totalAmount,
+          items: {
+            deleteMany: {},
+            create: itemsPayload,
+          },
+        },
+        include: posOrderInclude,
       });
     });
   }

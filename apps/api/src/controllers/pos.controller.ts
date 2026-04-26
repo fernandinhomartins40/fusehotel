@@ -39,6 +39,15 @@ export class POSController {
     }
   }
 
+  static async updateOrder(req: Request, res: Response, next: NextFunction) {
+    try {
+      const order = await POSService.updateOrder(req.params.id, req.body);
+      return sendSuccess(res, order, 'Pedido atualizado com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async updateOrderStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const order = await POSService.updateOrderStatus(req.params.id, req.body);

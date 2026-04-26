@@ -146,6 +146,38 @@ export const createPOSOrderSchema = z.object({
   }
 });
 
+export const updatePOSOrderSchema = z.object({
+  stayId: uuidSchema.optional(),
+  roomUnitId: uuidSchema.optional(),
+  origin: posOrderOriginSchema,
+  settlementType: posSettlementTypeSchema.optional(),
+  customerName: z.string().min(2).max(120).optional(),
+  tableNumber: z.string().max(20).optional(),
+  notes: z.string().max(500).optional(),
+  serviceFeeAmount: z.number().nonnegative().optional(),
+  discountAmount: z.number().nonnegative().optional(),
+  items: z
+    .array(
+      z.object({
+        productId: uuidSchema,
+        quantity: z.number().int().positive(),
+        notes: z.string().max(500).optional(),
+      })
+    )
+    .min(1),
+}).superRefine((data, ctx) => {
+  const needsStayOrRoom =
+    data.origin === 'ROOM_SERVICE' || data.settlementType === 'FOLIO';
+
+  if (needsStayOrRoom && !data.stayId && !data.roomUnitId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Informe uma hospedagem ou quarto para o pedido',
+      path: ['stayId'],
+    });
+  }
+});
+
 export const updatePOSOrderStatusSchema = z.object({
   status: posOrderStatusSchema,
 });
