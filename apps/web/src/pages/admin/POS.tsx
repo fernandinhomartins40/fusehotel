@@ -1008,7 +1008,7 @@ export default function POS() {
 
   return (
     <AdminLayout>
-      <div className="space-y-4 p-4 md:p-6 lg:flex lg:h-[calc(100dvh-4rem)] lg:flex-col lg:gap-4 lg:space-y-0 lg:overflow-hidden">
+      <div className="space-y-4 p-4 md:p-6 lg:min-h-[calc(100dvh-4rem)]">
         <div className="rounded-3xl bg-gradient-to-r from-sky-700 via-blue-700 to-slate-900 p-4 text-white shadow-sm">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div className="space-y-3">
@@ -1061,8 +1061,8 @@ export default function POS() {
           </div>
         </div>
 
-        <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px] lg:overflow-hidden">
-          <div className="space-y-4 lg:min-h-0 lg:flex lg:flex-col">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]">
+          <div className="space-y-4">
             <div className="rounded-3xl bg-slate-950 p-3 text-white shadow-sm">
               <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-7">
                 <SideAction icon={ShoppingCart} label="Pedidos" active={activeDialog === 'orders'} onClick={() => setActiveDialog('orders')} />
@@ -1075,7 +1075,7 @@ export default function POS() {
               </div>
             </div>
 
-            <div className="rounded-3xl bg-white p-4 shadow-sm lg:min-h-0 lg:flex lg:flex-col lg:overflow-hidden">
+            <div className="rounded-3xl bg-white p-4 shadow-sm">
               <div className="flex flex-col gap-3 xl:flex-row">
                 <div className="relative flex-1">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -1165,7 +1165,7 @@ export default function POS() {
                 </div>
               </div>
 
-              <ScrollArea className="mt-4 rounded-2xl border border-slate-200 lg:min-h-0 lg:flex-1">
+              <ScrollArea className="mt-4 max-h-[50vh] rounded-2xl border border-slate-200 xl:max-h-[56vh]">
                 <div className={`grid gap-3 p-3 sm:grid-cols-2 xl:grid-cols-3 ${isCompactMode ? '2xl:grid-cols-3' : '2xl:grid-cols-4'}`}>
                   {!filteredProducts.length ? (
                     <div className="col-span-full rounded-2xl border border-dashed p-8 text-center text-slate-500">
@@ -1200,7 +1200,7 @@ export default function POS() {
             </div>
           </div>
 
-          <div className="rounded-3xl bg-slate-950 p-4 text-white shadow-sm lg:min-h-0 lg:flex lg:flex-col lg:overflow-hidden">
+          <div className="rounded-3xl bg-slate-950 p-4 text-white shadow-sm lg:sticky lg:top-4">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-xs uppercase tracking-[0.18em] text-slate-400">Venda atual</div>
@@ -1313,7 +1313,7 @@ export default function POS() {
               </Button>
             </div>
 
-            <ScrollArea className="mt-4 rounded-2xl border border-white/10 bg-white/5 lg:min-h-[160px] lg:flex-1">
+            <ScrollArea className="mt-4 max-h-[34vh] rounded-2xl border border-white/10 bg-white/5 xl:max-h-[40vh]">
               <div className="space-y-3 p-3">
                 {!cartDetailedItems.length ? (
                   <div className="rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-slate-400">
