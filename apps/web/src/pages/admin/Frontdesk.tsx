@@ -55,7 +55,9 @@ export default function Frontdesk() {
 
   const [selectedRooms, setSelectedRooms] = useState<Record<string, string>>({});
   const [folioStayId, setFólioStayId] = useState<string | null>(null);
+  const [walkInDialogOpen, setWalkInDialogOpen] = useState(false);
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
+  const [walkInSearch, setWalkInSearch] = useState('');
   const [walkInForm, setWalkInForm] = useState({
     roomUnitId: '',
     customerId: '',
@@ -122,6 +124,23 @@ export default function Frontdesk() {
     [availableWalkInRooms, walkInForm.roomUnitId]
   );
 
+  const customerSearchResults = useMemo(() => {
+    const query = walkInSearch.trim().toLowerCase();
+
+    if (!query) {
+      return [];
+    }
+
+    return customers.filter((customer) => {
+      const haystack = [customer.name, customer.email, customer.phone, customer.whatsapp, customer.cpf]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(query);
+    });
+  }, [customers, walkInSearch]);
+
   const handleCheckIn = (reservation: Reservation) => {
     const roomUnitId = selectedRooms[reservation.id];
 
@@ -182,6 +201,22 @@ export default function Frontdesk() {
     );
   };
 
+  const openWalkInDialog = () => {
+    const firstMatch = customerSearchResults[0];
+
+    setWalkInForm((current) => ({
+      ...current,
+      customerId: firstMatch?.id ?? '',
+      guestName: firstMatch ? '' : walkInSearch.trim(),
+      guestEmail: firstMatch ? '' : current.guestEmail,
+      guestPhone: firstMatch ? '' : current.guestPhone,
+      guestWhatsApp: firstMatch ? '' : current.guestWhatsApp,
+      guestCpf: firstMatch ? '' : current.guestCpf,
+    }));
+
+    setWalkInDialogOpen(true);
+  };
+
   const handleAddEntry = () => {
     if (!folio || !entryForm.amount || !entryForm.description) {
       return;
@@ -226,197 +261,41 @@ export default function Frontdesk() {
           <CardHeader>
             <CardTitle>Check-in de balcão</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-              <div className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Cliente cadastrado</Label>
-                    <Select
-                      value={walkInForm.customerId || 'none'}
-                      onValueChange={(value) =>
-                        setWalkInForm((current) => ({
-                          ...current,
-                          customerId: value === 'none' ? '' : value,
-                        }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecionar cliente existente" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Cadastrar manualmente</SelectItem>
-                        {customers.map((customer) => (
-                          <SelectItem key={customer.id} value={customer.id}>
-                            {customer.name} {customer.whatsapp ? `- ${customer.whatsapp}` : ''}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex items-end">
-                    <Button variant="outline" onClick={() => setCustomerDialogOpen(true)}>
-                      Novo cliente
-                    </Button>
-                  </div>
-                </div>
-
-                {selectedWalkInCustomer ? (
-                  <div className="rounded-lg border p-4 text-sm text-gray-600">
-                    <div className="font-medium text-gray-900">{selectedWalkInCustomer.name}</div>
-                    <div>{selectedWalkInCustomer.email}</div>
-                    <div>{selectedWalkInCustomer.whatsapp || selectedWalkInCustomer.phone || 'Sem telefone'}</div>
-                  </div>
-                ) : (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="walkin-name">Nome do hóspede</Label>
-                      <Input
-                        id="walkin-name"
-                        value={walkInForm.guestName}
-                        onChange={(event) => setWalkInForm((current) => ({ ...current, guestName: event.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="walkin-email">Email</Label>
-                      <Input
-                        id="walkin-email"
-                        type="email"
-                        value={walkInForm.guestEmail}
-                        onChange={(event) => setWalkInForm((current) => ({ ...current, guestEmail: event.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="walkin-phone">Telefone</Label>
-                      <Input
-                        id="walkin-phone"
-                        value={walkInForm.guestPhone}
-                        onChange={(event) => setWalkInForm((current) => ({ ...current, guestPhone: event.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="walkin-whatsapp">WhatsApp</Label>
-                      <Input
-                        id="walkin-whatsapp"
-                        value={walkInForm.guestWhatsApp}
-                        onChange={(event) => setWalkInForm((current) => ({ ...current, guestWhatsApp: event.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="walkin-cpf">CPF</Label>
-                      <Input
-                        id="walkin-cpf"
-                        value={walkInForm.guestCpf}
-                        onChange={(event) => setWalkInForm((current) => ({ ...current, guestCpf: event.target.value }))}
-                      />
-                    </div>
-                  </div>
-                )}
+          <CardContent className="space-y-3">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="walkin-search">Pesquisar cliente</Label>
+                <Input
+                  id="walkin-search"
+                  value={walkInSearch}
+                  onChange={(event) => setWalkInSearch(event.target.value)}
+                  placeholder="Nome, WhatsApp, telefone, email ou CPF"
+                />
               </div>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Quarto disponível</Label>
-                  <Select
-                    value={walkInForm.roomUnitId || 'none'}
-                    onValueChange={(value) =>
-                      setWalkInForm((current) => ({
-                        ...current,
-                        roomUnitId: value === 'none' ? '' : value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecionar quarto disponível" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Selecione</SelectItem>
-                      {availableWalkInRooms.map((roomUnit) => (
-                        <SelectItem key={roomUnit.id} value={roomUnit.id}>
-                          {roomUnit.code} - {roomUnit.name} - {roomUnit.accommodation?.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="walkin-checkin">Check-in</Label>
-                    <Input
-                      id="walkin-checkin"
-                      type="date"
-                      value={walkInForm.checkInDate}
-                      onChange={(event) => setWalkInForm((current) => ({ ...current, checkInDate: event.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="walkin-checkout">Check-out</Label>
-                    <Input
-                      id="walkin-checkout"
-                      type="date"
-                      value={walkInForm.checkOutDate}
-                      onChange={(event) => setWalkInForm((current) => ({ ...current, checkOutDate: event.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="walkin-adults">Adultos</Label>
-                    <Input
-                      id="walkin-adults"
-                      type="number"
-                      min={1}
-                      value={walkInForm.adults}
-                      onChange={(event) => setWalkInForm((current) => ({ ...current, adults: event.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="walkin-children">Crianças</Label>
-                    <Input
-                      id="walkin-children"
-                      type="number"
-                      min={0}
-                      value={walkInForm.children}
-                      onChange={(event) => setWalkInForm((current) => ({ ...current, children: event.target.value }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="walkin-notes">Observações</Label>
-                  <Textarea
-                    id="walkin-notes"
-                    value={walkInForm.notes}
-                    onChange={(event) => setWalkInForm((current) => ({ ...current, notes: event.target.value }))}
-                    placeholder="Preferências, garantia, observações da recepção..."
-                  />
-                </div>
-
-                <div className="rounded-lg border p-4 text-sm text-gray-600">
-                  <div className="font-medium text-gray-900">
-                    {selectedWalkInRoom?.accommodation?.name || 'Selecione um quarto'}
-                  </div>
-                  <div>{selectedWalkInRoom ? `${selectedWalkInRoom.code} - ${selectedWalkInRoom.name}` : 'Sem quarto definido'}</div>
-                  <div>
-                    Diária padrão:{' '}
-                    {selectedWalkInRoom
-                      ? currencyFormatter.format(
-                          accommodations.find((item) => item.id === selectedWalkInRoom.accommodationId)?.pricePerNight || 0
-                        )
-                      : currencyFormatter.format(0)}
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleWalkInCheckIn}
-                    disabled={!walkInForm.roomUnitId || walkInCheckIn.isPending}
-                  >
-                    Fazer check-in no quarto
-                  </Button>
-                </div>
+              <div className="flex gap-2 lg:self-end">
+                <Button onClick={openWalkInDialog}>Fazer check-in</Button>
+                <Button variant="outline" onClick={() => setCustomerDialogOpen(true)}>
+                  Cadastrar cliente
+                </Button>
               </div>
             </div>
+
+            {walkInSearch.trim() ? (
+              <div className="rounded-lg border px-4 py-3 text-sm text-gray-600">
+                {customerSearchResults.length ? (
+                  <>
+                    <div className="font-medium text-gray-900">
+                      Cliente sugerido: {customerSearchResults[0].name}
+                    </div>
+                    <div>
+                      {customerSearchResults[0].whatsapp || customerSearchResults[0].phone || customerSearchResults[0].email}
+                    </div>
+                  </>
+                ) : (
+                  <div>Nenhum cliente encontrado. Você pode abrir o check-in e cadastrar os dados manualmente.</div>
+                )}
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 
@@ -648,6 +527,201 @@ export default function Frontdesk() {
               </Card>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={walkInDialogOpen} onOpenChange={setWalkInDialogOpen}>
+        <DialogContent className="max-w-5xl">
+          <DialogHeader>
+            <DialogTitle>Check-in de balcão</DialogTitle>
+            <DialogDescription>
+              Selecione o hóspede e o quarto disponível para abrir a hospedagem na recepção.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Cliente cadastrado</Label>
+                <Select
+                  value={walkInForm.customerId || 'none'}
+                  onValueChange={(value) =>
+                    setWalkInForm((current) => ({
+                      ...current,
+                      customerId: value === 'none' ? '' : value,
+                      guestName: value === 'none' ? current.guestName : '',
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar cliente existente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Informar hóspede manualmente</SelectItem>
+                    {customers.map((customer) => (
+                      <SelectItem key={customer.id} value={customer.id}>
+                        {customer.name} {customer.whatsapp ? `- ${customer.whatsapp}` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedWalkInCustomer ? (
+                <div className="rounded-lg border p-4 text-sm text-gray-600">
+                  <div className="font-medium text-gray-900">{selectedWalkInCustomer.name}</div>
+                  <div>{selectedWalkInCustomer.email}</div>
+                  <div>{selectedWalkInCustomer.whatsapp || selectedWalkInCustomer.phone || 'Sem telefone'}</div>
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="walkin-name">Nome do hóspede</Label>
+                    <Input
+                      id="walkin-name"
+                      value={walkInForm.guestName}
+                      onChange={(event) => setWalkInForm((current) => ({ ...current, guestName: event.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="walkin-email">Email</Label>
+                    <Input
+                      id="walkin-email"
+                      type="email"
+                      value={walkInForm.guestEmail}
+                      onChange={(event) => setWalkInForm((current) => ({ ...current, guestEmail: event.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="walkin-phone">Telefone</Label>
+                    <Input
+                      id="walkin-phone"
+                      value={walkInForm.guestPhone}
+                      onChange={(event) => setWalkInForm((current) => ({ ...current, guestPhone: event.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="walkin-whatsapp">WhatsApp</Label>
+                    <Input
+                      id="walkin-whatsapp"
+                      value={walkInForm.guestWhatsApp}
+                      onChange={(event) => setWalkInForm((current) => ({ ...current, guestWhatsApp: event.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="walkin-cpf">CPF</Label>
+                    <Input
+                      id="walkin-cpf"
+                      value={walkInForm.guestCpf}
+                      onChange={(event) => setWalkInForm((current) => ({ ...current, guestCpf: event.target.value }))}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Quarto disponível</Label>
+                <Select
+                  value={walkInForm.roomUnitId || 'none'}
+                  onValueChange={(value) =>
+                    setWalkInForm((current) => ({
+                      ...current,
+                      roomUnitId: value === 'none' ? '' : value,
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar quarto disponível" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Selecione</SelectItem>
+                    {availableWalkInRooms.map((roomUnit) => (
+                      <SelectItem key={roomUnit.id} value={roomUnit.id}>
+                        {roomUnit.code} - {roomUnit.name} - {roomUnit.accommodation?.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="walkin-checkin">Check-in</Label>
+                  <Input
+                    id="walkin-checkin"
+                    type="date"
+                    value={walkInForm.checkInDate}
+                    onChange={(event) => setWalkInForm((current) => ({ ...current, checkInDate: event.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="walkin-checkout">Check-out</Label>
+                  <Input
+                    id="walkin-checkout"
+                    type="date"
+                    value={walkInForm.checkOutDate}
+                    onChange={(event) => setWalkInForm((current) => ({ ...current, checkOutDate: event.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="walkin-adults">Adultos</Label>
+                  <Input
+                    id="walkin-adults"
+                    type="number"
+                    min={1}
+                    value={walkInForm.adults}
+                    onChange={(event) => setWalkInForm((current) => ({ ...current, adults: event.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="walkin-children">Crianças</Label>
+                  <Input
+                    id="walkin-children"
+                    type="number"
+                    min={0}
+                    value={walkInForm.children}
+                    onChange={(event) => setWalkInForm((current) => ({ ...current, children: event.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="walkin-notes">Observações</Label>
+                <Textarea
+                  id="walkin-notes"
+                  value={walkInForm.notes}
+                  onChange={(event) => setWalkInForm((current) => ({ ...current, notes: event.target.value }))}
+                  placeholder="Preferências, garantia, observações da recepção..."
+                />
+              </div>
+
+              <div className="rounded-lg border p-4 text-sm text-gray-600">
+                <div className="font-medium text-gray-900">
+                  {selectedWalkInRoom?.accommodation?.name || 'Selecione um quarto'}
+                </div>
+                <div>{selectedWalkInRoom ? `${selectedWalkInRoom.code} - ${selectedWalkInRoom.name}` : 'Sem quarto definido'}</div>
+                <div>
+                  Diária padrão:{' '}
+                  {selectedWalkInRoom
+                    ? currencyFormatter.format(
+                        accommodations.find((item) => item.id === selectedWalkInRoom.accommodationId)?.pricePerNight || 0
+                      )
+                    : currencyFormatter.format(0)}
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleWalkInCheckIn}
+                  disabled={!walkInForm.roomUnitId || walkInCheckIn.isPending}
+                >
+                  Fazer check-in no quarto
+                </Button>
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
