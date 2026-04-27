@@ -648,57 +648,57 @@ export default function POS() {
 
       if (isTyping) return;
 
-      if (event.key === 'F1') {
+      if (event.altKey && event.key === '1') {
         event.preventDefault();
         setActiveDialog('orders');
       }
 
-      if (event.key === 'F2') {
+      if (event.altKey && event.key === '2') {
         event.preventDefault();
         setActiveDialog('cash');
       }
 
-      if (event.key === 'F3') {
+      if (event.altKey && event.key === '3') {
         event.preventDefault();
         setActiveDialog('frontdesk');
       }
 
-      if (event.key === 'F4') {
+      if (event.altKey && event.key === '4') {
         event.preventDefault();
         setActiveDialog('housekeeping');
       }
 
-      if (event.key === 'F5') {
+      if (event.altKey && event.key === '5') {
         event.preventDefault();
         applySalePreset('BALCAO');
       }
 
-      if (event.key === 'F6') {
+      if (event.altKey && event.key === '6') {
         event.preventDefault();
         applySalePreset('MESA');
       }
 
-      if (event.key === 'F7') {
+      if (event.altKey && event.key === '7') {
         event.preventDefault();
         applySalePreset('COMANDA');
       }
 
-      if (event.key === 'F8') {
+      if (event.altKey && event.key === '8') {
         event.preventDefault();
         applySalePreset('QUARTO');
       }
 
-      if (event.key === 'F9') {
+      if (event.altKey && event.key === '9') {
         event.preventDefault();
         setActiveDialog('drafts');
       }
 
-      if (event.key === 'F10') {
+      if (event.altKey && event.key.toLowerCase() === 's') {
         event.preventDefault();
         suspendCurrentSale();
       }
 
-      if (event.key === 'F11') {
+      if (event.altKey && event.key.toLowerCase() === 'l') {
         event.preventDefault();
         resumeLatestDraft();
       }
@@ -708,18 +708,18 @@ export default function POS() {
         void toggleFullscreen();
       }
 
-      if (event.ctrlKey && event.key.toLowerCase() === 'b') {
+      if (event.altKey && event.key.toLowerCase() === 'c') {
         event.preventDefault();
         const quickInput = document.getElementById('pos-quick-code') as HTMLInputElement | null;
         quickInput?.focus();
       }
 
-      if (event.ctrlKey && event.key.toLowerCase() === 's') {
+      if (event.altKey && event.key.toLowerCase() === 'g') {
         event.preventDefault();
         saveCurrentDraft();
       }
 
-      if (event.ctrlKey && event.key.toLowerCase() === 'r') {
+      if (event.altKey && event.key.toLowerCase() === '0') {
         event.preventDefault();
         setActiveDialog('references');
       }
@@ -1019,7 +1019,7 @@ export default function POS() {
               <h1 className="truncate text-2xl font-semibold tracking-tight">PDV do hotel</h1>
               <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs text-sky-100">
                 <Keyboard className="h-3.5 w-3.5" />
-                F1 pedidos • F2 caixa • Ctrl + Enter finalizar
+                Alt + 1 pedidos • Alt + 2 caixa • Ctrl + Enter finalizar
               </div>
             </div>
 
@@ -1111,17 +1111,17 @@ export default function POS() {
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                   <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Modo de venda</div>
                   <div className="grid grid-cols-2 gap-2 2xl:grid-cols-4">
-                    <PresetButton label="Balcão" shortcut="F5" active={salePreset === 'BALCAO'} onClick={() => applySalePreset('BALCAO')} />
-                    <PresetButton label="Mesa" shortcut="F6" active={salePreset === 'MESA'} onClick={() => applySalePreset('MESA')} />
-                    <PresetButton label="Comanda" shortcut="F7" active={salePreset === 'COMANDA'} onClick={() => applySalePreset('COMANDA')} />
-                    <PresetButton label="Quarto" shortcut="F8" active={salePreset === 'QUARTO'} onClick={() => applySalePreset('QUARTO')} />
+                    <PresetButton label="Balcão" shortcut="Alt + 5" active={salePreset === 'BALCAO'} onClick={() => applySalePreset('BALCAO')} />
+                    <PresetButton label="Mesa" shortcut="Alt + 6" active={salePreset === 'MESA'} onClick={() => applySalePreset('MESA')} />
+                    <PresetButton label="Comanda" shortcut="Alt + 7" active={salePreset === 'COMANDA'} onClick={() => applySalePreset('COMANDA')} />
+                    <PresetButton label="Quarto" shortcut="Alt + 8" active={salePreset === 'QUARTO'} onClick={() => applySalePreset('QUARTO')} />
                   </div>
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                   <div className="mb-2 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-slate-500">
                     <span>Leitura rápida</span>
-                    <span>Ctrl + B</span>
+                    <span>Alt + C</span>
                   </div>
                   <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_80px_120px]">
                     <Input
