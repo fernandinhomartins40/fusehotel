@@ -47,6 +47,42 @@ export function useCheckIn() {
   });
 }
 
+export function useWalkInCheckIn() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      roomUnitId: string;
+      customerId?: string;
+      guestName?: string;
+      guestEmail?: string;
+      guestPhone?: string;
+      guestWhatsApp?: string;
+      guestCpf?: string;
+      checkInDate: string;
+      checkOutDate: string;
+      adults: number;
+      children?: number;
+      notes?: string;
+    }) => {
+      const { data } = await apiClient.post('/frontdesk/walk-in', payload);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['frontdesk-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['stays'] });
+      queryClient.invalidateQueries({ queryKey: ['room-units'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-reservations'] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast.success('Walk-in realizado com sucesso');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao realizar walk-in');
+    },
+  });
+}
+
 export function useCheckOut() {
   const queryClient = useQueryClient();
 

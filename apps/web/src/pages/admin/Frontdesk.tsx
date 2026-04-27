@@ -16,8 +16,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { CreateCustomerDialog } from '@/components/admin/customers/CreateCustomerDialog';
+import { useAccommodations } from '@/hooks/useAccommodations';
+import { useCustomers } from '@/hooks/useCustomers';
 import { useAddFolioEntry, useFolio } from '@/hooks/useFolios';
-import { useCheckIn, useCheckOut, useFrontdeskDashboard } from '@/hooks/useFrontdesk';
+import { useCheckIn, useCheckOut, useFrontdeskDashboard, useWalkInCheckIn } from '@/hooks/useFrontdesk';
 import { useRoomUnits } from '@/hooks/useRoomUnits';
 import type { FolioEntryType, RoomUnit, Stay } from '@/types/pms';
 import type { Reservation } from '@/types/reservation';
@@ -43,12 +46,30 @@ const entryTypeLabels: Record<FolioEntryType, string> = {
 export default function Frontdesk() {
   const { data: dashboard, isLoading } = useFrontdeskDashboard();
   const { data: roomUnits = [] } = useRoomUnits();
+  const { data: accommodations = [] } = useAccommodations({ adminView: true });
+  const { data: customers = [] } = useCustomers({ role: 'CUSTOMER' });
   const checkIn = useCheckIn();
+  const walkInCheckIn = useWalkInCheckIn();
   const checkOut = useCheckOut();
   const addFolioEntry = useAddFolioEntry();
 
   const [selectedRooms, setSelectedRooms] = useState<Record<string, string>>({});
   const [folioStayId, setFólioStayId] = useState<string | null>(null);
+  const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
+  const [walkInForm, setWalkInForm] = useState({
+    roomUnitId: '',
+    customerId: '',
+    guestName: '',
+    guestEmail: '',
+    guestPhone: '',
+    guestWhatsApp: '',
+    guestCpf: '',
+    checkInDate: new Date().toISOString().slice(0, 10),
+    checkOutDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
+    adults: '1',
+    children: '0',
+    notes: '',
+  });
   const [entryForm, setEntryForm] = useState({
     type: 'PAYMENT' as FolioEntryType,
     amount: '',
@@ -80,6 +101,27 @@ export default function Frontdesk() {
     }, {});
   }, [roomUnits]);
 
+  const availableWalkInRooms = useMemo(
+    () =>
+      roomUnits.filter(
+        (roomUnit) =>
+          roomUnit.isActive &&
+          ['AVAILABLE', 'INSPECTED'].includes(roomUnit.status) &&
+          ['CLEAN', 'INSPECTED'].includes(roomUnit.housekeepingStatus)
+      ),
+    [roomUnits]
+  );
+
+  const selectedWalkInCustomer = useMemo(
+    () => customers.find((customer) => customer.id === walkInForm.customerId),
+    [customers, walkInForm.customerId]
+  );
+
+  const selectedWalkInRoom = useMemo(
+    () => availableWalkInRooms.find((roomUnit) => roomUnit.id === walkInForm.roomUnitId),
+    [availableWalkInRooms, walkInForm.roomUnitId]
+  );
+
   const handleCheckIn = (reservation: Reservation) => {
     const roomUnitId = selectedRooms[reservation.id];
 
@@ -97,6 +139,47 @@ export default function Frontdesk() {
     checkOut.mutate({
       stayId: stay.id,
     });
+  };
+
+  const handleWalkInCheckIn = () => {
+    if (!walkInForm.roomUnitId) {
+      return;
+    }
+
+    walkInCheckIn.mutate(
+      {
+        roomUnitId: walkInForm.roomUnitId,
+        customerId: walkInForm.customerId || undefined,
+        guestName: walkInForm.customerId ? undefined : walkInForm.guestName.trim(),
+        guestEmail: walkInForm.customerId ? undefined : walkInForm.guestEmail.trim() || undefined,
+        guestPhone: walkInForm.customerId ? undefined : walkInForm.guestPhone.trim() || undefined,
+        guestWhatsApp: walkInForm.customerId ? undefined : walkInForm.guestWhatsApp.trim() || undefined,
+        guestCpf: walkInForm.customerId ? undefined : walkInForm.guestCpf.trim() || undefined,
+        checkInDate: walkInForm.checkInDate,
+        checkOutDate: walkInForm.checkOutDate,
+        adults: Number(walkInForm.adults),
+        children: Number(walkInForm.children || 0),
+        notes: walkInForm.notes.trim() || undefined,
+      },
+      {
+        onSuccess: () => {
+          setWalkInForm({
+            roomUnitId: '',
+            customerId: '',
+            guestName: '',
+            guestEmail: '',
+            guestPhone: '',
+            guestWhatsApp: '',
+            guestCpf: '',
+            checkInDate: new Date().toISOString().slice(0, 10),
+            checkOutDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
+            adults: '1',
+            children: '0',
+            notes: '',
+          });
+        },
+      }
+    );
   };
 
   const handleAddEntry = () => {
@@ -138,6 +221,204 @@ export default function Frontdesk() {
           <StatCard title="Quartos livres" value={dashboard?.roomStats.available ?? 0} icon={ClipboardList} />
           <StatCard title="Quartos sujos" value={dashboard?.roomStats.dirty ?? 0} icon={ArrowRightLeft} />
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Check-in de balcão</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Cliente cadastrado</Label>
+                    <Select
+                      value={walkInForm.customerId || 'none'}
+                      onValueChange={(value) =>
+                        setWalkInForm((current) => ({
+                          ...current,
+                          customerId: value === 'none' ? '' : value,
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecionar cliente existente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Cadastrar manualmente</SelectItem>
+                        {customers.map((customer) => (
+                          <SelectItem key={customer.id} value={customer.id}>
+                            {customer.name} {customer.whatsapp ? `- ${customer.whatsapp}` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-end">
+                    <Button variant="outline" onClick={() => setCustomerDialogOpen(true)}>
+                      Novo cliente
+                    </Button>
+                  </div>
+                </div>
+
+                {selectedWalkInCustomer ? (
+                  <div className="rounded-lg border p-4 text-sm text-gray-600">
+                    <div className="font-medium text-gray-900">{selectedWalkInCustomer.name}</div>
+                    <div>{selectedWalkInCustomer.email}</div>
+                    <div>{selectedWalkInCustomer.whatsapp || selectedWalkInCustomer.phone || 'Sem telefone'}</div>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="walkin-name">Nome do hóspede</Label>
+                      <Input
+                        id="walkin-name"
+                        value={walkInForm.guestName}
+                        onChange={(event) => setWalkInForm((current) => ({ ...current, guestName: event.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="walkin-email">Email</Label>
+                      <Input
+                        id="walkin-email"
+                        type="email"
+                        value={walkInForm.guestEmail}
+                        onChange={(event) => setWalkInForm((current) => ({ ...current, guestEmail: event.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="walkin-phone">Telefone</Label>
+                      <Input
+                        id="walkin-phone"
+                        value={walkInForm.guestPhone}
+                        onChange={(event) => setWalkInForm((current) => ({ ...current, guestPhone: event.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="walkin-whatsapp">WhatsApp</Label>
+                      <Input
+                        id="walkin-whatsapp"
+                        value={walkInForm.guestWhatsApp}
+                        onChange={(event) => setWalkInForm((current) => ({ ...current, guestWhatsApp: event.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="walkin-cpf">CPF</Label>
+                      <Input
+                        id="walkin-cpf"
+                        value={walkInForm.guestCpf}
+                        onChange={(event) => setWalkInForm((current) => ({ ...current, guestCpf: event.target.value }))}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Quarto disponível</Label>
+                  <Select
+                    value={walkInForm.roomUnitId || 'none'}
+                    onValueChange={(value) =>
+                      setWalkInForm((current) => ({
+                        ...current,
+                        roomUnitId: value === 'none' ? '' : value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar quarto disponível" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Selecione</SelectItem>
+                      {availableWalkInRooms.map((roomUnit) => (
+                        <SelectItem key={roomUnit.id} value={roomUnit.id}>
+                          {roomUnit.code} - {roomUnit.name} - {roomUnit.accommodation?.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="walkin-checkin">Check-in</Label>
+                    <Input
+                      id="walkin-checkin"
+                      type="date"
+                      value={walkInForm.checkInDate}
+                      onChange={(event) => setWalkInForm((current) => ({ ...current, checkInDate: event.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="walkin-checkout">Check-out</Label>
+                    <Input
+                      id="walkin-checkout"
+                      type="date"
+                      value={walkInForm.checkOutDate}
+                      onChange={(event) => setWalkInForm((current) => ({ ...current, checkOutDate: event.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="walkin-adults">Adultos</Label>
+                    <Input
+                      id="walkin-adults"
+                      type="number"
+                      min={1}
+                      value={walkInForm.adults}
+                      onChange={(event) => setWalkInForm((current) => ({ ...current, adults: event.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="walkin-children">Crianças</Label>
+                    <Input
+                      id="walkin-children"
+                      type="number"
+                      min={0}
+                      value={walkInForm.children}
+                      onChange={(event) => setWalkInForm((current) => ({ ...current, children: event.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="walkin-notes">Observações</Label>
+                  <Textarea
+                    id="walkin-notes"
+                    value={walkInForm.notes}
+                    onChange={(event) => setWalkInForm((current) => ({ ...current, notes: event.target.value }))}
+                    placeholder="Preferências, garantia, observações da recepção..."
+                  />
+                </div>
+
+                <div className="rounded-lg border p-4 text-sm text-gray-600">
+                  <div className="font-medium text-gray-900">
+                    {selectedWalkInRoom?.accommodation?.name || 'Selecione um quarto'}
+                  </div>
+                  <div>{selectedWalkInRoom ? `${selectedWalkInRoom.code} - ${selectedWalkInRoom.name}` : 'Sem quarto definido'}</div>
+                  <div>
+                    Diária padrão:{' '}
+                    {selectedWalkInRoom
+                      ? currencyFormatter.format(
+                          accommodations.find((item) => item.id === selectedWalkInRoom.accommodationId)?.pricePerNight || 0
+                        )
+                      : currencyFormatter.format(0)}
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleWalkInCheckIn}
+                    disabled={!walkInForm.roomUnitId || walkInCheckIn.isPending}
+                  >
+                    Fazer check-in no quarto
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
@@ -369,6 +650,13 @@ export default function Frontdesk() {
           )}
         </DialogContent>
       </Dialog>
+
+      <CreateCustomerDialog
+        open={customerDialogOpen}
+        onOpenChange={setCustomerDialogOpen}
+        hideRoleField
+        defaultRole="CUSTOMER"
+      />
     </AdminLayout>
   );
 }

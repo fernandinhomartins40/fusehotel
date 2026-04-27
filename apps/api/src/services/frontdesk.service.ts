@@ -1,10 +1,45 @@
 import { Prisma, ReservationStatus, RoomUnitStatus, HousekeepingStatus, StayStatus } from '@prisma/client';
+import { differenceInDays } from 'date-fns';
+import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../config/database';
 import { BadRequestError, NotFoundError } from '../utils/errors';
 import { FoliosService } from './folios.service';
-import { CheckInDto, CheckOutDto } from '../types/pms';
+import { CheckInDto, CheckOutDto, WalkInCheckInDto } from '../types/pms';
+import { scheduleService } from './schedule.service';
 
 export class FrontdeskService {
+  private static async ensureRoomReady(tx: Prisma.TransactionClient, roomUnitId: string) {
+    const roomUnit = await tx.roomUnit.findUnique({
+      where: { id: roomUnitId },
+    });
+
+    if (!roomUnit || !roomUnit.isActive) {
+      throw new NotFoundError('Quarto nao encontrado');
+    }
+
+    const roomUnitReady =
+      (roomUnit.status === RoomUnitStatus.AVAILABLE || roomUnit.status === RoomUnitStatus.INSPECTED) &&
+      (roomUnit.housekeepingStatus === HousekeepingStatus.CLEAN ||
+        roomUnit.housekeepingStatus === HousekeepingStatus.INSPECTED);
+
+    if (!roomUnitReady) {
+      throw new BadRequestError('Quarto nao esta liberado para check-in');
+    }
+
+    const activeStayOnRoom = await tx.stay.findFirst({
+      where: {
+        roomUnitId: roomUnit.id,
+        status: StayStatus.IN_HOUSE,
+      },
+    });
+
+    if (activeStayOnRoom) {
+      throw new BadRequestError('Ja existe uma hospedagem ativa neste quarto');
+    }
+
+    return roomUnit;
+  }
+
   static async getDashboard(referenceDate?: string) {
     const dateKey = referenceDate?.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
     const dayStart = new Date(`${dateKey}T00:00:00.000Z`);
@@ -173,34 +208,7 @@ export class FrontdeskService {
         throw new BadRequestError('Esta reserva ja esta em hospedagem ativa');
       }
 
-      const roomUnit = await tx.roomUnit.findUnique({
-        where: { id: data.roomUnitId },
-      });
-
-      if (!roomUnit || !roomUnit.isActive) {
-        throw new NotFoundError('Quarto nao encontrado');
-      }
-
-      const roomUnitReady =
-        (roomUnit.status === RoomUnitStatus.AVAILABLE ||
-          roomUnit.status === RoomUnitStatus.INSPECTED) &&
-        (roomUnit.housekeepingStatus === HousekeepingStatus.CLEAN ||
-          roomUnit.housekeepingStatus === HousekeepingStatus.INSPECTED);
-
-      if (!roomUnitReady) {
-        throw new BadRequestError('Quarto nao esta liberado para check-in');
-      }
-
-      const activeStayOnRoom = await tx.stay.findFirst({
-        where: {
-          roomUnitId: roomUnit.id,
-          status: StayStatus.IN_HOUSE,
-        },
-      });
-
-      if (activeStayOnRoom) {
-        throw new BadRequestError('Ja existe uma hospedagem ativa neste quarto');
-      }
+      const roomUnit = await this.ensureRoomReady(tx, data.roomUnitId);
 
       const stay = reservation.stay
         ? await tx.stay.update({
@@ -252,6 +260,161 @@ export class FrontdeskService {
           checkedInAt: new Date(),
         },
       });
+
+      await tx.roomUnit.update({
+        where: { id: roomUnit.id },
+        data: {
+          status: RoomUnitStatus.OCCUPIED,
+          housekeepingStatus: HousekeepingStatus.CLEAN,
+        },
+      });
+
+      return tx.stay.findUnique({
+        where: { id: stay.id },
+        include: {
+          reservation: {
+            include: {
+              accommodation: true,
+            },
+          },
+          roomUnit: true,
+          folio: {
+            include: {
+              entries: {
+                orderBy: { postedAt: 'desc' },
+              },
+            },
+          },
+        },
+      });
+    });
+  }
+
+  static async walkIn(data: WalkInCheckInDto) {
+    const checkInDate = new Date(data.checkInDate);
+    const checkOutDate = new Date(data.checkOutDate);
+    const numberOfNights = differenceInDays(checkOutDate, checkInDate);
+
+    if (Number.isNaN(checkInDate.getTime()) || Number.isNaN(checkOutDate.getTime())) {
+      throw new BadRequestError('Datas do walk-in invalidas');
+    }
+
+    if (numberOfNights <= 0) {
+      throw new BadRequestError('Data de check-out deve ser posterior ao check-in');
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const roomUnit = await this.ensureRoomReady(tx, data.roomUnitId);
+
+      const accommodation = await tx.accommodation.findUnique({
+        where: { id: roomUnit.accommodationId },
+      });
+
+      if (!accommodation || !accommodation.isAvailable) {
+        throw new BadRequestError('Acomodacao nao disponivel para walk-in');
+      }
+
+      const isAvailableForStay = await scheduleService.checkAvailability(
+        accommodation.id,
+        checkInDate.toISOString(),
+        checkOutDate.toISOString()
+      );
+
+      if (!isAvailableForStay) {
+        throw new BadRequestError('Nao ha disponibilidade comercial para este periodo');
+      }
+
+      const customer = data.customerId
+        ? await tx.user.findUnique({
+            where: { id: data.customerId },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              whatsapp: true,
+              cpf: true,
+            },
+          })
+        : null;
+
+      if (data.customerId && !customer) {
+        throw new NotFoundError('Cliente nao encontrado');
+      }
+
+      const guestName = data.guestName?.trim() || customer?.name;
+      const guestEmail = data.guestEmail?.trim().toLowerCase() || customer?.email || undefined;
+      const guestPhone = data.guestPhone?.trim() || customer?.phone || undefined;
+      const guestWhatsApp = data.guestWhatsApp?.replace(/\D/g, '') || customer?.whatsapp || guestPhone || '';
+      const guestCpf = data.guestCpf?.trim() || customer?.cpf || undefined;
+
+      if (!guestName) {
+        throw new BadRequestError('Nome do hospede obrigatorio para walk-in');
+      }
+
+      if (!guestWhatsApp) {
+        throw new BadRequestError('WhatsApp ou telefone obrigatorio para walk-in');
+      }
+
+      const subtotal = Number(accommodation.pricePerNight) * numberOfNights;
+      const serviceFee = subtotal * 0.05;
+      const taxes = subtotal * 0.02;
+      const totalAmount = Math.max(subtotal + serviceFee + taxes, 0);
+
+      const reservation = await tx.reservation.create({
+        data: {
+          reservationCode: `FH-${Date.now()}-${uuidv4().substring(0, 8).toUpperCase()}`,
+          accommodationId: accommodation.id,
+          userId: customer?.id,
+          checkInDate,
+          checkOutDate,
+          numberOfNights,
+          numberOfGuests: data.adults,
+          numberOfExtraBeds: 0,
+          guestName,
+          guestEmail,
+          guestPhone,
+          guestWhatsApp,
+          guestCpf,
+          pricePerNight: accommodation.pricePerNight,
+          subtotal,
+          extraBedsCost: 0,
+          serviceFee,
+          taxes,
+          discount: 0,
+          totalAmount,
+          source: 'WALK_IN',
+          status: ReservationStatus.CHECKED_IN,
+          checkedInAt: new Date(),
+          specialRequests: data.notes?.trim() || undefined,
+        },
+      });
+
+      const stay = await tx.stay.create({
+        data: {
+          reservationId: reservation.id,
+          roomUnitId: roomUnit.id,
+          status: StayStatus.IN_HOUSE,
+          adults: data.adults,
+          children: data.children ?? 0,
+          notes: data.notes?.trim(),
+          expectedCheckInAt: checkInDate,
+          expectedCheckOutAt: checkOutDate,
+          actualCheckInAt: new Date(),
+          guests: {
+            create: {
+              userId: customer?.id,
+              name: guestName,
+              email: guestEmail,
+              phone: guestPhone ?? guestWhatsApp,
+              cpf: guestCpf,
+              isPrimary: true,
+            },
+          },
+        },
+      });
+
+      await FoliosService.seedFromReservation(stay.id, tx);
 
       await tx.roomUnit.update({
         where: { id: roomUnit.id },

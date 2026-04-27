@@ -32,6 +32,15 @@ export class FrontdeskController {
     }
   }
 
+  static async walkIn(req: Request, res: Response, next: NextFunction) {
+    try {
+      const stay = await FrontdeskService.walkIn(req.body);
+      return sendSuccess(res, stay, 'Walk-in realizado com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async checkOut(req: Request, res: Response, next: NextFunction) {
     try {
       const stay = await FrontdeskService.checkOut(req.body);

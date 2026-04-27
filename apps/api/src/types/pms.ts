@@ -71,6 +71,21 @@ export interface CheckInDto {
   notes?: string;
 }
 
+export interface WalkInCheckInDto {
+  roomUnitId: string;
+  customerId?: string;
+  guestName?: string;
+  guestEmail?: string;
+  guestPhone?: string;
+  guestWhatsApp?: string;
+  guestCpf?: string;
+  checkInDate: string;
+  checkOutDate: string;
+  adults: number;
+  children?: number;
+  notes?: string;
+}
+
 export interface CheckOutDto {
   stayId: string;
   notes?: string;

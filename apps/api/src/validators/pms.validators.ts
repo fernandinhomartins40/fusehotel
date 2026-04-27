@@ -66,6 +66,39 @@ export const checkInSchema = z.object({
   notes: z.string().max(500).optional(),
 });
 
+export const walkInCheckInSchema = z
+  .object({
+    roomUnitId: uuidSchema,
+    customerId: uuidSchema.optional(),
+    guestName: z.string().min(3).max(120).optional(),
+    guestEmail: z.string().email('Email invalido').max(120).optional().or(z.literal('')),
+    guestPhone: z.string().max(30).optional(),
+    guestWhatsApp: z.string().max(30).optional(),
+    guestCpf: z.string().max(20).optional(),
+    checkInDate: z.string().min(10).max(30),
+    checkOutDate: z.string().min(10).max(30),
+    adults: z.number().int().positive(),
+    children: z.number().int().min(0).optional(),
+    notes: z.string().max(500).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.customerId && !data.guestName?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['guestName'],
+        message: 'Selecione um cliente ou informe o nome do hóspede',
+      });
+    }
+
+    if (!data.customerId && !data.guestWhatsApp?.trim() && !data.guestPhone?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['guestWhatsApp'],
+        message: 'Informe ao menos WhatsApp ou telefone para o walk-in',
+      });
+    }
+  });
+
 export const checkOutSchema = z.object({
   stayId: uuidSchema,
   notes: z.string().max(500).optional(),
