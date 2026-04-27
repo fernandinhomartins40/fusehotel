@@ -26,6 +26,7 @@ const mapAccommodationImages = (
 
 export class AccommodationService {
   static async list(filters: AccommodationFilters) {
+    const adminView = (filters as AccommodationFilters & { adminView?: boolean }).adminView === true;
     const where: Prisma.AccommodationWhereInput = {};
 
     if (filters.type) where.type = filters.type;
@@ -38,11 +39,42 @@ export class AccommodationService {
     }
     if (filters.minCapacity) where.capacity = { gte: filters.minCapacity };
 
-    return prisma.accommodation.findMany({
+    if (!adminView) {
+      where.isAvailable = true;
+      where.roomUnits = {
+        some: {
+          isActive: true,
+        },
+      };
+    }
+
+    const accommodations = await prisma.accommodation.findMany({
       where,
-      include: accommodationInclude,
+      include: {
+        ...accommodationInclude,
+        _count: {
+          select: {
+            roomUnits: true,
+          },
+        },
+        roomUnits: {
+          where: {
+            isActive: true,
+          },
+          select: {
+            id: true,
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' }
     });
+
+    return accommodations.map(({ roomUnits, _count, ...accommodation }) => ({
+      ...accommodation,
+      totalRoomUnitCount: _count.roomUnits,
+      activeRoomUnitCount: roomUnits.length,
+      isPublishedOnSite: accommodation.isAvailable && roomUnits.length > 0,
+    }));
   }
 
   static async getById(id: string) {

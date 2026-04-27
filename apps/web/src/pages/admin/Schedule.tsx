@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -47,7 +47,7 @@ export default function Schedule() {
   }, [currentDate]);
 
   // Fetch data
-  const { data: accommodations = [] } = useAccommodations();
+  const { data: accommodations = [] } = useAccommodations({ adminView: true });
   const { data: schedule = [], isLoading: isLoadingSchedule } = useSchedule({
     startDate,
     endDate,
@@ -80,7 +80,7 @@ export default function Schedule() {
           <div>
             <h1 className="text-3xl font-bold">Agenda de Reservas</h1>
             <p className="text-gray-600 mt-1">
-              Visualize e gerencie todas as reservas e disponibilidade das acomodações
+              Visualize e gerencie todas as reservas e disponibilidade das acomodaÃ§Ãµes
             </p>
           </div>
         </div>
@@ -114,10 +114,10 @@ export default function Schedule() {
                 onValueChange={setSelectedAccommodationId}
               >
                 <SelectTrigger className="w-[250px]">
-                  <SelectValue placeholder="Selecione uma acomodação" />
+                  <SelectValue placeholder="Selecione uma acomodaÃ§Ã£o" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas as Acomodações</SelectItem>
+                  <SelectItem value="all">Todas as AcomodaÃ§Ãµes</SelectItem>
                   {accommodations.map(accommodation => (
                     <SelectItem key={accommodation.id} value={accommodation.id}>
                       {accommodation.name}
@@ -131,7 +131,7 @@ export default function Schedule() {
                 <TabsList>
                   <TabsTrigger value="calendar" className="gap-2">
                     <CalendarIcon className="h-4 w-4" />
-                    Calendário
+                    CalendÃ¡rio
                   </TabsTrigger>
                   <TabsTrigger value="list" className="gap-2">
                     <List className="h-4 w-4" />
@@ -172,7 +172,7 @@ export default function Schedule() {
             <DialogHeader>
               <DialogTitle>Detalhes da Reserva</DialogTitle>
               <DialogDescription>
-                Código: {selectedReservation?.reservationCode}
+                CÃ³digo: {selectedReservation?.reservationCode}
               </DialogDescription>
             </DialogHeader>
 
@@ -197,7 +197,7 @@ export default function Schedule() {
 
                 {/* Guest Information */}
                 <div>
-                  <h3 className="font-semibold mb-3">Informações do Hóspede</h3>
+                  <h3 className="font-semibold mb-3">InformaÃ§Ãµes do HÃ³spede</h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-gray-500">Nome</p>
@@ -239,11 +239,11 @@ export default function Schedule() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Número de Noites</p>
+                      <p className="text-gray-500">NÃºmero de Noites</p>
                       <p className="font-medium">{selectedReservation.numberOfNights}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Número de Hóspedes</p>
+                      <p className="text-gray-500">NÃºmero de HÃ³spedes</p>
                       <p className="font-medium">{selectedReservation.numberOfGuests}</p>
                     </div>
                   </div>
@@ -271,3 +271,4 @@ export default function Schedule() {
     </AdminLayout>
   );
 }
+

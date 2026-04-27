@@ -45,6 +45,9 @@ export interface Accommodation {
   keywords: string[];
   isAvailable: boolean;
   isFeatured: boolean;
+  totalRoomUnitCount?: number;
+  activeRoomUnitCount?: number;
+  isPublishedOnSite?: boolean;
   createdAt: string;
   updatedAt: string;
 }

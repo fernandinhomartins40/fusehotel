@@ -92,7 +92,7 @@ export const CreateReservationDialog: React.FC<CreateReservationDialogProps> = (
   });
 
   const createReservation = useCreateReservation();
-  const { data: accommodations = [] } = useAccommodations();
+  const { data: accommodations = [] } = useAccommodations({ adminView: true });
   const { data: customers = [], isLoading: isLoadingCustomers } = useCustomers({
     role: 'CUSTOMER',
     isActive: true,
@@ -563,4 +563,5 @@ export const CreateReservationDialog: React.FC<CreateReservationDialogProps> = (
     </>
   );
 };
+
 

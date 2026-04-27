@@ -13,6 +13,9 @@ export class AccommodationController {
       if (filters.isFeatured !== undefined) {
         filters.isFeatured = filters.isFeatured === 'true' || filters.isFeatured === true;
       }
+      if (filters.adminView !== undefined) {
+        filters.adminView = filters.adminView === 'true' || filters.adminView === true;
+      }
       if (filters.minPrice) filters.minPrice = Number(filters.minPrice);
       if (filters.maxPrice) filters.maxPrice = Number(filters.maxPrice);
       if (filters.minCapacity) filters.minCapacity = Number(filters.minCapacity);

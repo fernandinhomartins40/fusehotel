@@ -150,6 +150,7 @@ export interface AccommodationFilters {
   isFeatured?: boolean;
   checkInDate?: string;
   checkOutDate?: string;
+  adminView?: boolean;
 }
 
 /**

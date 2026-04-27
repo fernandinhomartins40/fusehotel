@@ -16,6 +16,15 @@ const normalizeAccommodation = (accommodation: any): Accommodation => ({
     accommodation?.extraBedPrice !== undefined && accommodation?.extraBedPrice !== null
       ? Number(accommodation.extraBedPrice)
       : 0,
+  totalRoomUnitCount:
+    accommodation?.totalRoomUnitCount !== undefined && accommodation?.totalRoomUnitCount !== null
+      ? Number(accommodation.totalRoomUnitCount)
+      : 0,
+  activeRoomUnitCount:
+    accommodation?.activeRoomUnitCount !== undefined && accommodation?.activeRoomUnitCount !== null
+      ? Number(accommodation.activeRoomUnitCount)
+      : 0,
+  isPublishedOnSite: Boolean(accommodation?.isPublishedOnSite),
 });
 
 export function useAccommodations(filters?: any) {

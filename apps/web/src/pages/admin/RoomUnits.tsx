@@ -1,4 +1,5 @@
 ﻿import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BedDouble, Plus } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -30,7 +31,7 @@ const housekeepingLabels: Record<HousekeepingStatus, string> = {
 };
 
 export default function RoomUnits() {
-  const { data: accommodations = [] } = useAccommodations();
+  const { data: accommodations = [] } = useAccommodations({ adminView: true });
   const { data: roomUnits = [], isLoading } = useRoomUnits();
   const createRoomUnit = useCreateRoomUnit();
   const updateRoomUnit = useUpdateRoomUnit();
@@ -83,17 +84,47 @@ export default function RoomUnits() {
     <AdminLayout>
       <div className="flex flex-col gap-6 p-6">
         <div>
-          <h1 className="text-3xl font-bold">Quartos Físicos</h1>
-          <p className="text-gray-600 mt-1">
-            Cadastro operacional das unidades reais usadas no check-in, governança e estadia.
+          <h1 className="text-3xl font-bold">Quartos físicos</h1>
+          <p className="mt-1 text-gray-600">
+            Inventário operacional das unidades reais usadas no check-in, na governança e na estadia.
           </p>
         </div>
+
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="flex flex-col gap-3 p-6 text-blue-950 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="font-medium">Sem duplicidade: site e hotel agora seguem o mesmo fluxo.</div>
+              <p className="mt-1 text-sm text-blue-900">
+                O site vende o tipo de hospedagem. Esta tela controla os quartos reais vinculados a esse tipo.
+              </p>
+            </div>
+            <Button asChild variant="outline">
+              <Link to="/admin/accommodations">Abrir tipos de hospedagem</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        {accommodations.length === 0 && !isLoading ? (
+          <Card className="border-amber-200 bg-amber-50">
+            <CardContent className="flex flex-col gap-3 p-6 text-amber-950">
+              <div className="font-medium">Cadastre primeiro um tipo de hospedagem.</div>
+              <p className="text-sm text-amber-900">
+                Para criar quartos físicos, antes é preciso criar a categoria que será exibida no site e usada nas reservas.
+              </p>
+              <div>
+                <Button asChild variant="outline">
+                  <Link to="/admin/accommodations">Criar tipo de hospedagem</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5" />
-              Novo quarto
+              Novo quarto físico
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-5">
@@ -102,7 +133,7 @@ export default function RoomUnits() {
               onValueChange={(value) => setForm((current) => ({ ...current, accommodationId: value }))}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Categoria" />
+                <SelectValue placeholder="Tipo de hospedagem do site" />
               </SelectTrigger>
               <SelectContent>
                 {accommodations.map((accommodation) => (
@@ -114,7 +145,7 @@ export default function RoomUnits() {
             </Select>
 
             <Input
-              placeholder="Nome do quarto"
+              placeholder="Nome interno do quarto"
               value={form.name}
               onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
             />
@@ -132,7 +163,7 @@ export default function RoomUnits() {
               onChange={(event) => setForm((current) => ({ ...current, floor: event.target.value }))}
             />
 
-            <Button onClick={handleCreate} disabled={createRoomUnit.isPending}>
+            <Button onClick={handleCreate} disabled={createRoomUnit.isPending || accommodations.length === 0}>
               Cadastrar quarto
             </Button>
 
@@ -159,7 +190,7 @@ export default function RoomUnits() {
                 <TableRow>
                   <TableHead>Código</TableHead>
                   <TableHead>Quarto</TableHead>
-                  <TableHead>Categoria</TableHead>
+                  <TableHead>Tipo no site</TableHead>
                   <TableHead>Andar</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Governança</TableHead>
@@ -173,7 +204,7 @@ export default function RoomUnits() {
                   </TableRow>
                 ) : roomUnits.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7}>Nenhum quarto cadastrado.</TableCell>
+                    <TableCell colSpan={7}>Nenhum quarto físico cadastrado.</TableCell>
                   </TableRow>
                 ) : (
                   roomUnits.map((roomUnit) => (
@@ -232,4 +263,3 @@ export default function RoomUnits() {
     </AdminLayout>
   );
 }
-

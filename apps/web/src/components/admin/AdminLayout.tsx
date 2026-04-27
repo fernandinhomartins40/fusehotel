@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   BarChart3,
@@ -94,7 +94,7 @@ const operationItems: MenuItem[] = [
 const hotelItems: MenuItem[] = [
   {
     path: '/admin/room-units',
-    label: 'Quartos',
+    label: 'Quartos físicos',
     icon: BedDouble,
     activeClassName:
       'data-[active=true]:bg-sky-50 data-[active=true]:text-sky-700 data-[active=true]:border-r-2 data-[active=true]:border-sky-600',
@@ -132,14 +132,14 @@ const catalogItems: MenuItem[] = [
   },
   {
     path: '/admin/accommodations',
-    label: 'Acomodações',
+    label: 'Tipos de hospedagem',
     icon: Home,
     activeClassName:
       'data-[active=true]:bg-green-50 data-[active=true]:text-green-700 data-[active=true]:border-r-2 data-[active=true]:border-green-600',
   },
   {
     path: '/admin/packages-promotions',
-    label: 'Pacotes e Promoções',
+    label: 'Pacotes e promoções',
     icon: Tag,
     activeClassName:
       'data-[active=true]:bg-pink-50 data-[active=true]:text-pink-700 data-[active=true]:border-r-2 data-[active=true]:border-pink-600',
@@ -149,14 +149,14 @@ const catalogItems: MenuItem[] = [
 const siteItems: MenuItem[] = [
   {
     path: '/admin/landing-customizer',
-    label: 'Página Inicial',
+    label: 'Página inicial',
     icon: Home,
     activeClassName:
       'data-[active=true]:bg-pink-50 data-[active=true]:text-pink-700 data-[active=true]:border-r-2 data-[active=true]:border-pink-600',
   },
   {
     path: '/admin/about-customizer',
-    label: 'Sobre Nós',
+    label: 'Sobre nós',
     icon: FileText,
     activeClassName:
       'data-[active=true]:bg-purple-50 data-[active=true]:text-purple-700 data-[active=true]:border-r-2 data-[active=true]:border-purple-600',
@@ -296,3 +296,4 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 }
 
 export default AdminLayout;
+

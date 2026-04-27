@@ -40,6 +40,10 @@ export function useCreateRoomUnit() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['room-units'] });
+      queryClient.invalidateQueries({ queryKey: ['accommodations'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['availability'] });
       toast.success('Quarto cadastrado com sucesso');
     },
     onError: (error: any) => {
@@ -64,6 +68,10 @@ export function useUpdateRoomUnit() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['room-units'] });
+      queryClient.invalidateQueries({ queryKey: ['accommodations'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['schedule-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['availability'] });
       toast.success('Quarto atualizado com sucesso');
     },
     onError: (error: any) => {

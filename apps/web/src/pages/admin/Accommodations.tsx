@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from '@/components/ui/table';
 import {
   Dialog,
@@ -28,15 +29,15 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash, Star, Loader2 } from 'lucide-react';
+import { ArrowRight, BedDouble, Edit, Loader2, Plus, Star, Trash } from 'lucide-react';
 import { AccommodationForm } from '@/components/admin/AccommodationForm';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Accommodation, AccommodationFormData } from '@/types/accommodation';
 import { useAccommodations } from '@/hooks/useAccommodations';
 import {
   useCreateAccommodation,
+  useDeleteAccommodation,
   useUpdateAccommodation,
-  useDeleteAccommodation
 } from '@/hooks/useAccommodationMutations';
 
 const accommodationTypeLabels: Record<string, string> = {
@@ -52,41 +53,40 @@ export function Accommodations() {
   const [currentAccommodation, setCurrentAccommodation] = useState<Accommodation | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const { data: accommodations, isLoading, error } = useAccommodations();
+  const { data: accommodations, isLoading, error } = useAccommodations({ adminView: true });
   const createMutation = useCreateAccommodation();
   const updateMutation = useUpdateAccommodation();
   const deleteMutation = useDeleteAccommodation();
 
+  const publishedCount = useMemo(
+    () => (accommodations || []).filter((item) => item.isPublishedOnSite).length,
+    [accommodations]
+  );
+
   const handleAddEditAccommodation = (data: AccommodationFormData) => {
     if (currentAccommodation?.id) {
-      // Edit existing accommodation
       updateMutation.mutate(
         { id: currentAccommodation.id, data },
         {
           onSuccess: () => {
             setIsDialogOpen(false);
             setCurrentAccommodation(null);
-          }
+          },
         }
       );
-    } else {
-      // Add new accommodation
-      createMutation.mutate(data, {
-        onSuccess: () => {
-          setIsDialogOpen(false);
-          setCurrentAccommodation(null);
-        }
-      });
+      return;
     }
+
+    createMutation.mutate(data, {
+      onSuccess: () => {
+        setIsDialogOpen(false);
+        setCurrentAccommodation(null);
+      },
+    });
   };
 
   const handleEditClick = (accommodation: Accommodation) => {
     setCurrentAccommodation(accommodation);
-    setIsDialogOpen(true);
-  };
-
-  const handleAddClick = () => {
-    setCurrentAccommodation(null);
     setIsDialogOpen(true);
   };
 
@@ -95,19 +95,21 @@ export function Accommodations() {
   };
 
   const confirmDelete = () => {
-    if (deleteId) {
-      deleteMutation.mutate(deleteId, {
-        onSuccess: () => {
-          setDeleteId(null);
-        }
-      });
+    if (!deleteId) {
+      return;
     }
+
+    deleteMutation.mutate(deleteId, {
+      onSuccess: () => {
+        setDeleteId(null);
+      },
+    });
   };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
     }).format(value);
   };
 
@@ -115,14 +117,20 @@ export function Accommodations() {
     return (
       <AdminLayout>
         <div className="flex flex-col items-center justify-center p-12 text-center">
-          <div className="text-red-600 mb-4">
-            <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <div className="mb-4 text-red-600">
+            <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
-          <h2 className="text-xl font-bold mb-2">Erro ao carregar acomodações</h2>
+          <h2 className="mb-2 text-xl font-bold">Erro ao carregar tipos de hospedagem</h2>
           <p className="text-gray-600">
-            {(error as any)?.response?.data?.message || 'Ocorreu um erro ao carregar as acomodações'}
+            {(error as any)?.response?.data?.message ||
+              'Ocorreu um erro ao carregar os tipos de hospedagem.'}
           </p>
         </div>
       </AdminLayout>
@@ -132,23 +140,49 @@ export function Accommodations() {
   return (
     <AdminLayout>
       <div className="flex flex-col gap-6 p-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Gerenciar Acomodações</h1>
-            <p className="text-gray-600 mt-1">
-              {isLoading ? 'Carregando...' : `${accommodations?.length || 0} acomodações cadastradas`}
+            <h1 className="text-3xl font-bold">Tipos de hospedagem do site</h1>
+            <p className="mt-1 text-gray-600">
+              Catálogo comercial usado no site, nas reservas e no inventário operacional.
             </p>
           </div>
-          <Button onClick={handleAddClick} size="lg">
-            <Plus className="mr-2 h-4 w-4" /> Adicionar Acomodação
+          <Button onClick={() => {
+            setCurrentAccommodation(null);
+            setIsDialogOpen(true);
+          }} size="lg">
+            <Plus className="mr-2 h-4 w-4" /> Novo tipo de hospedagem
           </Button>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-3">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription>Total cadastrado</CardDescription>
+              <CardTitle>{isLoading ? '...' : accommodations?.length || 0}</CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription>Publicado no site</CardDescription>
+              <CardTitle>{isLoading ? '...' : publishedCount}</CardTitle>
+            </CardHeader>
+          </Card>
+          <Card className="border-blue-200 bg-blue-50">
+            <CardHeader className="pb-3">
+              <CardDescription className="text-blue-700">Regra de publicação</CardDescription>
+              <CardTitle className="text-base text-blue-950">
+                Só aparece no site quando o tipo está disponível e possui ao menos 1 quarto físico ativo.
+              </CardTitle>
+            </CardHeader>
+          </Card>
         </div>
 
         {isLoading ? (
           <Card>
             <CardContent className="flex items-center justify-center p-12">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-              <span className="ml-3 text-lg">Carregando acomodações...</span>
+              <span className="ml-3 text-lg">Carregando tipos de hospedagem...</span>
             </CardContent>
           </Card>
         ) : accommodations && accommodations.length > 0 ? (
@@ -162,7 +196,8 @@ export function Accommodations() {
                     <TableHead>Tipo</TableHead>
                     <TableHead>Capacidade</TableHead>
                     <TableHead>Preço</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Site</TableHead>
+                    <TableHead>Quartos físicos</TableHead>
                     <TableHead>Comodidades</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -171,16 +206,16 @@ export function Accommodations() {
                   {accommodations.map((accommodation) => (
                     <TableRow key={accommodation.id}>
                       <TableCell>
-                        <div className="w-20 h-12 relative overflow-hidden rounded">
-                          <AspectRatio ratio={16/9} className="bg-muted">
+                        <div className="relative h-12 w-20 overflow-hidden rounded">
+                          <AspectRatio ratio={16 / 9} className="bg-muted">
                             {accommodation.images && accommodation.images.length > 0 ? (
                               <img
                                 src={accommodation.images[0].url}
                                 alt={accommodation.images[0].alt}
-                                className="object-cover w-full h-full"
+                                className="h-full w-full object-cover"
                               />
                             ) : (
-                              <div className="flex items-center justify-center w-full h-full bg-gray-200">
+                              <div className="flex h-full w-full items-center justify-center bg-gray-200">
                                 <span className="text-xs text-gray-400">Sem imagem</span>
                               </div>
                             )}
@@ -189,10 +224,10 @@ export function Accommodations() {
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="font-medium flex items-center gap-2">
+                          <div className="flex items-center gap-2 font-medium">
                             {accommodation.name}
                             {accommodation.isFeatured && (
-                              <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                              <Star className="h-4 w-4 fill-current text-yellow-500" />
                             )}
                           </div>
                           <div className="text-sm text-gray-500">
@@ -206,12 +241,27 @@ export function Accommodations() {
                         {formatCurrency(Number(accommodation.pricePerNight))}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={accommodation.isAvailable ? "default" : "secondary"}>
-                          {accommodation.isAvailable ? 'Disponível' : 'Indisponível'}
-                        </Badge>
+                        {accommodation.isPublishedOnSite ? (
+                          <Badge variant="default">Publicado</Badge>
+                        ) : (
+                          <div className="space-y-1">
+                            <Badge variant="secondary">Fora do site</Badge>
+                            <div className="text-xs text-muted-foreground">
+                              {!accommodation.isAvailable ? 'Tipo indisponível' : 'Sem quarto físico ativo'}
+                            </div>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-1 max-w-32">
+                        <div className="space-y-1">
+                          <div className="font-medium">{accommodation.activeRoomUnitCount || 0} ativos</div>
+                          <div className="text-xs text-muted-foreground">
+                            {accommodation.totalRoomUnitCount || 0} cadastrados
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex max-w-40 flex-wrap gap-1">
                           {accommodation.amenities && accommodation.amenities.length > 0 ? (
                             <>
                               {accommodation.amenities.slice(0, 2).map((item, index) => (
@@ -232,12 +282,12 @@ export function Accommodations() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditClick(accommodation)}
-                            title="Editar"
-                          >
+                          <Button asChild variant="outline" size="sm">
+                            <Link to="/admin/room-units">
+                              <BedDouble className="mr-2 h-4 w-4" /> Quartos
+                            </Link>
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(accommodation)} title="Editar">
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
@@ -260,31 +310,75 @@ export function Accommodations() {
         ) : (
           <Card>
             <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-              <div className="text-gray-400 mb-4">
-                <svg className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              <div className="mb-4 text-gray-400">
+                <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1}
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold mb-2">Nenhuma acomodação cadastrada</h3>
-              <p className="text-gray-600 mb-4">Comece adicionando sua primeira acomodação</p>
-              <Button onClick={handleAddClick}>
-                <Plus className="mr-2 h-4 w-4" /> Adicionar Primeira Acomodação
+              <h3 className="mb-2 text-lg font-semibold">Nenhum tipo de hospedagem cadastrado</h3>
+              <p className="mb-4 text-gray-600">Comece criando a categoria que será vendida no site.</p>
+              <Button onClick={() => {
+                setCurrentAccommodation(null);
+                setIsDialogOpen(true);
+              }}>
+                <Plus className="mr-2 h-4 w-4" /> Criar primeiro tipo de hospedagem
               </Button>
             </CardContent>
           </Card>
         )}
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Fluxo unificado</CardTitle>
+            <CardDescription>
+              O site vende tipos de hospedagem. A operação usa quartos físicos vinculados a esses tipos.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-xl border p-4">
+              <div className="font-medium">1. Cadastre o tipo</div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Nome, preço, capacidade, imagens e descrição que serão exibidos no site.
+              </p>
+            </div>
+            <div className="rounded-xl border p-4">
+              <div className="font-medium">2. Vincule quartos físicos</div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Cada quarto real deve apontar para um tipo de hospedagem desta tela.
+              </p>
+            </div>
+            <div className="rounded-xl border p-4">
+              <div className="font-medium">3. Publicação automática</div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                O site só oferece tipos com pelo menos um quarto ativo e disponibilidade comercial.
+              </p>
+            </div>
+            <div className="md:col-span-3">
+              <Button asChild variant="outline">
+                <Link to="/admin/room-units">
+                  Vincular quartos físicos agora
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
             <DialogHeader>
               <DialogTitle>
-                {currentAccommodation ? 'Editar Acomodação' : 'Adicionar Acomodação'}
+                {currentAccommodation ? 'Editar tipo de hospedagem' : 'Novo tipo de hospedagem'}
               </DialogTitle>
               <DialogDescription>
                 {currentAccommodation
-                  ? 'Modifique os detalhes da acomodação abaixo.'
-                  : 'Preencha os detalhes da nova acomodação.'
-                }
+                  ? 'Modifique o produto que será vendido no site e usado nas reservas.'
+                  : 'Cadastre a categoria comercial que será exibida no site.'}
               </DialogDescription>
             </DialogHeader>
             <AccommodationForm
@@ -300,7 +394,7 @@ export function Accommodations() {
             <AlertDialogHeader>
               <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
               <AlertDialogDescription>
-                Esta ação não pode ser desfeita. A acomodação será permanentemente removida do sistema.
+                Esta ação não pode ser desfeita. O tipo de hospedagem será removido do sistema.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
