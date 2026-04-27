@@ -10,6 +10,7 @@ import { seedServices } from './services.seed';
 import { seedAboutPage } from './about.seed';
 import { seedFAQ } from './faq.seed';
 import { seedContact } from './contact.seed';
+import { seedPmsData } from './pms.seed';
 
 async function seedUsers() {
   logger.info('🌱 Seeding users...');
@@ -252,6 +253,7 @@ async function main() {
     await seedHotelSettings();
     await seedPromotions();
     await seedAccommodations();
+    await seedPmsData();
     await seedLandingPage();
     await seedServices();
     await seedAboutPage();
