@@ -1010,38 +1010,38 @@ export default function POS() {
     <AdminLayout>
       <div className="space-y-4 p-4 md:p-6 lg:min-h-[calc(100dvh-4rem)]">
         <div className="rounded-3xl bg-gradient-to-r from-sky-700 via-blue-700 to-slate-900 p-3 text-white shadow-sm">
-          <div className="grid gap-2.5 lg:grid-cols-[minmax(220px,1fr)_minmax(560px,760px)] lg:items-center lg:justify-between">
+          <div className="grid gap-2.5 xl:grid-cols-[minmax(220px,1fr)_minmax(560px,760px)] xl:items-center xl:justify-between">
             <div className="min-w-0 space-y-1.5">
-              <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2 overflow-hidden">
                 <Badge className="border-0 bg-white/10 text-white hover:bg-white/10">PDV</Badge>
                 <Badge className="border-0 bg-white/10 text-white hover:bg-white/10">Hotel</Badge>
-                <h1 className="min-w-0 truncate text-xl font-semibold tracking-tight">PDV do hotel</h1>
+                <h1 className="min-w-0 truncate whitespace-nowrap text-xl font-semibold tracking-tight">PDV do hotel</h1>
               </div>
-              <div className="inline-flex w-fit max-w-full items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] text-sky-100">
+              <div className="inline-flex max-w-full items-center gap-2 overflow-hidden rounded-full bg-white/10 px-3 py-1 text-[11px] text-sky-100">
                 <Keyboard className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">Alt + 1 pedidos | Alt + 2 caixa | Ctrl + Enter finalizar</span>
+                <span className="truncate whitespace-nowrap">Alt + 1 pedidos | Alt + 2 caixa | Ctrl + Enter finalizar</span>
               </div>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_minmax(150px,1fr)_minmax(150px,1fr)]">
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_minmax(168px,1fr)_minmax(168px,1fr)]">
               <TopMetric label="Caixa" value={activeCashSession ? activeCashSession.code : 'Fechado'} icon={Wallet} />
               <TopMetric label="Pedidos" value={String(openOrders.length)} icon={Receipt} />
               <TopMetric label="Hospedados" value={String(report?.frontdesk.inHouse ?? inHouseStays.length)} icon={Hotel} />
               <TopMetric label="Receita PDV" value={currency.format(report?.finance.posRevenueMonth ?? 0)} icon={CreditCard} />
               <Button
                 variant="outline"
-                className="h-10 justify-center border-white/20 bg-white/10 px-4 text-white hover:bg-white/15"
+                className="h-10 justify-center whitespace-nowrap border-white/20 bg-white/10 px-4 text-white hover:bg-white/15"
                 onClick={() => setIsCompactMode((current) => !current)}
               >
-                <TabletSmartphone className="mr-2 h-4 w-4" />
+                <TabletSmartphone className="mr-2 h-4 w-4 shrink-0" />
                 {isCompactMode ? 'Modo amplo' : 'Modo compacto'}
               </Button>
               <Button
                 variant="outline"
-                className="h-10 justify-center border-white/20 bg-white/10 px-4 text-white hover:bg-white/15"
+                className="h-10 justify-center whitespace-nowrap border-white/20 bg-white/10 px-4 text-white hover:bg-white/15"
                 onClick={() => void toggleFullscreen()}
               >
-                {isFullscreen ? <Minimize2 className="mr-2 h-4 w-4" /> : <Maximize2 className="mr-2 h-4 w-4" />}
+                {isFullscreen ? <Minimize2 className="mr-2 h-4 w-4 shrink-0" /> : <Maximize2 className="mr-2 h-4 w-4 shrink-0" />}
                 {isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
               </Button>
             </div>
@@ -2102,8 +2102,8 @@ function TopMetric({
           <Icon className="h-3.5 w-3.5" />
         </div>
         <div className="min-w-0">
-          <div className="text-[11px] uppercase tracking-[0.08em] text-sky-100/90">{label}</div>
-          <div className="truncate text-sm font-semibold leading-tight text-white">{value}</div>
+          <div className="truncate whitespace-nowrap text-[10px] uppercase tracking-[0.08em] text-sky-100/90">{label}</div>
+          <div className="truncate whitespace-nowrap text-sm font-semibold leading-tight text-white">{value}</div>
         </div>
       </div>
     </div>
