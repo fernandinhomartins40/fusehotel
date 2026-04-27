@@ -1023,10 +1023,8 @@ export default function POS() {
               </div>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_minmax(168px,1fr)_minmax(168px,1fr)]">
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-[repeat(2,minmax(0,1fr))_minmax(168px,1fr)_minmax(168px,1fr)]">
               <TopMetric label="Caixa" value={activeCashSession ? activeCashSession.code : 'Fechado'} icon={Wallet} />
-              <TopMetric label="Pedidos" value={String(openOrders.length)} icon={Receipt} />
-              <TopMetric label="Hospedados" value={String(report?.frontdesk.inHouse ?? inHouseStays.length)} icon={Hotel} />
               <TopMetric label="Receita PDV" value={currency.format(report?.finance.posRevenueMonth ?? 0)} icon={CreditCard} />
               <Button
                 variant="outline"
