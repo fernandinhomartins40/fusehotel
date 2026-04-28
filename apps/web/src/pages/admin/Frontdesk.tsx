@@ -141,6 +141,11 @@ export default function Frontdesk() {
     });
   }, [customers, walkInSearch]);
 
+  const selectedSearchCustomer = useMemo(
+    () => customers.find((customer) => customer.id === walkInForm.customerId),
+    [customers, walkInForm.customerId]
+  );
+
   const handleCheckIn = (reservation: Reservation) => {
     const roomUnitId = selectedRooms[reservation.id];
 
@@ -202,7 +207,7 @@ export default function Frontdesk() {
   };
 
   const openWalkInDialog = () => {
-    const firstMatch = customerSearchResults[0];
+    const firstMatch = selectedSearchCustomer ?? customerSearchResults[0];
 
     setWalkInForm((current) => ({
       ...current,
@@ -215,6 +220,36 @@ export default function Frontdesk() {
     }));
 
     setWalkInDialogOpen(true);
+  };
+
+  const handleWalkInSearchChange = (value: string) => {
+    setWalkInSearch(value);
+
+    if (walkInForm.customerId) {
+      setWalkInForm((current) => ({
+        ...current,
+        customerId: '',
+      }));
+    }
+  };
+
+  const handleSelectCustomerFromSearch = (customerId: string) => {
+    const customer = customers.find((item) => item.id === customerId);
+
+    if (!customer) {
+      return;
+    }
+
+    setWalkInSearch(customer.name);
+    setWalkInForm((current) => ({
+      ...current,
+      customerId: customer.id,
+      guestName: '',
+      guestEmail: '',
+      guestPhone: '',
+      guestWhatsApp: '',
+      guestCpf: '',
+    }));
   };
 
   const handleAddEntry = () => {
@@ -268,9 +303,36 @@ export default function Frontdesk() {
                 <Input
                   id="walkin-search"
                   value={walkInSearch}
-                  onChange={(event) => setWalkInSearch(event.target.value)}
+                  onChange={(event) => handleWalkInSearchChange(event.target.value)}
                   placeholder="Nome, WhatsApp, telefone, email ou CPF"
                 />
+                {walkInSearch.trim() ? (
+                  <div className="rounded-lg border bg-white">
+                    {customerSearchResults.length ? (
+                      <div className="max-h-64 overflow-y-auto py-1">
+                        {customerSearchResults.slice(0, 8).map((customer) => (
+                          <button
+                            key={customer.id}
+                            type="button"
+                            className={`flex w-full flex-col items-start px-3 py-2 text-left text-sm transition hover:bg-slate-50 ${
+                              walkInForm.customerId === customer.id ? 'bg-sky-50' : ''
+                            }`}
+                            onClick={() => handleSelectCustomerFromSearch(customer.id)}
+                          >
+                            <span className="font-medium text-gray-900">{customer.name}</span>
+                            <span className="text-gray-500">
+                              {customer.whatsapp || customer.phone || customer.email || 'Sem contato'}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="px-3 py-2 text-sm text-gray-500">
+                        Nenhum hóspede encontrado para essa pesquisa.
+                      </div>
+                    )}
+                  </div>
+                ) : null}
               </div>
               <div className="flex gap-2 lg:self-end">
                 <Button onClick={openWalkInDialog}>Fazer check-in</Button>
@@ -280,20 +342,14 @@ export default function Frontdesk() {
               </div>
             </div>
 
-            {walkInSearch.trim() ? (
+            {selectedSearchCustomer ? (
               <div className="rounded-lg border px-4 py-3 text-sm text-gray-600">
-                {customerSearchResults.length ? (
-                  <>
-                    <div className="font-medium text-gray-900">
-                      Cliente sugerido: {customerSearchResults[0].name}
-                    </div>
-                    <div>
-                      {customerSearchResults[0].whatsapp || customerSearchResults[0].phone || customerSearchResults[0].email}
-                    </div>
-                  </>
-                ) : (
-                  <div>Nenhum cliente encontrado. Você pode abrir o check-in e cadastrar os dados manualmente.</div>
-                )}
+                <div className="font-medium text-gray-900">
+                  Cliente selecionado: {selectedSearchCustomer.name}
+                </div>
+                <div>
+                  {selectedSearchCustomer.whatsapp || selectedSearchCustomer.phone || selectedSearchCustomer.email}
+                </div>
               </div>
             ) : null}
           </CardContent>
