@@ -211,6 +211,7 @@ export default function POS() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentReference, setPaymentReference] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
+  const [showCheckoutExtras, setShowCheckoutExtras] = useState(false);
   const [activeNumericField, setActiveNumericField] = useState<NumericField>('payment');
   const [salePreset, setSalePreset] = useState<SalePreset>('BALCAO');
   const [quickCode, setQuickCode] = useState('');
@@ -257,6 +258,20 @@ export default function POS() {
       return matchesCategory && matchesSearch;
     });
   }, [activeProducts, category, search]);
+
+  const operationalReferenceLabel = useMemo(() => {
+    if (salePreset === 'MESA') return 'Mesa';
+    if (salePreset === 'COMANDA') return 'Comanda';
+    if (salePreset === 'QUARTO') return 'Quarto / hospedagem';
+    return 'Referência';
+  }, [salePreset]);
+
+  const operationalReferencePlaceholder = useMemo(() => {
+    if (salePreset === 'MESA') return 'Número da mesa';
+    if (salePreset === 'COMANDA') return 'Número da comanda';
+    if (salePreset === 'QUARTO') return 'Quarto ou observação da entrega';
+    return 'Cliente ou referência opcional';
+  }, [salePreset]);
 
   const cartDetailedItems = useMemo(() => {
     return cartItems
@@ -1019,7 +1034,7 @@ export default function POS() {
                 <div className="rounded-2xl bg-slate-950 px-3 py-2 text-sm font-semibold text-white">PDV</div>
                 <div className="min-w-0">
                   <h1 className="truncate text-xl font-semibold tracking-tight text-slate-900">PDV do hotel</h1>
-                  <p className="text-sm text-slate-500">Venda, conta da hospedagem e opera??o r?pida do hotel.</p>
+                  <p className="text-sm text-slate-500">Venda, conta da hospedagem e operação rápida do hotel.</p>
                 </div>
               </div>
               <div className="inline-flex max-w-full items-center gap-2 overflow-hidden rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-600 xl:flex-none">
@@ -1046,74 +1061,78 @@ export default function POS() {
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]">
           <div className="space-y-4">
             <div className="rounded-3xl border bg-slate-950 p-3 text-white shadow-sm">
-              <div className="mb-3 text-xs font-medium uppercase tracking-[0.12em] text-slate-400">Opera??o r?pida</div>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs font-medium uppercase tracking-[0.12em] text-slate-400">Operação rápida</div>
+                  <div className="mt-1 text-sm text-slate-300">Acesse as ações do turno sem sair do caixa.</div>
+                </div>
+                <div className="hidden text-xs text-slate-500 xl:block">Alt + 1, 2, 3 e 9</div>
+              </div>
               <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-5">
-                <SideAction icon={ShoppingCart} label="Pedidos" active={activeDialog === 'orders'} onClick={() => setActiveDialog('orders')} />
-                <SideAction icon={Wallet} label="Caixa" active={activeDialog === 'cash'} onClick={() => setActiveDialog('cash')} />
-                <SideAction icon={Hotel} label="Hotel" active={activeDialog === 'hotel'} onClick={() => openHotelDialog('frontdesk')} />
-                <SideAction icon={Receipt} label="Pr?-venda" active={activeDialog === 'drafts'} onClick={() => setActiveDialog('drafts')} />
-                <SideAction icon={Search} label="Refer?ncias" active={activeDialog === 'references'} onClick={() => setActiveDialog('references')} />
+                <SideAction
+                  icon={ShoppingCart}
+                  label="Pedidos"
+                  description="Abertos e recebimento"
+                  shortcut="Alt + 1"
+                  active={activeDialog === 'orders'}
+                  onClick={() => setActiveDialog('orders')}
+                />
+                <SideAction
+                  icon={Wallet}
+                  label="Caixa"
+                  description="Abertura, sangria e fechamento"
+                  shortcut="Alt + 2"
+                  active={activeDialog === 'cash'}
+                  onClick={() => setActiveDialog('cash')}
+                />
+                <SideAction
+                  icon={Hotel}
+                  label="Hotel"
+                  description="Check-in, quartos e saída"
+                  shortcut="Alt + 3"
+                  active={activeDialog === 'hotel'}
+                  onClick={() => openHotelDialog('frontdesk')}
+                />
+                <SideAction
+                  icon={Receipt}
+                  label="Pré-venda"
+                  description="Suspensas e retomada"
+                  shortcut="Alt + 9"
+                  active={activeDialog === 'drafts'}
+                  onClick={() => setActiveDialog('drafts')}
+                />
+                <SideAction
+                  icon={Search}
+                  label="Referências"
+                  description="Mesa, comanda ou hóspede"
+                  shortcut="Alt + 0"
+                  active={activeDialog === 'references'}
+                  onClick={() => setActiveDialog('references')}
+                />
               </div>
             </div>
 
             <div className="rounded-3xl bg-white p-4 shadow-sm">
-              <div className="flex flex-col gap-3 xl:flex-row">
-                <div className="relative flex-1">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <Input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Buscar item, produto ou serviço"
-                    className="h-12 rounded-2xl border-slate-200 pl-9 text-base"
-                  />
-                </div>
-                <Button
-                  variant="outline"
-                  className="h-12 rounded-2xl border-slate-200 px-5"
-                  onClick={() => {
-                    setCategory('ALL');
-                    setSearch('');
-                  }}
-                >
-                  Limpar busca
-                </Button>
-              </div>
-
-              <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
-                {Object.entries(categoryLabels).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setCategory(value as POSProductCategory | 'ALL')}
-                    className={`min-w-[150px] rounded-2xl border px-4 py-3 text-left transition ${
-                      category === value
-                        ? 'border-sky-700 bg-sky-700 text-white shadow-sm'
-                        : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
-                    }`}
-                  >
-                    <div className="text-[11px] uppercase tracking-wide opacity-80">Categoria</div>
-                    <div className="mt-2 font-semibold">{label}</div>
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_340px]">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                  <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Modo de venda</div>
-                  <div className="grid grid-cols-2 gap-2 2xl:grid-cols-4">
-                    <PresetButton label="Balcão" shortcut="Alt + 5" active={salePreset === 'BALCAO'} onClick={() => applySalePreset('BALCAO')} />
-                    <PresetButton label="Mesa" shortcut="Alt + 6" active={salePreset === 'MESA'} onClick={() => applySalePreset('MESA')} />
-                    <PresetButton label="Comanda" shortcut="Alt + 7" active={salePreset === 'COMANDA'} onClick={() => applySalePreset('COMANDA')} />
-                    <PresetButton label="Quarto" shortcut="Alt + 8" active={salePreset === 'QUARTO'} onClick={() => applySalePreset('QUARTO')} />
+              <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
+                <div className="space-y-3">
+                  <div className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Cat?logo</div>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                      placeholder="Buscar item, produto ou servi?o"
+                      className="h-12 rounded-2xl border-slate-200 pl-9 text-base"
+                    />
                   </div>
                 </div>
 
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                   <div className="mb-2 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-slate-500">
-                    <span>Leitura rápida</span>
+                    <span>Leitura r?pida</span>
                     <span>Alt + C</span>
                   </div>
-                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_80px_120px]">
+                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_72px_112px]">
                     <Input
                       id="pos-quick-code"
                       value={quickCode}
@@ -1124,7 +1143,7 @@ export default function POS() {
                           handleQuickAdd();
                         }
                       }}
-                      placeholder="Código, SKU ou nome"
+                      placeholder="C?digo ou SKU"
                       className="h-11 rounded-xl bg-white"
                     />
                     <Input
@@ -1144,6 +1163,37 @@ export default function POS() {
                     </Button>
                   </div>
                 </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <div className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Categorias</div>
+                <Button
+                  variant="outline"
+                  className="h-10 rounded-2xl border-slate-200 px-4"
+                  onClick={() => {
+                    setCategory('ALL');
+                    setSearch('');
+                  }}
+                >
+                  Limpar busca
+                </Button>
+              </div>
+
+              <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
+                {Object.entries(categoryLabels).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setCategory(value as POSProductCategory | 'ALL')}
+                    className={`min-w-[140px] rounded-2xl border px-4 py-4 text-left transition ${
+                      category === value
+                        ? 'border-sky-700 bg-sky-700 text-white shadow-sm'
+                        : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
+                    }`}
+                  >
+                    <div className="font-semibold">{label}</div>
+                  </button>
+                ))}
               </div>
 
               <ScrollArea className="mt-4 max-h-[50vh] rounded-2xl border border-slate-200 xl:max-h-[56vh]">
@@ -1214,84 +1264,66 @@ export default function POS() {
               </button>
             </div>
 
-            <div className="mt-4 space-y-3 rounded-2xl bg-white/5 p-3">
-              <Select value={origin} onValueChange={(value) => setOrigin(value as POSOrderOrigin)}>
-                <SelectTrigger className="border-white/10 bg-white/5 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(originLabels).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {settlementType === 'DIRECT' ? (
-                <>
-                  <Input
-                    value={customerName}
-                    onChange={(event) => setCustomerName(event.target.value)}
-                    placeholder="Cliente"
-                    className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
-                  />
-                  <Input
-                    value={tableNumber}
-                    onChange={(event) => setTableNumber(event.target.value)}
-                    placeholder="Mesa, quarto ou referência"
-                    className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
-                  />
-                </>
-              ) : (
-                <Select value={selectedStayId || 'none'} onValueChange={(value) => setSelectedStayId(value === 'none' ? '' : value)}>
-                  <SelectTrigger className="border-white/10 bg-white/5 text-white">
-                    <SelectValue placeholder="Selecionar hospedagem" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Selecionar hospedagem</SelectItem>
-                    {inHouseStays.map((stay) => (
-                      <SelectItem key={stay.id} value={stay.id}>
-                        {stay.reservation.guestName} • Quarto {stay.roomUnit?.code ?? 'Sem quarto'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-3">
-              <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-400">
-                <span>Mesa / comanda / pré-venda</span>
-                <span>{salePreset}</span>
-              </div>
-              <Input
-                value={draftReference}
-                onChange={(event) => setDraftReference(event.target.value)}
-                placeholder="Número da mesa, comanda ou referência"
-                className="mt-3 border-white/10 bg-white/5 text-white placeholder:text-slate-400"
-              />
+            <div className="mt-4 rounded-2xl bg-white/5 p-3">
+              <div className="text-xs uppercase tracking-[0.12em] text-slate-400">Contexto da venda</div>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                <Button variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={saveCurrentDraft}>
-                  Salvar
+                <PresetButton label="Balc?o" shortcut="Alt + 5" active={salePreset === 'BALCAO'} onClick={() => applySalePreset('BALCAO')} />
+                <PresetButton label="Mesa" shortcut="Alt + 6" active={salePreset === 'MESA'} onClick={() => applySalePreset('MESA')} />
+                <PresetButton label="Comanda" shortcut="Alt + 7" active={salePreset === 'COMANDA'} onClick={() => applySalePreset('COMANDA')} />
+                <PresetButton label="Quarto" shortcut="Alt + 8" active={salePreset === 'QUARTO'} onClick={() => applySalePreset('QUARTO')} />
+              </div>
+
+              <div className="mt-3 space-y-3">
+                {settlementType === 'DIRECT' ? (
+                  <>
+                    <Input
+                      value={customerName}
+                      onChange={(event) => setCustomerName(event.target.value)}
+                      placeholder="Cliente"
+                      className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
+                    />
+                    <Input
+                      value={tableNumber}
+                      onChange={(event) => {
+                        setTableNumber(event.target.value);
+                        setDraftReference(event.target.value);
+                      }}
+                      placeholder={operationalReferencePlaceholder}
+                      className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
+                    />
+                  </>
+                ) : (
+                  <Select value={selectedStayId || 'none'} onValueChange={(value) => setSelectedStayId(value === 'none' ? '' : value)}>
+                    <SelectTrigger className="border-white/10 bg-white/5 text-white">
+                      <SelectValue placeholder="Selecionar hospedagem" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Selecionar hospedagem</SelectItem>
+                      {inHouseStays.map((stay) => (
+                        <SelectItem key={stay.id} value={stay.id}>
+                          {stay.reservation.guestName} ? Quarto {stay.roomUnit?.code ?? 'Sem quarto'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={() => setActiveDialog('drafts')}>
+                  Rascunhos
                 </Button>
-                <Button variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={openDraftByReference}>
-                  Abrir
+                <Button variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={() => setActiveDialog('references')}>
+                  Refer?ncias
                 </Button>
-                <Button variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={suspendCurrentSale}>
-                  Suspender
-                </Button>
-                <Button variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={resumeLatestDraft}>
-                  Retomar última
+                <Button
+                  variant="outline"
+                  className="border-white/10 bg-white/5 text-white hover:bg-white/10"
+                  onClick={() => setShowCheckoutExtras((current) => !current)}
+                >
+                  {showCheckoutExtras ? 'Ocultar detalhes' : 'Mais op??es'}
                 </Button>
               </div>
-              <Button
-                variant="outline"
-                className="mt-3 w-full border-dashed border-white/10 bg-transparent text-slate-300 hover:bg-white/5"
-                onClick={() => setActiveDialog('references')}
-              >
-                Consultar mesa, comanda ou pedido
-              </Button>
             </div>
 
             <ScrollArea className="mt-4 max-h-[34vh] rounded-2xl border border-white/10 bg-white/5 xl:max-h-[40vh]">
@@ -1350,57 +1382,68 @@ export default function POS() {
                   <FieldButton label="Pagamento" value={paymentAmount} active={activeNumericField === 'payment'} onClick={() => setActiveNumericField('payment')} />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('PIX')}
-                    className={`rounded-2xl py-3 text-sm font-semibold transition ${
-                      paymentMethod === 'PIX' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                    }`}
-                  >
-                    PIX
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('CASH')}
-                    className={`rounded-2xl py-3 text-sm font-semibold transition ${
-                      paymentMethod === 'CASH' ? 'bg-lime-500 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                    }`}
-                  >
-                    Dinheiro
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('CREDIT_CARD')}
-                    className={`rounded-2xl py-3 text-sm font-semibold transition ${
-                      paymentMethod === 'CREDIT_CARD' ? 'bg-orange-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                    }`}
-                  >
-                    Cr?dito
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('DEBIT_CARD')}
-                    className={`rounded-2xl py-3 text-sm font-semibold transition ${
-                      paymentMethod === 'DEBIT_CARD' ? 'bg-cyan-500 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                    }`}
-                  >
-                    D?bito
-                  </button>
-                </div>
+                {settlementType === 'DIRECT' ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('PIX')}
+                      className={`rounded-2xl py-3 text-sm font-semibold transition ${
+                        paymentMethod === 'PIX' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      PIX
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('CASH')}
+                      className={`rounded-2xl py-3 text-sm font-semibold transition ${
+                        paymentMethod === 'CASH' ? 'bg-lime-500 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      Dinheiro
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('CREDIT_CARD')}
+                      className={`rounded-2xl py-3 text-sm font-semibold transition ${
+                        paymentMethod === 'CREDIT_CARD' ? 'bg-orange-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      Cr?dito
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('DEBIT_CARD')}
+                      className={`rounded-2xl py-3 text-sm font-semibold transition ${
+                        paymentMethod === 'DEBIT_CARD' ? 'bg-cyan-500 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'
+                      }`}
+                    >
+                      D?bito
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-3 text-sm text-sky-100">
+                    Os itens ser?o lan?ados direto na conta da hospedagem selecionada.
+                  </div>
+                )}
 
-                <Input
-                  value={paymentReference}
-                  onChange={(event) => setPaymentReference(event.target.value)}
-                  placeholder="NSU ou referência"
-                  className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
-                />
-                <Textarea
-                  value={orderNotes}
-                  onChange={(event) => setOrderNotes(event.target.value)}
-                  placeholder="Observações"
-                  className="min-h-20 border-white/10 bg-white/5 text-white placeholder:text-slate-400"
-                />
+                {showCheckoutExtras ? (
+                  <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-3">
+                    <div className="text-xs uppercase tracking-[0.12em] text-slate-400">Detalhes da venda</div>
+                    <Input
+                      value={paymentReference}
+                      onChange={(event) => setPaymentReference(event.target.value)}
+                      placeholder="NSU ou refer?ncia"
+                      className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
+                    />
+                    <Textarea
+                      value={orderNotes}
+                      onChange={(event) => setOrderNotes(event.target.value)}
+                      placeholder="Observa??es"
+                      className="min-h-20 border-white/10 bg-white/5 text-white placeholder:text-slate-400"
+                    />
+                  </div>
+                ) : null}
               </div>
 
               <div className="grid grid-cols-4 gap-2 xl:grid-cols-3">
@@ -1426,13 +1469,6 @@ export default function POS() {
                   className="col-span-2 rounded-2xl bg-white/5 py-3 text-sm font-semibold text-slate-300 hover:bg-white/10 xl:col-span-3"
                 >
                   Limpar venda
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveDialog('orders')}
-                  className="col-span-2 rounded-2xl bg-white/5 py-3 text-sm font-semibold text-slate-300 hover:bg-white/10 xl:col-span-3"
-                >
-                  Pedidos
                 </button>
               </div>
             </div>
@@ -2137,11 +2173,15 @@ function DialogStat({ label, value }: { label: string; value: string }) {
 function SideAction({
   icon: Icon,
   label,
+  description,
+  shortcut,
   active,
   onClick,
 }: {
   icon: typeof ShoppingCart;
   label: string;
+  description: string;
+  shortcut: string;
   active?: boolean;
   onClick: () => void;
 }) {
@@ -2149,12 +2189,24 @@ function SideAction({
     <button
       type="button"
       onClick={onClick}
-      className={`min-w-[88px] rounded-2xl p-3 text-center transition lg:min-w-0 ${
-        active ? 'bg-sky-600 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
+      className={`min-w-[88px] rounded-2xl border p-3 text-left transition lg:min-w-0 ${
+        active
+          ? 'border-sky-500 bg-sky-600 text-white'
+          : 'border-white/5 bg-white/5 text-slate-300 hover:border-white/10 hover:bg-white/10'
       }`}
     >
-      <Icon className="mx-auto h-5 w-5" />
-      <div className="mt-2 text-[11px] font-medium">{label}</div>
+      <div className="flex items-start justify-between gap-3">
+        <div className={`rounded-xl p-2 ${active ? 'bg-white/15' : 'bg-white/5'}`}>
+          <Icon className="h-4 w-4" />
+        </div>
+        <span className={`rounded-full px-2 py-1 text-[10px] font-medium ${active ? 'bg-white/15 text-white' : 'bg-white/5 text-slate-400'}`}>
+          {shortcut}
+        </span>
+      </div>
+      <div className="mt-3">
+        <div className="text-sm font-semibold">{label}</div>
+        <div className={`mt-1 text-xs leading-relaxed ${active ? 'text-sky-50' : 'text-slate-400'}`}>{description}</div>
+      </div>
     </button>
   );
 }
