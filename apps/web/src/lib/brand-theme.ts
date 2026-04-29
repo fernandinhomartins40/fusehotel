@@ -40,6 +40,24 @@ function getSettingValue(settings: PublicSetting[] | undefined, key: string) {
   return typeof value === 'string' && value.trim() ? value : undefined;
 }
 
+function normalizeAssetUrl(value: string | undefined) {
+  if (!value) {
+    return '';
+  }
+
+  const trimmed = value.trim();
+
+  if (typeof window === 'undefined' || window.location.protocol !== 'https:') {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('http://')) {
+    return `https://${trimmed.slice('http://'.length)}`;
+  }
+
+  return trimmed;
+}
+
 function normalizeHex(hex: string) {
   if (!hex) {
     return null;
@@ -160,9 +178,9 @@ export function buildBrandTheme(
   return {
     ...DEFAULT_THEME,
     browserTitle: headerBrowserTitle?.trim() || DEFAULT_THEME.browserTitle,
-    favicon: getSettingValue(settings, 'branding_favicon') || DEFAULT_THEME.favicon,
-    logo: getSettingValue(settings, 'branding_logo') || DEFAULT_THEME.logo,
-    footerLogo: getSettingValue(settings, 'branding_footerLogo') || DEFAULT_THEME.footerLogo,
+    favicon: normalizeAssetUrl(getSettingValue(settings, 'branding_favicon')) || DEFAULT_THEME.favicon,
+    logo: normalizeAssetUrl(getSettingValue(settings, 'branding_logo')) || DEFAULT_THEME.logo,
+    footerLogo: normalizeAssetUrl(getSettingValue(settings, 'branding_footerLogo')) || DEFAULT_THEME.footerLogo,
     primaryColor: getSettingValue(settings, 'branding_primaryColor') || DEFAULT_THEME.primaryColor,
     secondaryColor:
       getSettingValue(settings, 'branding_secondaryColor') || DEFAULT_THEME.secondaryColor,
