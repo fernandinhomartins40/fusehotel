@@ -143,9 +143,16 @@ type CartItem = {
 };
 
 type NumericField = 'serviceFee' | 'discount' | 'payment';
-type DialogKey = 'cash' | 'hotel' | 'orders' | 'drafts' | 'references' | null;
+type DialogKey = 'cash' | 'hotel' | 'orders' | 'drafts' | 'references' | 'details' | null;
 type SalePreset = 'BALCAO' | 'MESA' | 'COMANDA' | 'QUARTO';
 type HotelTab = 'frontdesk' | 'housekeeping' | 'maintenance';
+
+const salePresetLabels: Record<SalePreset, string> = {
+  BALCAO: 'Balcão',
+  MESA: 'Mesa',
+  COMANDA: 'Comanda',
+  QUARTO: 'Quarto',
+};
 
 type SavedDraft = {
   id: string;
@@ -211,7 +218,6 @@ export default function POS() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentReference, setPaymentReference] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
-  const [showCheckoutExtras, setShowCheckoutExtras] = useState(false);
   const [activeNumericField, setActiveNumericField] = useState<NumericField>('payment');
   const [salePreset, setSalePreset] = useState<SalePreset>('BALCAO');
   const [quickCode, setQuickCode] = useState('');
@@ -258,13 +264,6 @@ export default function POS() {
       return matchesCategory && matchesSearch;
     });
   }, [activeProducts, category, search]);
-
-  const operationalReferenceLabel = useMemo(() => {
-    if (salePreset === 'MESA') return 'Mesa';
-    if (salePreset === 'COMANDA') return 'Comanda';
-    if (salePreset === 'QUARTO') return 'Quarto / hospedagem';
-    return 'Referência';
-  }, [salePreset]);
 
   const operationalReferencePlaceholder = useMemo(() => {
     if (salePreset === 'MESA') return 'Número da mesa';
@@ -1039,7 +1038,7 @@ export default function POS() {
               </div>
               <div className="inline-flex max-w-full items-center gap-2 overflow-hidden rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-600 xl:flex-none">
                 <Keyboard className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate whitespace-nowrap">Alt + 1 pedidos ? Alt + 2 caixa ? Alt + 3 hotel ? Ctrl + Enter finalizar</span>
+                <span className="truncate whitespace-nowrap">Alt + 1 pedidos • Alt + 2 caixa • Alt + 3 hotel • Ctrl + Enter finalizar</span>
               </div>
             </div>
 
@@ -1115,13 +1114,13 @@ export default function POS() {
             <div className="rounded-3xl bg-white p-4 shadow-sm">
               <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
                 <div className="space-y-3">
-                  <div className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Cat?logo</div>
+                  <div className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Catálogo</div>
                   <div className="relative">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <Input
                       value={search}
                       onChange={(event) => setSearch(event.target.value)}
-                      placeholder="Buscar item, produto ou servi?o"
+                      placeholder="Buscar item, produto ou serviço"
                       className="h-12 rounded-2xl border-slate-200 pl-9 text-base"
                     />
                   </div>
@@ -1129,7 +1128,7 @@ export default function POS() {
 
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                   <div className="mb-2 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-slate-500">
-                    <span>Leitura r?pida</span>
+                    <span>Leitura rápida</span>
                     <span>Alt + C</span>
                   </div>
                   <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_72px_112px]">
@@ -1143,7 +1142,7 @@ export default function POS() {
                           handleQuickAdd();
                         }
                       }}
-                      placeholder="C?digo ou SKU"
+                      placeholder="Código ou SKU"
                       className="h-11 rounded-xl bg-white"
                     />
                     <Input
@@ -1255,7 +1254,10 @@ export default function POS() {
               </button>
               <button
                 type="button"
-                onClick={() => setSettlementType('FOLIO')}
+                onClick={() => {
+                  setSettlementType('FOLIO');
+                  applySalePreset('QUARTO');
+                }}
                 className={`rounded-2xl px-3 py-3 text-sm font-medium transition ${
                   settlementType === 'FOLIO' ? 'bg-sky-600 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
                 }`}
@@ -1265,23 +1267,41 @@ export default function POS() {
             </div>
 
             <div className="mt-4 rounded-2xl bg-white/5 p-3">
-              <div className="text-xs uppercase tracking-[0.12em] text-slate-400">Contexto da venda</div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <PresetButton label="Balc?o" shortcut="Alt + 5" active={salePreset === 'BALCAO'} onClick={() => applySalePreset('BALCAO')} />
-                <PresetButton label="Mesa" shortcut="Alt + 6" active={salePreset === 'MESA'} onClick={() => applySalePreset('MESA')} />
-                <PresetButton label="Comanda" shortcut="Alt + 7" active={salePreset === 'COMANDA'} onClick={() => applySalePreset('COMANDA')} />
-                <PresetButton label="Quarto" shortcut="Alt + 8" active={salePreset === 'QUARTO'} onClick={() => applySalePreset('QUARTO')} />
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-xs uppercase tracking-[0.12em] text-slate-400">Contexto</div>
+                {settlementType === 'DIRECT' ? (
+                  <Badge className="bg-white/10 text-white hover:bg-white/10">{salePresetLabels[salePreset]}</Badge>
+                ) : (
+                  <Badge className="bg-sky-500/15 text-sky-100 hover:bg-sky-500/15">Conta da hospedagem</Badge>
+                )}
               </div>
 
-              <div className="mt-3 space-y-3">
-                {settlementType === 'DIRECT' ? (
-                  <>
-                    <Input
-                      value={customerName}
-                      onChange={(event) => setCustomerName(event.target.value)}
-                      placeholder="Cliente"
-                      className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
-                    />
+              {settlementType === 'DIRECT' ? (
+                <div className="mt-3 grid gap-3">
+                  <Select
+                    value={salePreset}
+                    onValueChange={(value) => applySalePreset(value as SalePreset)}
+                  >
+                    <SelectTrigger className="border-white/10 bg-white/5 text-white">
+                      <SelectValue placeholder="Modo da venda" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(salePresetLabels).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Input
+                    value={customerName}
+                    onChange={(event) => setCustomerName(event.target.value)}
+                    placeholder={salePreset === 'BALCAO' ? 'Cliente (opcional)' : 'Cliente ou nome da referência'}
+                    className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
+                  />
+
+                  {salePreset !== 'BALCAO' ? (
                     <Input
                       value={tableNumber}
                       onChange={(event) => {
@@ -1291,8 +1311,10 @@ export default function POS() {
                       placeholder={operationalReferencePlaceholder}
                       className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
                     />
-                  </>
-                ) : (
+                  ) : null}
+                </div>
+              ) : (
+                <div className="mt-3 grid gap-3">
                   <Select value={selectedStayId || 'none'} onValueChange={(value) => setSelectedStayId(value === 'none' ? '' : value)}>
                     <SelectTrigger className="border-white/10 bg-white/5 text-white">
                       <SelectValue placeholder="Selecionar hospedagem" />
@@ -1301,29 +1323,17 @@ export default function POS() {
                       <SelectItem value="none">Selecionar hospedagem</SelectItem>
                       {inHouseStays.map((stay) => (
                         <SelectItem key={stay.id} value={stay.id}>
-                          {stay.reservation.guestName} ? Quarto {stay.roomUnit?.code ?? 'Sem quarto'}
+                          {stay.reservation.guestName} • Quarto {stay.roomUnit?.code ?? 'Sem quarto'}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                )}
-              </div>
 
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={() => setActiveDialog('drafts')}>
-                  Rascunhos
-                </Button>
-                <Button variant="outline" className="border-white/10 bg-white/5 text-white hover:bg-white/10" onClick={() => setActiveDialog('references')}>
-                  Refer?ncias
-                </Button>
-                <Button
-                  variant="outline"
-                  className="border-white/10 bg-white/5 text-white hover:bg-white/10"
-                  onClick={() => setShowCheckoutExtras((current) => !current)}
-                >
-                  {showCheckoutExtras ? 'Ocultar detalhes' : 'Mais op??es'}
-                </Button>
-              </div>
+                  <div className="rounded-2xl border border-sky-500/20 bg-sky-500/10 px-3 py-2 text-sm text-sky-100">
+                    O consumo será lançado direto na conta da hospedagem selecionada.
+                  </div>
+                </div>
+              )}
             </div>
 
             <ScrollArea className="mt-4 max-h-[34vh] rounded-2xl border border-white/10 bg-white/5 xl:max-h-[40vh]">
@@ -1376,10 +1386,15 @@ export default function POS() {
 
             <div className="mt-4 grid gap-3 xl:grid-cols-[1fr_170px]">
               <div className="space-y-3">
-                <div className="grid gap-2">
-                  <FieldButton label="Taxa" value={serviceFeeAmount} active={activeNumericField === 'serviceFee'} onClick={() => setActiveNumericField('serviceFee')} />
-                  <FieldButton label="Desconto" value={discountAmount} active={activeNumericField === 'discount'} onClick={() => setActiveNumericField('discount')} />
+                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_152px]">
                   <FieldButton label="Pagamento" value={paymentAmount} active={activeNumericField === 'payment'} onClick={() => setActiveNumericField('payment')} />
+                  <Button
+                    variant="outline"
+                    className="h-full rounded-2xl border-white/10 bg-white/5 text-white hover:bg-white/10"
+                    onClick={() => setActiveDialog('details')}
+                  >
+                    Ajustes e detalhes
+                  </Button>
                 </div>
 
                 {settlementType === 'DIRECT' ? (
@@ -1409,7 +1424,7 @@ export default function POS() {
                         paymentMethod === 'CREDIT_CARD' ? 'bg-orange-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
                       }`}
                     >
-                      Cr?dito
+                      Crédito
                     </button>
                     <button
                       type="button"
@@ -1418,30 +1433,8 @@ export default function POS() {
                         paymentMethod === 'DEBIT_CARD' ? 'bg-cyan-500 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'
                       }`}
                     >
-                      D?bito
+                      Débito
                     </button>
-                  </div>
-                ) : (
-                  <div className="rounded-2xl border border-sky-500/20 bg-sky-500/10 p-3 text-sm text-sky-100">
-                    Os itens ser?o lan?ados direto na conta da hospedagem selecionada.
-                  </div>
-                )}
-
-                {showCheckoutExtras ? (
-                  <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-3">
-                    <div className="text-xs uppercase tracking-[0.12em] text-slate-400">Detalhes da venda</div>
-                    <Input
-                      value={paymentReference}
-                      onChange={(event) => setPaymentReference(event.target.value)}
-                      placeholder="NSU ou refer?ncia"
-                      className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
-                    />
-                    <Textarea
-                      value={orderNotes}
-                      onChange={(event) => setOrderNotes(event.target.value)}
-                      placeholder="Observa??es"
-                      className="min-h-20 border-white/10 bg-white/5 text-white placeholder:text-slate-400"
-                    />
                   </div>
                 ) : null}
               </div>
@@ -1460,7 +1453,7 @@ export default function POS() {
                           : 'bg-sky-700 text-white hover:bg-sky-600'
                     }`}
                   >
-                    {key === 'clear' ? 'C' : key === 'back' ? '?' : key}
+                    {key === 'clear' ? 'C' : key === 'back' ? '←' : key}
                   </button>
                 ))}
                 <button
@@ -1498,14 +1491,64 @@ export default function POS() {
                   ? Number(paymentAmount || 0) > 0
                     ? 'Salvar e receber'
                     : 'Salvar comanda'
-                  : 'Atualizar e lan?ar consumo'
+                  : 'Atualizar e lançar consumo'
                 : settlementType === 'DIRECT'
                   ? 'Receber e finalizar'
-                  : 'Lan?ar consumo'}
+                  : 'Lançar consumo'}
             </Button>
           </div>
         </div>
       </div>
+
+      <Dialog open={activeDialog === 'details'} onOpenChange={(open) => setActiveDialog(open ? 'details' : null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Ajustes e detalhes</DialogTitle>
+            <DialogDescription>Use apenas quando precisar complementar a venda.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <FieldButton label="Taxa" value={serviceFeeAmount} active={activeNumericField === 'serviceFee'} onClick={() => setActiveNumericField('serviceFee')} dark={false} />
+              <FieldButton label="Desconto" value={discountAmount} active={activeNumericField === 'discount'} onClick={() => setActiveNumericField('discount')} dark={false} />
+            </div>
+
+            {settlementType === 'DIRECT' ? (
+              <Input
+                value={paymentReference}
+                onChange={(event) => setPaymentReference(event.target.value)}
+                placeholder="NSU ou referência"
+              />
+            ) : null}
+
+            <Textarea
+              value={orderNotes}
+              onChange={(event) => setOrderNotes(event.target.value)}
+              placeholder="Observações internas"
+              className="min-h-24"
+            />
+
+            <div className="grid grid-cols-4 gap-2">
+              {['7', '8', '9', 'clear', '4', '5', '6', 'back', '1', '2', '3', '.', '00', '0'].map((key) => (
+                <button
+                  key={`details-${key}`}
+                  type="button"
+                  onClick={() => applyKeypad(key)}
+                  className={`rounded-2xl py-3 text-base font-semibold transition ${
+                    key === 'clear'
+                      ? 'bg-red-500 text-white'
+                      : key === 'back'
+                        ? 'bg-amber-400 text-slate-950'
+                        : 'bg-sky-700 text-white hover:bg-sky-600'
+                  }`}
+                >
+                  {key === 'clear' ? 'C' : key === 'back' ? '←' : key}
+                </button>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={activeDialog === 'cash'} onOpenChange={(open) => setActiveDialog(open ? 'cash' : null)}>
         <DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto">
@@ -1836,10 +1879,10 @@ export default function POS() {
                         <div>
                           <div className="font-medium">{draft.reference}</div>
                           <div className="mt-1 text-sm text-slate-500">
-                            {draft.salePreset} • {draft.cartItems.length} item(ns) • {new Date(draft.updatedAt).toLocaleString('pt-BR')}
+                            {salePresetLabels[draft.salePreset]} • {draft.cartItems.length} item(ns) • {new Date(draft.updatedAt).toLocaleString('pt-BR')}
                           </div>
                         </div>
-                        <Badge variant="outline">{draft.settlementType}</Badge>
+                        <Badge variant="outline">{settlementLabels[draft.settlementType]}</Badge>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <Button variant="outline" onClick={() => restoreDraft(draft)}>
@@ -1965,10 +2008,10 @@ export default function POS() {
                             <div>
                               <div className="font-medium">{draft.reference}</div>
                               <div className="mt-1 text-sm text-slate-500">
-                                {draft.salePreset} • {draft.cartItems.length} item(ns)
+                                {salePresetLabels[draft.salePreset]} • {draft.cartItems.length} item(ns)
                               </div>
                             </div>
-                            <Badge variant="outline">{draft.settlementType}</Badge>
+                            <Badge variant="outline">{settlementLabels[draft.settlementType]}</Badge>
                           </div>
                           <div className="mt-3 flex gap-2">
                             <Button variant="outline" onClick={() => restoreDraft(draft)}>
@@ -2211,57 +2254,31 @@ function SideAction({
   );
 }
 
-function ShortcutHint({ label, description }: { label: string; description: string }) {
-  return (
-    <span className="rounded-full bg-white/10 px-3 py-2">
-      <strong className="mr-1 font-semibold text-white">{label}</strong>
-      <span>{description}</span>
-    </span>
-  );
-}
-
-function PresetButton({
-  label,
-  shortcut,
-  active,
-  onClick,
-}: {
-  label: string;
-  shortcut: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-2xl border px-4 py-3 text-left transition ${
-        active ? 'border-sky-700 bg-sky-700 text-white' : 'border-slate-200 bg-white hover:border-slate-300'
-      }`}
-    >
-      <div className="text-xs uppercase opacity-80">{shortcut}</div>
-      <div className="mt-2 font-semibold">{label}</div>
-    </button>
-  );
-}
-
 function FieldButton({
   label,
   value,
   active,
   onClick,
+  dark = true,
 }: {
   label: string;
   value: string;
   active: boolean;
   onClick: () => void;
+  dark?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${
-        active ? 'border-sky-500 bg-sky-500/10 text-white' : 'border-white/10 bg-white/5 text-slate-300'
+        dark
+          ? active
+            ? 'border-sky-500 bg-sky-500/10 text-white'
+            : 'border-white/10 bg-white/5 text-slate-300'
+          : active
+            ? 'border-sky-500 bg-sky-50 text-sky-700'
+            : 'border-slate-200 bg-white text-slate-700'
       }`}
     >
       <span className="text-sm font-medium">{label}</span>
