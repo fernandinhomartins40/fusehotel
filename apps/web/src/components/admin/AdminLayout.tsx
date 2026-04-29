@@ -45,7 +45,7 @@ interface MenuItem {
   activeClassName: string;
 }
 
-const operationItems: MenuItem[] = [
+const primaryItems: MenuItem[] = [
   {
     path: '/admin',
     label: 'Painel do turno',
@@ -107,7 +107,7 @@ const hotelItems: MenuItem[] = [
   },
 ];
 
-const managementItems: MenuItem[] = [
+const backofficeItems: MenuItem[] = [
   {
     path: '/admin/dashboard',
     label: 'Indicadores',
@@ -183,13 +183,21 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
 
-  const renderMenuItems = (items: MenuItem[]) =>
+  const renderMenuItems = (items: MenuItem[], variant: 'default' | 'primary' = 'default') =>
     items.map((item) => {
       const Icon = item.icon;
 
       return (
         <SidebarMenuItem key={item.path}>
-          <SidebarMenuButton asChild isActive={isActive(item.path)} className={item.activeClassName}>
+          <SidebarMenuButton
+            asChild
+            isActive={isActive(item.path)}
+            className={`${item.activeClassName} ${
+              variant === 'primary'
+                ? 'h-11 rounded-xl bg-slate-50 font-medium text-slate-800 hover:bg-slate-100'
+                : 'rounded-lg'
+            }`}
+          >
             <Link to={item.path}>
               <Icon />
               <span>{item.label}</span>
@@ -204,21 +212,24 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <div className="flex min-h-screen w-full bg-slate-50">
         <Sidebar className="border-r border-slate-200">
           <SidebarHeader className="border-b border-slate-200 bg-white">
-            <div className="flex items-center px-2 py-2">
+            <div className="space-y-3 px-3 py-3">
               <div className="flex items-center gap-2 text-lg font-semibold">
                 <div className="rounded-lg bg-slate-900 p-2 text-white">
                   <LayoutDashboard className="h-5 w-5" />
                 </div>
                 <span className="text-slate-900">FuseHotel PMS</span>
               </div>
+              <div className="rounded-xl bg-slate-950 px-3 py-2 text-sm text-white">
+                Operação diária do hotel
+              </div>
             </div>
           </SidebarHeader>
 
           <SidebarContent className="bg-white">
             <SidebarGroup>
-              <SidebarGroupLabel className="font-medium text-slate-500">Operação</SidebarGroupLabel>
+              <SidebarGroupLabel className="font-medium text-slate-500">Principal</SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>{renderMenuItems(operationItems)}</SidebarMenu>
+                <SidebarMenu>{renderMenuItems(primaryItems, 'primary')}</SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
@@ -230,9 +241,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </SidebarGroup>
 
             <SidebarGroup>
-              <SidebarGroupLabel className="font-medium text-slate-500">Gestão</SidebarGroupLabel>
+              <SidebarGroupLabel className="font-medium text-slate-500">Backoffice</SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>{renderMenuItems(managementItems)}</SidebarMenu>
+                <SidebarMenu>{renderMenuItems(backofficeItems)}</SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 

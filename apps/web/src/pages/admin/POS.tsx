@@ -1012,26 +1012,28 @@ export default function POS() {
   return (
     <AdminLayout>
       <div className="space-y-4 p-4 md:p-6 lg:min-h-[calc(100dvh-4rem)]">
-        <div className="rounded-3xl bg-gradient-to-r from-sky-700 via-blue-700 to-slate-900 px-3 py-2.5 text-white shadow-sm">
-          <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex min-w-0 flex-col gap-2 xl:flex-1 xl:flex-row xl:items-center xl:gap-3">
-              <div className="flex min-w-0 items-center gap-2 overflow-hidden">
-                <Badge className="border-0 bg-white/10 text-white hover:bg-white/10">PDV</Badge>
-                <Badge className="border-0 bg-white/10 text-white hover:bg-white/10">Hotel</Badge>
-                <h1 className="min-w-0 truncate whitespace-nowrap text-xl font-semibold tracking-tight">PDV do hotel</h1>
+        <div className="rounded-3xl border bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex min-w-0 flex-col gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="rounded-2xl bg-slate-950 px-3 py-2 text-sm font-semibold text-white">PDV</div>
+                <div className="min-w-0">
+                  <h1 className="truncate text-xl font-semibold tracking-tight text-slate-900">PDV do hotel</h1>
+                  <p className="text-sm text-slate-500">Venda, conta da hospedagem e opera??o r?pida do hotel.</p>
+                </div>
               </div>
-              <div className="inline-flex max-w-full items-center gap-2 overflow-hidden rounded-full bg-white/10 px-3 py-1 text-[11px] text-sky-100 xl:flex-none">
+              <div className="inline-flex max-w-full items-center gap-2 overflow-hidden rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-600 xl:flex-none">
                 <Keyboard className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate whitespace-nowrap">Alt + 1 pedidos | Alt + 2 caixa | Alt + 3 hotel | Ctrl + Enter finalizar</span>
+                <span className="truncate whitespace-nowrap">Alt + 1 pedidos ? Alt + 2 caixa ? Alt + 3 hotel ? Ctrl + Enter finalizar</span>
               </div>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-2 xl:flex xl:items-stretch xl:gap-2">
-              <TopMetric label="Caixa" value={activeCashSession ? activeCashSession.code : 'Fechado'} icon={Wallet} />
-              <TopMetric label="Receita PDV" value={currency.format(report?.finance.posRevenueMonth ?? 0)} icon={CreditCard} />
+            <div className="grid gap-2 sm:grid-cols-3 xl:min-w-[540px]">
+              <TopMetric label="Caixa" value={activeCashSession ? activeCashSession.code : 'Fechado'} icon={Wallet} dark={false} />
+              <TopMetric label="Receita PDV" value={currency.format(report?.finance.posRevenueMonth ?? 0)} icon={CreditCard} dark={false} />
               <Button
                 variant="outline"
-                className="h-10 justify-center whitespace-nowrap border-white/20 bg-white/10 px-4 text-white hover:bg-white/15 xl:min-w-[168px]"
+                className="h-full min-h-[58px] justify-center rounded-2xl border-slate-200 px-4 text-slate-700 hover:bg-slate-50"
                 onClick={() => void toggleFullscreen()}
               >
                 {isFullscreen ? <Minimize2 className="mr-2 h-4 w-4 shrink-0" /> : <Maximize2 className="mr-2 h-4 w-4 shrink-0" />}
@@ -1043,13 +1045,14 @@ export default function POS() {
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]">
           <div className="space-y-4">
-            <div className="rounded-3xl bg-slate-950 p-3 text-white shadow-sm">
+            <div className="rounded-3xl border bg-slate-950 p-3 text-white shadow-sm">
+              <div className="mb-3 text-xs font-medium uppercase tracking-[0.12em] text-slate-400">Opera??o r?pida</div>
               <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-5">
                 <SideAction icon={ShoppingCart} label="Pedidos" active={activeDialog === 'orders'} onClick={() => setActiveDialog('orders')} />
                 <SideAction icon={Wallet} label="Caixa" active={activeDialog === 'cash'} onClick={() => setActiveDialog('cash')} />
                 <SideAction icon={Hotel} label="Hotel" active={activeDialog === 'hotel'} onClick={() => openHotelDialog('frontdesk')} />
-                <SideAction icon={Receipt} label="Pré-venda" active={activeDialog === 'drafts'} onClick={() => setActiveDialog('drafts')} />
-                <SideAction icon={Search} label="Referências" active={activeDialog === 'references'} onClick={() => setActiveDialog('references')} />
+                <SideAction icon={Receipt} label="Pr?-venda" active={activeDialog === 'drafts'} onClick={() => setActiveDialog('drafts')} />
+                <SideAction icon={Search} label="Refer?ncias" active={activeDialog === 'references'} onClick={() => setActiveDialog('references')} />
               </div>
             </div>
 
@@ -1207,7 +1210,7 @@ export default function POS() {
                   settlementType === 'FOLIO' ? 'bg-sky-600 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
                 }`}
               >
-                F?lio
+                Conta
               </button>
             </div>
 
@@ -2100,20 +2103,22 @@ function TopMetric({
   label,
   value,
   icon: Icon,
+  dark = true,
 }: {
   label: string;
   value: string;
   icon: typeof Wallet;
+  dark?: boolean;
 }) {
   return (
-    <div className="h-full rounded-2xl bg-white/10 px-3 py-2 backdrop-blur">
+    <div className={`h-full rounded-2xl px-3 py-2 ${dark ? 'bg-white/10 backdrop-blur' : 'border border-slate-200 bg-slate-50'}`}>
       <div className="flex min-h-[44px] items-center gap-2">
-        <div className="rounded-lg bg-white/10 p-1.5">
+        <div className={`rounded-lg p-1.5 ${dark ? 'bg-white/10' : 'bg-white'}`}>
           <Icon className="h-3.5 w-3.5" />
         </div>
         <div className="min-w-0">
-          <div className="truncate whitespace-nowrap text-[10px] uppercase tracking-[0.08em] text-sky-100/90">{label}</div>
-          <div className="truncate whitespace-nowrap text-sm font-semibold leading-tight text-white">{value}</div>
+          <div className={`truncate whitespace-nowrap text-[10px] uppercase tracking-[0.08em] ${dark ? 'text-sky-100/90' : 'text-slate-500'}`}>{label}</div>
+          <div className={`truncate whitespace-nowrap text-sm font-semibold leading-tight ${dark ? 'text-white' : 'text-slate-900'}`}>{value}</div>
         </div>
       </div>
     </div>
