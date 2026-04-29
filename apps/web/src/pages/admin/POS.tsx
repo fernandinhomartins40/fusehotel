@@ -15,7 +15,6 @@ import {
   Receipt,
   Search,
   ShoppingCart,
-  TabletSmartphone,
   UserCheck,
   Wallet,
   X,
@@ -235,7 +234,6 @@ export default function POS() {
   const [maintenanceTitle, setMaintenanceTitle] = useState('');
   const [maintenancePriority, setMaintenancePriority] = useState<MaintenanceOrderPriority>('MEDIUM');
   const [maintenanceDescription, setMaintenanceDescription] = useState('');
-  const [isCompactMode, setIsCompactMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
   const scannerBufferRef = useRef('');
   const scannerTimeoutRef = useRef<number | null>(null);
@@ -1009,34 +1007,26 @@ export default function POS() {
   return (
     <AdminLayout>
       <div className="space-y-4 p-4 md:p-6 lg:min-h-[calc(100dvh-4rem)]">
-        <div className="rounded-3xl bg-gradient-to-r from-sky-700 via-blue-700 to-slate-900 p-3 text-white shadow-sm">
-          <div className="grid gap-2.5 xl:grid-cols-[minmax(220px,1fr)_minmax(560px,760px)] xl:items-center xl:justify-between">
-            <div className="min-w-0 space-y-1.5">
+        <div className="rounded-3xl bg-gradient-to-r from-sky-700 via-blue-700 to-slate-900 px-3 py-2.5 text-white shadow-sm">
+          <div className="flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex min-w-0 flex-col gap-2 xl:flex-1 xl:flex-row xl:items-center xl:gap-3">
               <div className="flex min-w-0 items-center gap-2 overflow-hidden">
                 <Badge className="border-0 bg-white/10 text-white hover:bg-white/10">PDV</Badge>
                 <Badge className="border-0 bg-white/10 text-white hover:bg-white/10">Hotel</Badge>
                 <h1 className="min-w-0 truncate whitespace-nowrap text-xl font-semibold tracking-tight">PDV do hotel</h1>
               </div>
-              <div className="inline-flex max-w-full items-center gap-2 overflow-hidden rounded-full bg-white/10 px-3 py-1 text-[11px] text-sky-100">
+              <div className="inline-flex max-w-full items-center gap-2 overflow-hidden rounded-full bg-white/10 px-3 py-1 text-[11px] text-sky-100 xl:flex-none">
                 <Keyboard className="h-3.5 w-3.5 shrink-0" />
                 <span className="truncate whitespace-nowrap">Alt + 1 pedidos | Alt + 2 caixa | Ctrl + Enter finalizar</span>
               </div>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-[repeat(2,minmax(0,1fr))_minmax(168px,1fr)_minmax(168px,1fr)]">
+            <div className="grid gap-2 sm:grid-cols-2 xl:flex xl:items-stretch xl:gap-2">
               <TopMetric label="Caixa" value={activeCashSession ? activeCashSession.code : 'Fechado'} icon={Wallet} />
               <TopMetric label="Receita PDV" value={currency.format(report?.finance.posRevenueMonth ?? 0)} icon={CreditCard} />
               <Button
                 variant="outline"
-                className="h-10 justify-center whitespace-nowrap border-white/20 bg-white/10 px-4 text-white hover:bg-white/15"
-                onClick={() => setIsCompactMode((current) => !current)}
-              >
-                <TabletSmartphone className="mr-2 h-4 w-4 shrink-0" />
-                {isCompactMode ? 'Modo amplo' : 'Modo compacto'}
-              </Button>
-              <Button
-                variant="outline"
-                className="h-10 justify-center whitespace-nowrap border-white/20 bg-white/10 px-4 text-white hover:bg-white/15"
+                className="h-10 justify-center whitespace-nowrap border-white/20 bg-white/10 px-4 text-white hover:bg-white/15 xl:min-w-[168px]"
                 onClick={() => void toggleFullscreen()}
               >
                 {isFullscreen ? <Minimize2 className="mr-2 h-4 w-4 shrink-0" /> : <Maximize2 className="mr-2 h-4 w-4 shrink-0" />}
@@ -1151,7 +1141,7 @@ export default function POS() {
               </div>
 
               <ScrollArea className="mt-4 max-h-[50vh] rounded-2xl border border-slate-200 xl:max-h-[56vh]">
-                <div className={`grid gap-3 p-3 sm:grid-cols-2 xl:grid-cols-3 ${isCompactMode ? '2xl:grid-cols-3' : '2xl:grid-cols-4'}`}>
+                <div className="grid gap-3 p-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                   {!filteredProducts.length ? (
                     <div className="col-span-full rounded-2xl border border-dashed p-8 text-center text-slate-500">
                       Nenhum item encontrado.
