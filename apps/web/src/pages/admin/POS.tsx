@@ -218,6 +218,7 @@ export default function POS() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentReference, setPaymentReference] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
+  const [showDirectCustomerInput, setShowDirectCustomerInput] = useState(false);
   const [activeNumericField, setActiveNumericField] = useState<NumericField>('payment');
   const [salePreset, setSalePreset] = useState<SalePreset>('BALCAO');
   const [quickCode, setQuickCode] = useState('');
@@ -264,13 +265,6 @@ export default function POS() {
       return matchesCategory && matchesSearch;
     });
   }, [activeProducts, category, search]);
-
-  const operationalReferencePlaceholder = useMemo(() => {
-    if (salePreset === 'MESA') return 'Número da mesa';
-    if (salePreset === 'COMANDA') return 'Número da comanda';
-    if (salePreset === 'QUARTO') return 'Quarto ou observação da entrega';
-    return 'Cliente ou referência opcional';
-  }, [salePreset]);
 
   const cartDetailedItems = useMemo(() => {
     return cartItems
@@ -407,6 +401,7 @@ export default function POS() {
     setPaymentAmount('');
     setPaymentReference('');
     setOrderNotes('');
+    setShowDirectCustomerInput(false);
     setDraftReference('');
     setReferenceLookup('');
   };
@@ -526,6 +521,7 @@ export default function POS() {
     setOrderNotes(draft.orderNotes);
     setCartItems(draft.cartItems);
     setDraftReference(draft.reference);
+    setShowDirectCustomerInput(Boolean(draft.customerName));
     setActiveDialog(null);
     toast.success(`Pré-venda ${draft.reference} restaurada`);
   };
@@ -601,6 +597,7 @@ export default function POS() {
     setPaymentAmount('');
     setPaymentReference('');
     setOrderNotes(order.notes ?? '');
+    setShowDirectCustomerInput(Boolean(order.customerName));
 
     if (order.settlementType === 'FOLIO' || order.origin === 'ROOM_SERVICE') {
       setSalePreset('QUARTO');
@@ -1245,7 +1242,7 @@ export default function POS() {
             <div className="mt-4 grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => setSettlementType('DIRECT')}
+                onClick={() => applySalePreset('BALCAO')}
                 className={`rounded-2xl px-3 py-3 text-sm font-medium transition ${
                   settlementType === 'DIRECT' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
                 }`}
@@ -1267,54 +1264,56 @@ export default function POS() {
             </div>
 
             <div className="mt-4 rounded-2xl bg-white/5 p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-xs uppercase tracking-[0.12em] text-slate-400">Contexto</div>
-                {settlementType === 'DIRECT' ? (
-                  <Badge className="bg-white/10 text-white hover:bg-white/10">{salePresetLabels[salePreset]}</Badge>
-                ) : (
-                  <Badge className="bg-sky-500/15 text-sky-100 hover:bg-sky-500/15">Conta da hospedagem</Badge>
-                )}
-              </div>
-
               {settlementType === 'DIRECT' ? (
-                <div className="mt-3 grid gap-3">
-                  <Select
-                    value={salePreset}
-                    onValueChange={(value) => applySalePreset(value as SalePreset)}
-                  >
-                    <SelectTrigger className="border-white/10 bg-white/5 text-white">
-                      <SelectValue placeholder="Modo da venda" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(salePresetLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium text-white">
+                        {tableNumber ? `${salePresetLabels[salePreset]} ${tableNumber}` : 'Venda de balcão'}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-400">
+                        {customerName ? `Cliente identificado: ${customerName}` : 'Sem identificação obrigatória para continuar.'}
+                      </div>
+                    </div>
+                    <Badge className="bg-white/10 text-white hover:bg-white/10">Direto</Badge>
+                  </div>
 
-                  <Input
-                    value={customerName}
-                    onChange={(event) => setCustomerName(event.target.value)}
-                    placeholder={salePreset === 'BALCAO' ? 'Cliente (opcional)' : 'Cliente ou nome da referência'}
-                    className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
-                  />
-
-                  {salePreset !== 'BALCAO' ? (
+                  {showDirectCustomerInput ? (
                     <Input
-                      value={tableNumber}
-                      onChange={(event) => {
-                        setTableNumber(event.target.value);
-                        setDraftReference(event.target.value);
-                      }}
-                      placeholder={operationalReferencePlaceholder}
+                      value={customerName}
+                      onChange={(event) => setCustomerName(event.target.value)}
+                      placeholder="Cliente (opcional)"
                       className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
                     />
                   ) : null}
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      className="border-white/10 bg-white/5 text-white hover:bg-white/10"
+                      onClick={() => setShowDirectCustomerInput((current) => !current)}
+                    >
+                      {showDirectCustomerInput || customerName ? 'Editar cliente' : 'Identificar cliente'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-white/10 bg-white/5 text-white hover:bg-white/10"
+                      onClick={() => setActiveDialog('drafts')}
+                    >
+                      {tableNumber ? 'Editar mesa/comanda' : 'Usar mesa/comanda'}
+                    </Button>
+                  </div>
                 </div>
               ) : (
-                <div className="mt-3 grid gap-3">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium text-white">Lançar na conta da hospedagem</div>
+                      <div className="mt-1 text-xs text-slate-400">Selecione apenas a hospedagem que receberá o consumo.</div>
+                    </div>
+                    <Badge className="bg-sky-500/15 text-sky-100 hover:bg-sky-500/15">Conta</Badge>
+                  </div>
+
                   <Select value={selectedStayId || 'none'} onValueChange={(value) => setSelectedStayId(value === 'none' ? '' : value)}>
                     <SelectTrigger className="border-white/10 bg-white/5 text-white">
                       <SelectValue placeholder="Selecionar hospedagem" />
@@ -1328,10 +1327,6 @@ export default function POS() {
                       ))}
                     </SelectContent>
                   </Select>
-
-                  <div className="rounded-2xl border border-sky-500/20 bg-sky-500/10 px-3 py-2 text-sm text-sky-100">
-                    O consumo será lançado direto na conta da hospedagem selecionada.
-                  </div>
                 </div>
               )}
             </div>
