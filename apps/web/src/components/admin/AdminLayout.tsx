@@ -4,7 +4,6 @@ import {
   BarChart3,
   BedDouble,
   Calendar,
-  CalendarDays,
   ClipboardCheck,
   ConciergeBell,
   FileText,
@@ -74,13 +73,6 @@ const operationItems: MenuItem[] = [
     icon: Calendar,
     activeClassName:
       'data-[active=true]:bg-purple-50 data-[active=true]:text-purple-700 data-[active=true]:border-r-2 data-[active=true]:border-purple-600',
-  },
-  {
-    path: '/admin/schedule',
-    label: 'Calendário operacional',
-    icon: CalendarDays,
-    activeClassName:
-      'data-[active=true]:bg-indigo-50 data-[active=true]:text-indigo-700 data-[active=true]:border-r-2 data-[active=true]:border-indigo-600',
   },
 ];
 

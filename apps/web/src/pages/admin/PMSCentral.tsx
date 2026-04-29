@@ -114,11 +114,11 @@ export default function PMSCentral() {
       cta: 'Abrir reservas',
     },
     {
-      title: 'Mapa operacional',
+      title: 'Calendário operacional',
       description: 'Disponibilidade, quartos e bloqueios.',
       icon: LayoutGrid,
-      to: '/admin/schedule',
-      cta: 'Abrir mapa',
+      to: '/admin/reservations',
+      cta: 'Abrir calendário',
     },
   ];
 

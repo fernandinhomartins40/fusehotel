@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { BrowserBranding } from "@/components/layout/BrowserBranding";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
@@ -26,7 +26,6 @@ import ServicesCustomizer from "./pages/admin/ServicesCustomizer";
 import AboutCustomizer from "./pages/admin/AboutCustomizer";
 import FAQCustomizer from "./pages/admin/FAQCustomizer";
 import ContactCustomizer from "./pages/admin/ContactCustomizer";
-import Schedule from "./pages/admin/Schedule";
 import Frontdesk from "./pages/admin/Frontdesk";
 import RoomUnits from "./pages/admin/RoomUnits";
 import Housekeeping from "./pages/admin/Housekeeping";
@@ -132,7 +131,7 @@ const App = () => {
                 path="/admin/schedule"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
-                    <Schedule />
+                    <Navigate to="/admin/reservations" replace />
                   </ProtectedRoute>
                 }
               />
@@ -156,7 +155,7 @@ const App = () => {
                 path="/admin/central"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
-                    <PMSCentral />
+                    <Navigate to="/admin" replace />
                   </ProtectedRoute>
                 }
               />
