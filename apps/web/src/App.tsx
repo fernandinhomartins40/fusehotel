@@ -169,14 +169,6 @@ const App = () => {
                 }
               />
               <Route
-                path="/admin/pos-legacy"
-                element={
-                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
-                    <POS />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/admin/reports"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>

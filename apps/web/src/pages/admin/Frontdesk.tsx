@@ -469,7 +469,7 @@ export default function Frontdesk() {
                         <div className="flex justify-end gap-2">
                           <Button variant="outline" onClick={() => setFólioStayId(stay.id)}>
                             <Banknote className="mr-2 h-4 w-4" />
-                            Fólio
+                            Conta
                           </Button>
                           <Button
                             onClick={() => handleCheckOut(stay)}
@@ -491,14 +491,14 @@ export default function Frontdesk() {
       <Dialog open={Boolean(folioStayId)} onOpenChange={(open) => !open && setFólioStayId(null)}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Fólio da hospedagem</DialogTitle>
+            <DialogTitle>Conta da hospedagem</DialogTitle>
             <DialogDescription>
               Lançamentos financeiros da estadia e liquidação para check-out.
             </DialogDescription>
           </DialogHeader>
 
           {!folio ? (
-            <div>Carregando fólio...</div>
+            <div>Carregando conta...</div>
           ) : (
             <div className="grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
               <div className="space-y-4">
@@ -577,7 +577,7 @@ export default function Frontdesk() {
                   </div>
 
                   <Button className="w-full" onClick={handleAddEntry} disabled={addFolioEntry.isPending}>
-                    Registrar no fólio
+                    Registrar na conta
                   </Button>
                 </CardContent>
               </Card>

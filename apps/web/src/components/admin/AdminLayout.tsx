@@ -49,7 +49,7 @@ interface MenuItem {
 const operationItems: MenuItem[] = [
   {
     path: '/admin',
-    label: 'Central do Hotel',
+    label: 'Painel do turno',
     icon: LayoutDashboard,
     activeClassName:
       'data-[active=true]:bg-lime-50 data-[active=true]:text-lime-700 data-[active=true]:border-r-2 data-[active=true]:border-lime-600',
@@ -77,24 +77,17 @@ const operationItems: MenuItem[] = [
   },
   {
     path: '/admin/schedule',
-    label: 'Mapa de Reservas',
+    label: 'Calendário operacional',
     icon: CalendarDays,
     activeClassName:
       'data-[active=true]:bg-indigo-50 data-[active=true]:text-indigo-700 data-[active=true]:border-r-2 data-[active=true]:border-indigo-600',
-  },
-  {
-    path: '/admin/reports',
-    label: 'Relatórios',
-    icon: BarChart3,
-    activeClassName:
-      'data-[active=true]:bg-fuchsia-50 data-[active=true]:text-fuchsia-700 data-[active=true]:border-r-2 data-[active=true]:border-fuchsia-600',
   },
 ];
 
 const hotelItems: MenuItem[] = [
   {
     path: '/admin/room-units',
-    label: 'Quartos físicos',
+    label: 'Quartos',
     icon: BedDouble,
     activeClassName:
       'data-[active=true]:bg-sky-50 data-[active=true]:text-sky-700 data-[active=true]:border-r-2 data-[active=true]:border-sky-600',
@@ -122,14 +115,24 @@ const hotelItems: MenuItem[] = [
   },
 ];
 
-const catalogItems: MenuItem[] = [
+const managementItems: MenuItem[] = [
   {
     path: '/admin/dashboard',
-    label: 'Dashboard Administrativo',
+    label: 'Indicadores',
     icon: LayoutDashboard,
     activeClassName:
       'data-[active=true]:bg-blue-50 data-[active=true]:text-blue-700 data-[active=true]:border-r-2 data-[active=true]:border-blue-600',
   },
+  {
+    path: '/admin/reports',
+    label: 'Relatórios',
+    icon: BarChart3,
+    activeClassName:
+      'data-[active=true]:bg-fuchsia-50 data-[active=true]:text-fuchsia-700 data-[active=true]:border-r-2 data-[active=true]:border-fuchsia-600',
+  },
+];
+
+const catalogItems: MenuItem[] = [
   {
     path: '/admin/accommodations',
     label: 'Tipos de hospedagem',
@@ -231,6 +234,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               <SidebarGroupLabel className="font-medium text-slate-500">Hotel</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>{renderMenuItems(hotelItems)}</SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            <SidebarGroup>
+              <SidebarGroupLabel className="font-medium text-slate-500">Gestão</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>{renderMenuItems(managementItems)}</SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 

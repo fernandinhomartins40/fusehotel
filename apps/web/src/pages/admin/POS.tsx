@@ -105,7 +105,7 @@ const orderStatusLabels: Record<POSOrderStatus, string> = {
 
 const settlementLabels: Record<POSSettlementType, string> = {
   DIRECT: 'Pagamento direto',
-  FOLIO: 'Lançar no fólio',
+  FOLIO: 'Lançar na conta',
 };
 
 const paymentMethodLabels: Record<PaymentMethod, string> = {
@@ -788,7 +788,7 @@ export default function POS() {
     }
 
     if (settlementType === 'FOLIO' && !selectedStayId) {
-      toast.error('Selecione uma hospedagem para lançar no fólio');
+      toast.error('Selecione uma hospedagem para lançar na conta');
       return;
     }
 
@@ -1589,7 +1589,7 @@ export default function POS() {
                       </div>
                       <div className="mt-3 flex items-center justify-between">
                         <span className="text-sm text-slate-500">
-                          Fólio {currency.format(Number(stay.folio?.balance ?? 0))}
+                          Conta {currency.format(Number(stay.folio?.balance ?? 0))}
                         </span>
                         <Button variant="outline" onClick={() => checkOut.mutate({ stayId: stay.id })} disabled={checkOut.isPending}>
                           Check-out
@@ -2053,7 +2053,7 @@ export default function POS() {
                       </div>
                     ) : (
                       <div className="rounded-2xl border bg-slate-50 p-4 text-sm text-slate-600">
-                        Este pedido está configurado para lançamento em fólio.
+                        Este pedido está configurado para lançamento na conta da hospedagem.
                       </div>
                     )}
 

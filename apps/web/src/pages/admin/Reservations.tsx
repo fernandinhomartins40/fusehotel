@@ -1,4 +1,5 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Eye, Filter, Loader2, CalendarPlus } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { ReservationDetails } from '@/components/admin/ReservationDetails';
@@ -195,6 +196,10 @@ export function Reservations() {
           </div>
 
           <div className="flex items-center gap-4">
+            <Button asChild variant="outline" size="lg">
+              <Link to="/admin/schedule">Ver calend�rio</Link>
+            </Button>
+
             <Button onClick={() => setShowCreateDialog(true)} size="lg">
               <CalendarPlus className="mr-2 h-5 w-5" />
               Nova Reserva
@@ -235,8 +240,8 @@ export function Reservations() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Codigo</TableHead>
-                    <TableHead>Hóspede</TableHead>
-                    <TableHead>Acomodação</TableHead>
+                    <TableHead>H�spede</TableHead>
+                    <TableHead>Acomoda��o</TableHead>
                     <TableHead>Check-in</TableHead>
                     <TableHead>Check-out</TableHead>
                     <TableHead>Valor</TableHead>
@@ -328,4 +333,5 @@ export function Reservations() {
 }
 
 export default Reservations;
+
 
