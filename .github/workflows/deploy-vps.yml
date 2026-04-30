@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: deploy-vps
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -295,9 +295,29 @@ jobs:
             fi
             echo "✓ Container fusehotel-nginx-vps está rodando"
 
-            # Aguardar aplicação inicializar completamente (Prisma migrations rodando)
-            echo "Aguardando aplicação inicializar (60s — Prisma migrations)..."
-            sleep 60
+            # Aguardar aplicação inicializar completamente sem janela morta fixa
+            echo "Aguardando API estabilizar..."
+            for i in {1..18}; do
+              API_HEALTH=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' fusehotel-api-vps 2>/dev/null || echo "missing")
+              POSTGRES_HEALTH=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' fusehotel-postgres-vps 2>/dev/null || echo "missing")
+              NGINX_HEALTH=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' fusehotel-nginx-vps 2>/dev/null || echo "missing")
+
+              echo "Tentativa $i/18 - api: $API_HEALTH | postgres: $POSTGRES_HEALTH | nginx: $NGINX_HEALTH"
+
+              if [ "$API_HEALTH" = "healthy" ] && [ "$POSTGRES_HEALTH" = "healthy" ]; then
+                echo "✅ API e banco estabilizados"
+                break
+              fi
+
+              if [ $i -eq 18 ]; then
+                echo "❌ API não estabilizou no tempo esperado"
+                docker logs fusehotel-api-vps --tail=120 || true
+                docker logs fusehotel-postgres-vps --tail=80 || true
+                exit 1
+              fi
+
+              sleep 5
+            done
 
             # ===== DIAGNÓSTICO: Verificar logs =====
             echo "=== Logs da Aplicação (últimas 100 linhas) ==="
