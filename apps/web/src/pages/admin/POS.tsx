@@ -146,12 +146,20 @@ type NumericField = 'serviceFee' | 'discount' | 'payment';
 type DialogKey = 'cash' | 'hotel' | 'orders' | 'drafts' | 'references' | 'details' | null;
 type SalePreset = 'BALCAO' | 'MESA' | 'COMANDA' | 'QUARTO';
 type HotelTab = 'frontdesk' | 'housekeeping' | 'maintenance';
+type POSStep = 'customer' | 'items' | 'settlement' | 'review';
 
 const salePresetLabels: Record<SalePreset, string> = {
   BALCAO: 'Balcão',
   MESA: 'Mesa',
   COMANDA: 'Comanda',
   QUARTO: 'Quarto',
+};
+
+const posStepLabels: Record<POSStep, string> = {
+  customer: 'Cliente',
+  items: 'Itens',
+  settlement: 'Cobrança',
+  review: 'Revisão',
 };
 
 type SavedDraft = {
@@ -225,6 +233,7 @@ export default function POS() {
   const [draftReference, setDraftReference] = useState('');
   const [savedDrafts, setSavedDrafts] = useState<SavedDraft[]>([]);
   const [referenceLookup, setReferenceLookup] = useState('');
+  const [currentStep, setCurrentStep] = useState<POSStep>('customer');
   const [refundPaymentId, setRefundPaymentId] = useState('');
   const [refundAmount, setRefundAmount] = useState('');
   const [refundNotes, setRefundNotes] = useState('');
@@ -296,6 +305,11 @@ export default function POS() {
     [openOrders, selectedOrderId]
   );
 
+  const selectedStay = useMemo(
+    () => inHouseStays.find((stay) => stay.id === selectedStayId) ?? null,
+    [inHouseStays, selectedStayId]
+  );
+
   const editingOrder = useMemo(
     () => orders.find((order) => order.id === editingOrderId) ?? null,
     [editingOrderId, orders]
@@ -323,6 +337,30 @@ export default function POS() {
       selectedOrder.payments.length === 0
     );
   }, [selectedOrder]);
+
+  const resolvedCustomerName = useMemo(() => {
+    if (settlementType === 'FOLIO') {
+      return selectedStay?.reservation.guestName ?? '';
+    }
+    return customerName.trim();
+  }, [customerName, selectedStay, settlementType]);
+
+  const stepSequence: POSStep[] = ['customer', 'items', 'settlement', 'review'];
+  const stepIndex = stepSequence.indexOf(currentStep);
+
+  const canMovePastCustomer = useMemo(() => {
+    if (settlementType === 'FOLIO') {
+      return Boolean(selectedStayId);
+    }
+
+    if (customerName.trim().length < 2) return false;
+
+    if ((salePreset === 'MESA' || salePreset === 'COMANDA') && tableNumber.trim().length < 1) {
+      return false;
+    }
+
+    return true;
+  }, [customerName, salePreset, selectedStayId, settlementType, tableNumber]);
 
   const availableRoomUnitsByAccommodation = useMemo(() => {
     return roomUnits.reduce<Record<string, RoomUnit[]>>((accumulator, roomUnit) => {
@@ -402,6 +440,7 @@ export default function POS() {
     setOrderNotes('');
     setDraftReference('');
     setReferenceLookup('');
+    setCurrentStep('customer');
   };
 
   const applySalePreset = (preset: SalePreset) => {
@@ -410,18 +449,22 @@ export default function POS() {
     if (preset === 'BALCAO') {
       setOrigin('FRONTDESK');
       setSettlementType('DIRECT');
+      setSelectedStayId('');
+      setTableNumber('');
       return;
     }
 
     if (preset === 'MESA' || preset === 'COMANDA') {
       setOrigin('RESTAURANT');
       setSettlementType('DIRECT');
+      setSelectedStayId('');
       return;
     }
 
     if (preset === 'QUARTO') {
       setOrigin('ROOM_SERVICE');
       setSettlementType('FOLIO');
+      setTableNumber('');
     }
   };
 
@@ -519,6 +562,7 @@ export default function POS() {
     setOrderNotes(draft.orderNotes);
     setCartItems(draft.cartItems);
     setDraftReference(draft.reference);
+    setCurrentStep('items');
     setActiveDialog(null);
     toast.success(`Pré-venda ${draft.reference} restaurada`);
   };
@@ -603,6 +647,7 @@ export default function POS() {
       setSalePreset('BALCAO');
     }
 
+    setCurrentStep('review');
     setActiveDialog(null);
     toast.success(`Pedido ${order.orderNumber} carregado no carrinho`);
   };
@@ -786,6 +831,43 @@ export default function POS() {
     }
 
     await document.exitFullscreen();
+  };
+
+  const canAdvanceCurrentStep = () => {
+    if (currentStep === 'customer') return canMovePastCustomer;
+    if (currentStep === 'items') return cartDetailedItems.length > 0;
+    if (currentStep === 'settlement') {
+      if (settlementType === 'FOLIO') return Boolean(selectedStayId);
+      return Boolean(paymentMethod);
+    }
+    return true;
+  };
+
+  const goToNextStep = () => {
+    if (!canAdvanceCurrentStep()) {
+      if (currentStep === 'customer') {
+        toast.error('Preencha o cliente ou a hospedagem antes de continuar');
+        return;
+      }
+
+      if (currentStep === 'items') {
+        toast.error('Adicione ao menos um item antes de continuar');
+        return;
+      }
+
+      if (currentStep === 'settlement') {
+        toast.error('Revise a cobrança antes de continuar');
+      }
+      return;
+    }
+
+    const nextStep = stepSequence[stepIndex + 1];
+    if (nextStep) setCurrentStep(nextStep);
+  };
+
+  const goToPreviousStep = () => {
+    const previousStep = stepSequence[stepIndex - 1];
+    if (previousStep) setCurrentStep(previousStep);
   };
 
   const handleFinalizeSale = async () => {
@@ -1021,6 +1103,358 @@ export default function POS() {
     setActiveDialog('hotel');
   };
 
+  const renderCustomerStep = () => (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold text-slate-900">1. Identifique o cliente</h2>
+        <p className="mt-1 text-sm text-slate-500">Defina primeiro para quem será o lançamento e como a venda será vinculada.</p>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <ModeCard
+          title="Balcão"
+          description="Venda direta com recebimento no caixa."
+          active={settlementType === 'DIRECT' && salePreset === 'BALCAO'}
+          onClick={() => applySalePreset('BALCAO')}
+        />
+        <ModeCard
+          title="Mesa / comanda"
+          description="Venda direta com referência de atendimento."
+          active={settlementType === 'DIRECT' && (salePreset === 'MESA' || salePreset === 'COMANDA')}
+          onClick={() => applySalePreset('COMANDA')}
+        />
+        <ModeCard
+          title="Conta da hospedagem"
+          description="Lançamento direto na conta do hóspede."
+          active={settlementType === 'FOLIO'}
+          onClick={() => applySalePreset('QUARTO')}
+        />
+      </div>
+
+      {settlementType === 'DIRECT' ? (
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
+          <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div className="text-sm font-medium text-slate-900">Cliente obrigatório</div>
+            <Input
+              value={customerName}
+              onChange={(event) => setCustomerName(event.target.value)}
+              placeholder="Nome do cliente"
+              className="h-12 rounded-2xl bg-white"
+            />
+            <p className="text-xs text-slate-500">Toda venda direta precisa ficar vinculada a um cliente.</p>
+          </div>
+
+          {(salePreset === 'MESA' || salePreset === 'COMANDA') ? (
+            <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-sm font-medium text-slate-900">Mesa ou comanda</div>
+              <Input
+                value={tableNumber}
+                onChange={(event) => {
+                  setTableNumber(event.target.value);
+                  setDraftReference(event.target.value);
+                }}
+                placeholder="Número ou referência"
+                className="h-12 rounded-2xl bg-white"
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" onClick={() => setActiveDialog('references')}>
+                  Buscar referência
+                </Button>
+                <Button variant="outline" onClick={() => setActiveDialog('drafts')}>
+                  Vendas salvas
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-sm font-medium text-slate-900">Origem da venda</div>
+              <div className="mt-2 text-sm text-slate-600">Balcão é o modo padrão para venda direta e não exige outro contexto.</div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div className="text-sm font-medium text-slate-900">Hospedagem vinculada</div>
+            <Select value={selectedStayId || 'none'} onValueChange={(value) => setSelectedStayId(value === 'none' ? '' : value)}>
+              <SelectTrigger className="h-12 rounded-2xl bg-white">
+                <SelectValue placeholder="Selecionar hospedagem" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Selecionar hospedagem</SelectItem>
+                {inHouseStays.map((stay) => (
+                  <SelectItem key={stay.id} value={stay.id}>
+                    {stay.reservation.guestName} • Quarto {stay.roomUnit?.code ?? 'Sem quarto'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-slate-500">O cliente passa a ser o hóspede da hospedagem selecionada.</p>
+          </div>
+
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div className="text-sm font-medium text-slate-900">Cliente da conta</div>
+            {selectedStay ? (
+              <div className="mt-3 space-y-2 text-sm text-slate-600">
+                <div><strong className="text-slate-900">{selectedStay.reservation.guestName}</strong></div>
+                <div>Quarto {selectedStay.roomUnit?.code ?? 'Sem quarto'}</div>
+                <div>Saída prevista em {new Date(selectedStay.reservation.checkOutDate).toLocaleDateString('pt-BR')}</div>
+              </div>
+            ) : (
+              <div className="mt-3 text-sm text-slate-500">Selecione uma hospedagem para continuar.</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderItemsStep = () => (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold text-slate-900">2. Inclua produtos e serviços</h2>
+        <p className="mt-1 text-sm text-slate-500">Busque, filtre por categoria ou use leitura rápida para montar a venda.</p>
+      </div>
+
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar item, produto ou serviço"
+              className="h-12 rounded-2xl border-slate-200 pl-9 text-base"
+            />
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+          <div className="mb-2 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-slate-500">
+            <span>Leitura rápida</span>
+            <span>Alt + C</span>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_72px_112px]">
+            <Input
+              id="pos-quick-code"
+              value={quickCode}
+              onChange={(event) => setQuickCode(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  handleQuickAdd();
+                }
+              }}
+              placeholder="Código ou SKU"
+              className="h-11 rounded-xl bg-white"
+            />
+            <Input
+              value={quickQuantity}
+              onChange={(event) => setQuickQuantity(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  handleQuickAdd();
+                }
+              }}
+              placeholder="Qtd"
+              className="h-11 rounded-xl bg-white"
+            />
+            <Button className="h-11 rounded-xl" onClick={handleQuickAdd}>
+              Adicionar
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Categorias</div>
+        <Button
+          variant="outline"
+          className="h-10 rounded-2xl border-slate-200 px-4"
+          onClick={() => {
+            setCategory('ALL');
+            setSearch('');
+          }}
+        >
+          Limpar busca
+        </Button>
+      </div>
+
+      <div className="flex gap-3 overflow-x-auto pb-1">
+        {Object.entries(categoryLabels).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setCategory(value as POSProductCategory | 'ALL')}
+            className={`min-w-[140px] rounded-2xl border px-4 py-4 text-left transition ${
+              category === value
+                ? 'border-sky-700 bg-sky-700 text-white shadow-sm'
+                : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
+            }`}
+          >
+            <div className="font-semibold">{label}</div>
+          </button>
+        ))}
+      </div>
+
+      <ScrollArea className="max-h-[58vh] rounded-2xl border border-slate-200">
+        <div className="grid gap-3 p-3 sm:grid-cols-2 xl:grid-cols-3">
+          {!filteredProducts.length ? (
+            <div className="col-span-full rounded-2xl border border-dashed p-8 text-center text-slate-500">
+              Nenhum item encontrado.
+            </div>
+          ) : (
+            filteredProducts.map((product) => (
+              <button
+                key={product.id}
+                type="button"
+                onClick={() => addProductToCart(product)}
+                className="rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-sky-400 hover:bg-sky-50"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="line-clamp-2 font-medium text-slate-900">{product.name}</div>
+                    <div className="mt-1 text-xs text-slate-500">{categoryLabels[product.category]}</div>
+                  </div>
+                  <Grid2x2 className="h-4 w-4 shrink-0 text-slate-400" />
+                </div>
+                <div className="mt-4 flex items-center justify-between">
+                  <span className="text-lg font-semibold text-slate-900">{currency.format(Number(product.price))}</span>
+                  <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">
+                    {product.trackStock ? `Estoque ${product.stockQuantity}` : 'Livre'}
+                  </span>
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+
+  const renderSettlementStep = () => (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold text-slate-900">3. Defina a cobrança</h2>
+        <p className="mt-1 text-sm text-slate-500">Escolha como a venda será cobrada ou lançada antes de revisar.</p>
+      </div>
+
+      {settlementType === 'DIRECT' ? (
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_180px]">
+          <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_160px]">
+              <FieldButton
+                label="Pagamento"
+                value={paymentAmount}
+                active={activeNumericField === 'payment'}
+                onClick={() => setActiveNumericField('payment')}
+                dark={false}
+              />
+              <Button variant="outline" className="rounded-2xl" onClick={() => setActiveDialog('details')}>
+                Ajustes e detalhes
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              {(['PIX', 'CASH', 'CREDIT_CARD', 'DEBIT_CARD'] as PaymentMethod[]).map((method) => (
+                <button
+                  key={method}
+                  type="button"
+                  onClick={() => setPaymentMethod(method)}
+                  className={`rounded-2xl py-3 text-sm font-semibold transition ${
+                    paymentMethod === method
+                      ? 'bg-sky-700 text-white'
+                      : 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                  }`}
+                >
+                  {paymentMethodLabels[method]}
+                </button>
+              ))}
+            </div>
+
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-3 text-sm text-slate-600">
+              Deixe o valor zerado apenas quando quiser salvar a venda como comanda para receber depois.
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 gap-2 xl:grid-cols-3">
+            {['7', '8', '9', 'clear', '4', '5', '6', 'back', '1', '2', '3', '.', '00', '0'].map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => applyKeypad(key)}
+                className={`rounded-2xl py-3 text-base font-semibold transition ${
+                  key === 'clear'
+                    ? 'bg-red-500 text-white'
+                    : key === 'back'
+                      ? 'bg-amber-400 text-slate-950'
+                      : 'bg-sky-700 text-white hover:bg-sky-600'
+                }`}
+              >
+                {key === 'clear' ? 'C' : key === 'back' ? '←' : key}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+          <div className="text-sm font-medium text-slate-900">Cobrança pela conta da hospedagem</div>
+          <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+            O lançamento será enviado para a conta do hóspede selecionado e poderá ser fechado no check-out.
+          </div>
+          <Button variant="outline" className="rounded-2xl" onClick={() => setActiveDialog('details')}>
+            Ajustes e detalhes
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderReviewStep = () => (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold text-slate-900">4. Revise e conclua</h2>
+        <p className="mt-1 text-sm text-slate-500">Confira cliente, itens e cobrança antes de finalizar.</p>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <DialogStat label="Cliente" value={resolvedCustomerName || 'Não definido'} />
+        <DialogStat
+          label="Tipo"
+          value={settlementType === 'FOLIO' ? 'Conta da hospedagem' : salePresetLabels[salePreset]}
+        />
+        <DialogStat label="Itens" value={`${cartDetailedItems.length}`} />
+      </div>
+
+      <div className="rounded-3xl border border-slate-200">
+        <div className="border-b border-slate-200 px-4 py-3 text-sm font-medium text-slate-900">Itens da venda</div>
+        <div className="space-y-3 p-4">
+          {!cartDetailedItems.length ? (
+            <EmptyInline text="Nenhum item adicionado." />
+          ) : (
+            cartDetailedItems.map((item) => (
+              <div key={item.productId} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div>
+                  <div className="font-medium text-slate-900">{item.product.name}</div>
+                  <div className="text-sm text-slate-500">{item.quantity} x {currency.format(Number(item.product.price))}</div>
+                </div>
+                <div className="font-semibold text-slate-900">{currency.format(item.total)}</div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStepContent = () => {
+    if (currentStep === 'customer') return renderCustomerStep();
+    if (currentStep === 'items') return renderItemsStep();
+    if (currentStep === 'settlement') return renderSettlementStep();
+    return renderReviewStep();
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-4 p-4 md:p-6 lg:min-h-[calc(100dvh-4rem)]">
@@ -1057,436 +1491,143 @@ export default function POS() {
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]">
           <div className="space-y-4">
-            <div className="rounded-3xl border bg-slate-950 p-3 text-white shadow-sm">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-xs font-medium uppercase tracking-[0.12em] text-slate-400">Operação rápida</div>
-                  <div className="mt-1 text-sm text-slate-300">Acesse as ações do turno sem sair do caixa.</div>
-                </div>
-                <div className="hidden text-xs text-slate-500 xl:block">Alt + 1, 2, 3 e 9</div>
+          <div className="rounded-3xl border bg-slate-950 p-3 text-white shadow-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <SideAction icon={ShoppingCart} label="Pedidos" description="Abertos e recebimento" shortcut="Alt + 1" active={activeDialog === 'orders'} onClick={() => setActiveDialog('orders')} />
+              <SideAction icon={Wallet} label="Caixa" description="Abertura e fechamento" shortcut="Alt + 2" active={activeDialog === 'cash'} onClick={() => setActiveDialog('cash')} />
+              <SideAction icon={Hotel} label="Hotel" description="Check-in e quartos" shortcut="Alt + 3" active={activeDialog === 'hotel'} onClick={() => openHotelDialog('frontdesk')} />
+              <SideAction icon={Receipt} label="Pr?-venda" description="Suspensas e retomada" shortcut="Alt + 9" active={activeDialog === 'drafts'} onClick={() => setActiveDialog('drafts')} />
+              <SideAction icon={Search} label="Refer?ncias" description="Mesa, comanda ou h?spede" shortcut="Alt + 0" active={activeDialog === 'references'} onClick={() => setActiveDialog('references')} />
+            </div>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="rounded-3xl border bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap gap-2">
+                {stepSequence.map((step, index) => {
+                  const active = currentStep === step;
+                  const completed = index < stepIndex;
+                  return (
+                    <button
+                      key={step}
+                      type="button"
+                      onClick={() => {
+                        if (index <= stepIndex) setCurrentStep(step);
+                      }}
+                      className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-left transition ${
+                        active
+                          ? 'border-sky-600 bg-sky-600 text-white'
+                          : completed
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                            : 'border-slate-200 bg-slate-50 text-slate-500'
+                      }`}
+                    >
+                      <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
+                        active ? 'bg-white/20 text-white' : completed ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-slate-500'
+                      }`}>
+                        {index + 1}
+                      </span>
+                      <span className="text-sm font-medium">{posStepLabels[step]}</span>
+                    </button>
+                  );
+                })}
               </div>
-              <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-5">
-                <SideAction
-                  icon={ShoppingCart}
-                  label="Pedidos"
-                  description="Abertos e recebimento"
-                  shortcut="Alt + 1"
-                  active={activeDialog === 'orders'}
-                  onClick={() => setActiveDialog('orders')}
-                />
-                <SideAction
-                  icon={Wallet}
-                  label="Caixa"
-                  description="Abertura, sangria e fechamento"
-                  shortcut="Alt + 2"
-                  active={activeDialog === 'cash'}
-                  onClick={() => setActiveDialog('cash')}
-                />
-                <SideAction
-                  icon={Hotel}
-                  label="Hotel"
-                  description="Check-in, quartos e saída"
-                  shortcut="Alt + 3"
-                  active={activeDialog === 'hotel'}
-                  onClick={() => openHotelDialog('frontdesk')}
-                />
-                <SideAction
-                  icon={Receipt}
-                  label="Pré-venda"
-                  description="Suspensas e retomada"
-                  shortcut="Alt + 9"
-                  active={activeDialog === 'drafts'}
-                  onClick={() => setActiveDialog('drafts')}
-                />
-                <SideAction
-                  icon={Search}
-                  label="Referências"
-                  description="Mesa, comanda ou hóspede"
-                  shortcut="Alt + 0"
-                  active={activeDialog === 'references'}
-                  onClick={() => setActiveDialog('references')}
-                />
-              </div>
+
+              <div className="mt-5">{renderStepContent()}</div>
             </div>
 
-            <div className="rounded-3xl bg-white p-4 shadow-sm">
-              <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
-                <div className="space-y-3">
-                  <div className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Catálogo</div>
-                  <div className="relative">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <Input
-                      value={search}
-                      onChange={(event) => setSearch(event.target.value)}
-                      placeholder="Buscar item, produto ou serviço"
-                      className="h-12 rounded-2xl border-slate-200 pl-9 text-base"
-                    />
+            <div className="space-y-4 xl:sticky xl:top-4 xl:self-start">
+              <div className="rounded-3xl bg-slate-950 p-4 text-white shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-xs uppercase tracking-[0.18em] text-slate-400">Resumo da venda</div>
+                    <div className="mt-1 text-xl font-semibold">{posStepLabels[currentStep]}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {editingOrder && <Badge className="bg-amber-500/20 text-amber-200 hover:bg-amber-500/20">Editando {editingOrder.orderNumber}</Badge>}
+                    <Badge className="bg-white/10 text-white hover:bg-white/10">{cartDetailedItems.length} itens</Badge>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                  <div className="mb-2 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-slate-500">
-                    <span>Leitura rápida</span>
-                    <span>Alt + C</span>
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_72px_112px]">
-                    <Input
-                      id="pos-quick-code"
-                      value={quickCode}
-                      onChange={(event) => setQuickCode(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault();
-                          handleQuickAdd();
-                        }
-                      }}
-                      placeholder="Código ou SKU"
-                      className="h-11 rounded-xl bg-white"
-                    />
-                    <Input
-                      value={quickQuantity}
-                      onChange={(event) => setQuickQuantity(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault();
-                          handleQuickAdd();
-                        }
-                      }}
-                      placeholder="Qtd"
-                      className="h-11 rounded-xl bg-white"
-                    />
-                    <Button className="h-11 rounded-xl" onClick={handleQuickAdd}>
-                      Adicionar
-                    </Button>
-                  </div>
+                <div className="mt-4 space-y-3 text-sm">
+                  <SummaryRow label="Cliente" value={resolvedCustomerName || 'Aguardando identifica??o'} />
+                  <SummaryRow label="Origem" value={settlementType === 'FOLIO' ? 'Conta da hospedagem' : salePresetLabels[salePreset]} />
+                  <SummaryRow label="Refer?ncia" value={settlementType === 'FOLIO' ? (selectedStay ? `Quarto ${selectedStay.roomUnit?.code ?? 'Sem quarto'}` : 'Sem hospedagem') : (tableNumber || 'Balc?o')} />
+                  <SummaryRow label="Pagamento" value={settlementType === 'DIRECT' ? paymentMethodLabels[paymentMethod] : 'Lan?amento em conta'} />
                 </div>
-              </div>
 
-              <div className="mt-4 flex items-center justify-between gap-3">
-                <div className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Categorias</div>
-                <Button
-                  variant="outline"
-                  className="h-10 rounded-2xl border-slate-200 px-4"
-                  onClick={() => {
-                    setCategory('ALL');
-                    setSearch('');
-                  }}
-                >
-                  Limpar busca
-                </Button>
-              </div>
-
-              <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
-                {Object.entries(categoryLabels).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setCategory(value as POSProductCategory | 'ALL')}
-                    className={`min-w-[140px] rounded-2xl border px-4 py-4 text-left transition ${
-                      category === value
-                        ? 'border-sky-700 bg-sky-700 text-white shadow-sm'
-                        : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
-                    }`}
-                  >
-                    <div className="font-semibold">{label}</div>
-                  </button>
-                ))}
-              </div>
-
-              <ScrollArea className="mt-4 max-h-[50vh] rounded-2xl border border-slate-200 xl:max-h-[56vh]">
-                <div className="grid gap-3 p-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                  {!filteredProducts.length ? (
-                    <div className="col-span-full rounded-2xl border border-dashed p-8 text-center text-slate-500">
-                      Nenhum item encontrado.
-                    </div>
-                  ) : (
-                    filteredProducts.map((product) => (
-                      <button
-                        key={product.id}
-                        type="button"
-                        onClick={() => addProductToCart(product)}
-                        className="rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-sky-400 hover:bg-sky-50"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="line-clamp-2 font-medium text-slate-900">{product.name}</div>
-                            <div className="mt-1 text-xs text-slate-500">{categoryLabels[product.category]}</div>
+                <ScrollArea className="mt-4 max-h-[260px] rounded-2xl border border-white/10 bg-white/5">
+                  <div className="space-y-2 p-3">
+                    {!cartDetailedItems.length ? (
+                      <div className="rounded-2xl border border-dashed border-white/10 p-4 text-center text-sm text-slate-400">Nenhum item adicionado.</div>
+                    ) : (
+                      cartDetailedItems.map((item) => (
+                        <div key={item.productId} className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2">
+                          <div className="line-clamp-1 text-sm font-medium">{item.product.name}</div>
+                          <div className="mt-1 flex items-center justify-between text-xs text-slate-400">
+                            <span>{item.quantity}x</span>
+                            <span>{currency.format(item.total)}</span>
                           </div>
-                          <Grid2x2 className="h-4 w-4 shrink-0 text-slate-400" />
                         </div>
-                        <div className="mt-4 flex items-center justify-between">
-                          <span className="text-lg font-semibold text-slate-900">{currency.format(Number(product.price))}</span>
-                          <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">
-                            {product.trackStock ? `Estoque ${product.stockQuantity}` : 'Livre'}
-                          </span>
-                        </div>
-                      </button>
-                    ))
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+
+                <div className="mt-4 rounded-3xl bg-white px-4 py-5 text-slate-950">
+                  <div className="flex items-center justify-between text-sm text-slate-500">
+                    <span>Subtotal</span>
+                    <span>{currency.format(subtotal)}</span>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-sm text-slate-500">
+                    <span>Ajustes</span>
+                    <span>{currency.format(Number(serviceFeeAmount || 0) - Number(discountAmount || 0))}</span>
+                  </div>
+                  <div className="mt-4 flex items-end justify-between">
+                    <span className="text-base font-medium">Valor total</span>
+                    <span className="text-4xl font-semibold">{currency.format(total)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border bg-white p-4 shadow-sm">
+                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+                  <Button variant="outline" className="rounded-2xl" onClick={clearDraft}>
+                    Limpar venda
+                  </Button>
+                  {stepIndex > 0 ? (
+                    <Button variant="outline" className="rounded-2xl" onClick={goToPreviousStep}>
+                      Voltar etapa
+                    </Button>
+                  ) : null}
+                  {currentStep !== 'review' ? (
+                    <Button className="rounded-2xl" onClick={goToNextStep}>
+                      Pr?xima etapa
+                    </Button>
+                  ) : (
+                    <Button
+                      className="h-14 rounded-2xl bg-emerald-500 text-base font-semibold text-white hover:bg-emerald-600"
+                      onClick={handleFinalizeSale}
+                      disabled={createOrder.isPending || updateOrder.isPending || registerPayment.isPending || updateOrderStatus.isPending}
+                    >
+                      {editingOrder
+                        ? settlementType === 'DIRECT'
+                          ? Number(paymentAmount || 0) > 0
+                            ? 'Salvar e receber'
+                            : 'Salvar comanda'
+                          : 'Atualizar e lan?ar consumo'
+                        : settlementType === 'DIRECT'
+                          ? 'Receber e finalizar'
+                          : 'Lan?ar consumo'}
+                    </Button>
                   )}
                 </div>
-              </ScrollArea>
-            </div>
-          </div>
-
-          <div className="rounded-3xl bg-slate-950 p-4 text-white shadow-sm lg:sticky lg:top-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-xs uppercase tracking-[0.18em] text-slate-400">Venda atual</div>
-                <div className="mt-1 text-2xl font-semibold">Carrinho</div>
-              </div>
-              <div className="flex items-center gap-2">
-                {editingOrder && <Badge className="bg-amber-500/20 text-amber-200 hover:bg-amber-500/20">Editando {editingOrder.orderNumber}</Badge>}
-                <Badge className="bg-white/10 text-white hover:bg-white/10">{cartDetailedItems.length} itens</Badge>
               </div>
             </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => applySalePreset('BALCAO')}
-                className={`rounded-2xl px-3 py-3 text-sm font-medium transition ${
-                  settlementType === 'DIRECT' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                }`}
-              >
-                Direto
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSettlementType('FOLIO');
-                  applySalePreset('QUARTO');
-                }}
-                className={`rounded-2xl px-3 py-3 text-sm font-medium transition ${
-                  settlementType === 'FOLIO' ? 'bg-sky-600 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                }`}
-              >
-                Conta
-              </button>
-            </div>
-
-            <div className="mt-4 rounded-2xl bg-white/5 p-3">
-              {settlementType === 'DIRECT' ? (
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-medium text-white">
-                        {tableNumber ? `${salePresetLabels[salePreset]} ${tableNumber}` : 'Venda de balcão'}
-                      </div>
-                      <div className="mt-1 text-xs text-slate-400">
-                        {customerName ? `Cliente vinculado: ${customerName}` : 'Cliente obrigatório para toda venda direta.'}
-                      </div>
-                    </div>
-                    <Badge className="bg-white/10 text-white hover:bg-white/10">Direto</Badge>
-                  </div>
-
-                  <Input
-                    value={customerName}
-                    onChange={(event) => setCustomerName(event.target.value)}
-                    placeholder="Nome do cliente"
-                    className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
-                  />
-
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      className="border-white/10 bg-white/5 text-white hover:bg-white/10"
-                      onClick={() => setActiveDialog('drafts')}
-                    >
-                      {tableNumber ? 'Editar mesa/comanda' : 'Vincular mesa/comanda'}
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-medium text-white">Lançar na conta da hospedagem</div>
-                      <div className="mt-1 text-xs text-slate-400">O cliente será sempre o hóspede vinculado à hospedagem selecionada.</div>
-                    </div>
-                    <Badge className="bg-sky-500/15 text-sky-100 hover:bg-sky-500/15">Conta</Badge>
-                  </div>
-
-                  <Select value={selectedStayId || 'none'} onValueChange={(value) => setSelectedStayId(value === 'none' ? '' : value)}>
-                    <SelectTrigger className="border-white/10 bg-white/5 text-white">
-                      <SelectValue placeholder="Selecionar hospedagem" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Selecionar hospedagem</SelectItem>
-                      {inHouseStays.map((stay) => (
-                        <SelectItem key={stay.id} value={stay.id}>
-                          {stay.reservation.guestName} • Quarto {stay.roomUnit?.code ?? 'Sem quarto'}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-
-            <ScrollArea className="mt-4 max-h-[34vh] rounded-2xl border border-white/10 bg-white/5 xl:max-h-[40vh]">
-              <div className="space-y-3 p-3">
-                {!cartDetailedItems.length ? (
-                  <div className="rounded-2xl border border-dashed border-white/10 p-6 text-center text-sm text-slate-400">
-                    Toque em um produto para adicionar ao carrinho.
-                  </div>
-                ) : (
-                  cartDetailedItems.map((item) => (
-                    <div key={item.productId} className="rounded-2xl border border-white/10 bg-black/10 p-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="line-clamp-2 font-medium">{item.product.name}</div>
-                          <div className="mt-1 text-xs text-slate-400">{currency.format(Number(item.product.price))} por unidade</div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => updateCartQuantity(item.productId, 0)}
-                          className="rounded-xl bg-white/5 p-2 text-slate-300 hover:bg-white/10"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <div className="mt-3 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => updateCartQuantity(item.productId, item.quantity - 1)}
-                            className="rounded-xl bg-white/5 p-2 hover:bg-white/10"
-                          >
-                            <Minus className="h-4 w-4" />
-                          </button>
-                          <div className="min-w-10 text-center font-semibold">{item.quantity}</div>
-                          <button
-                            type="button"
-                            onClick={() => updateCartQuantity(item.productId, item.quantity + 1)}
-                            className="rounded-xl bg-white/5 p-2 hover:bg-white/10"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </button>
-                        </div>
-                        <div className="text-lg font-semibold">{currency.format(item.total)}</div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </ScrollArea>
-
-            <div className="mt-4 grid gap-3 xl:grid-cols-[1fr_170px]">
-              <div className="space-y-3">
-                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_152px]">
-                  <FieldButton label="Pagamento" value={paymentAmount} active={activeNumericField === 'payment'} onClick={() => setActiveNumericField('payment')} />
-                  <Button
-                    variant="outline"
-                    className="h-full rounded-2xl border-white/10 bg-white/5 text-white hover:bg-white/10"
-                    onClick={() => setActiveDialog('details')}
-                  >
-                    Ajustes e detalhes
-                  </Button>
-                </div>
-
-                {settlementType === 'DIRECT' ? (
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('PIX')}
-                      className={`rounded-2xl py-3 text-sm font-semibold transition ${
-                        paymentMethod === 'PIX' ? 'bg-emerald-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                      }`}
-                    >
-                      PIX
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('CASH')}
-                      className={`rounded-2xl py-3 text-sm font-semibold transition ${
-                        paymentMethod === 'CASH' ? 'bg-lime-500 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                      }`}
-                    >
-                      Dinheiro
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('CREDIT_CARD')}
-                      className={`rounded-2xl py-3 text-sm font-semibold transition ${
-                        paymentMethod === 'CREDIT_CARD' ? 'bg-orange-500 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                      }`}
-                    >
-                      Crédito
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('DEBIT_CARD')}
-                      className={`rounded-2xl py-3 text-sm font-semibold transition ${
-                        paymentMethod === 'DEBIT_CARD' ? 'bg-cyan-500 text-slate-950' : 'bg-white/5 text-slate-300 hover:bg-white/10'
-                      }`}
-                    >
-                      Débito
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="grid grid-cols-4 gap-2 xl:grid-cols-3">
-                {['7', '8', '9', 'clear', '4', '5', '6', 'back', '1', '2', '3', '.', '00', '0'].map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => applyKeypad(key)}
-                    className={`rounded-2xl py-3 text-base font-semibold transition ${
-                      key === 'clear'
-                        ? 'bg-red-500 text-white'
-                        : key === 'back'
-                          ? 'bg-amber-400 text-slate-950'
-                          : 'bg-sky-700 text-white hover:bg-sky-600'
-                    }`}
-                  >
-                    {key === 'clear' ? 'C' : key === 'back' ? '←' : key}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={clearDraft}
-                  className="col-span-2 rounded-2xl bg-white/5 py-3 text-sm font-semibold text-slate-300 hover:bg-white/10 xl:col-span-3"
-                >
-                  Limpar venda
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-4 rounded-3xl bg-white px-4 py-5 text-slate-950">
-              <div className="flex items-center justify-between text-sm text-slate-500">
-                <span>Subtotal</span>
-                <span>{currency.format(subtotal)}</span>
-              </div>
-              <div className="mt-2 flex items-center justify-between text-sm text-slate-500">
-                <span>Ajustes</span>
-                <span>{currency.format(Number(serviceFeeAmount || 0) - Number(discountAmount || 0))}</span>
-              </div>
-              <div className="mt-4 flex items-end justify-between">
-                <span className="text-base font-medium">Valor total</span>
-                <span className="text-4xl font-semibold">{currency.format(total)}</span>
-              </div>
-            </div>
-
-            <Button
-              className="mt-4 h-14 rounded-2xl bg-emerald-500 text-base font-semibold text-white hover:bg-emerald-600"
-              onClick={handleFinalizeSale}
-              disabled={createOrder.isPending || updateOrder.isPending || registerPayment.isPending || updateOrderStatus.isPending}
-            >
-              {editingOrder
-                ? settlementType === 'DIRECT'
-                  ? Number(paymentAmount || 0) > 0
-                    ? 'Salvar e receber'
-                    : 'Salvar comanda'
-                  : 'Atualizar e lançar consumo'
-                : settlementType === 'DIRECT'
-                  ? 'Receber e finalizar'
-                  : 'Lançar consumo'}
-            </Button>
           </div>
         </div>
+        </div>
       </div>
-
       <Dialog open={activeDialog === 'details'} onOpenChange={(open) => setActiveDialog(open ? 'details' : null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -1504,7 +1645,7 @@ export default function POS() {
               <Input
                 value={paymentReference}
                 onChange={(event) => setPaymentReference(event.target.value)}
-                placeholder="NSU ou referência"
+                placeholder="NSU ou refer?ncia"
               />
             ) : null}
 
@@ -2197,6 +2338,40 @@ function DialogStat({ label, value }: { label: string; value: string }) {
       <div className="text-[10px] uppercase tracking-[0.08em] text-slate-500">{label}</div>
       <div className="mt-1 text-lg font-semibold text-slate-900">{value}</div>
     </div>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <span className="text-slate-400">{label}</span>
+      <span className="text-right font-medium text-white">{value}</span>
+    </div>
+  );
+}
+
+function ModeCard({
+  title,
+  description,
+  active,
+  onClick,
+}: {
+  title: string;
+  description: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-3xl border p-4 text-left transition ${
+        active ? 'border-sky-600 bg-sky-50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+      }`}
+    >
+      <div className={`text-sm font-semibold ${active ? 'text-sky-700' : 'text-slate-900'}`}>{title}</div>
+      <div className={`mt-2 text-sm ${active ? 'text-sky-600' : 'text-slate-500'}`}>{description}</div>
+    </button>
   );
 }
 
