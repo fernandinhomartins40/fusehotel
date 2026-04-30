@@ -218,7 +218,6 @@ export default function POS() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentReference, setPaymentReference] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
-  const [showDirectCustomerInput, setShowDirectCustomerInput] = useState(false);
   const [activeNumericField, setActiveNumericField] = useState<NumericField>('payment');
   const [salePreset, setSalePreset] = useState<SalePreset>('BALCAO');
   const [quickCode, setQuickCode] = useState('');
@@ -401,7 +400,6 @@ export default function POS() {
     setPaymentAmount('');
     setPaymentReference('');
     setOrderNotes('');
-    setShowDirectCustomerInput(false);
     setDraftReference('');
     setReferenceLookup('');
   };
@@ -521,7 +519,6 @@ export default function POS() {
     setOrderNotes(draft.orderNotes);
     setCartItems(draft.cartItems);
     setDraftReference(draft.reference);
-    setShowDirectCustomerInput(Boolean(draft.customerName));
     setActiveDialog(null);
     toast.success(`Pré-venda ${draft.reference} restaurada`);
   };
@@ -597,7 +594,6 @@ export default function POS() {
     setPaymentAmount('');
     setPaymentReference('');
     setOrderNotes(order.notes ?? '');
-    setShowDirectCustomerInput(Boolean(order.customerName));
 
     if (order.settlementType === 'FOLIO' || order.origin === 'ROOM_SERVICE') {
       setSalePreset('QUARTO');
@@ -803,6 +799,11 @@ export default function POS() {
       return;
     }
 
+    if (settlementType === 'DIRECT' && customerName.trim().length < 2) {
+      toast.error('Informe o cliente da venda antes de finalizar');
+      return;
+    }
+
     if (settlementType === 'DIRECT' && paymentMethod === 'CASH' && !activeCashSession) {
       toast.error('Abra o caixa antes de receber em dinheiro');
       return;
@@ -817,7 +818,7 @@ export default function POS() {
             : undefined,
         origin,
         settlementType,
-        customerName: settlementType === 'DIRECT' ? customerName || undefined : undefined,
+        customerName: settlementType === 'DIRECT' ? customerName.trim() : undefined,
         tableNumber: tableNumber || undefined,
         serviceFeeAmount: Number(serviceFeeAmount || 0) || undefined,
         discountAmount: Number(discountAmount || 0) || undefined,
@@ -1272,35 +1273,26 @@ export default function POS() {
                         {tableNumber ? `${salePresetLabels[salePreset]} ${tableNumber}` : 'Venda de balcão'}
                       </div>
                       <div className="mt-1 text-xs text-slate-400">
-                        {customerName ? `Cliente identificado: ${customerName}` : 'Sem identificação obrigatória para continuar.'}
+                        {customerName ? `Cliente vinculado: ${customerName}` : 'Cliente obrigatório para toda venda direta.'}
                       </div>
                     </div>
                     <Badge className="bg-white/10 text-white hover:bg-white/10">Direto</Badge>
                   </div>
 
-                  {showDirectCustomerInput ? (
-                    <Input
-                      value={customerName}
-                      onChange={(event) => setCustomerName(event.target.value)}
-                      placeholder="Cliente (opcional)"
-                      className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
-                    />
-                  ) : null}
+                  <Input
+                    value={customerName}
+                    onChange={(event) => setCustomerName(event.target.value)}
+                    placeholder="Nome do cliente"
+                    className="border-white/10 bg-white/5 text-white placeholder:text-slate-400"
+                  />
 
                   <div className="flex flex-wrap gap-2">
                     <Button
                       variant="outline"
                       className="border-white/10 bg-white/5 text-white hover:bg-white/10"
-                      onClick={() => setShowDirectCustomerInput((current) => !current)}
-                    >
-                      {showDirectCustomerInput || customerName ? 'Editar cliente' : 'Identificar cliente'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="border-white/10 bg-white/5 text-white hover:bg-white/10"
                       onClick={() => setActiveDialog('drafts')}
                     >
-                      {tableNumber ? 'Editar mesa/comanda' : 'Usar mesa/comanda'}
+                      {tableNumber ? 'Editar mesa/comanda' : 'Vincular mesa/comanda'}
                     </Button>
                   </div>
                 </div>
@@ -1309,7 +1301,7 @@ export default function POS() {
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <div className="text-sm font-medium text-white">Lançar na conta da hospedagem</div>
-                      <div className="mt-1 text-xs text-slate-400">Selecione apenas a hospedagem que receberá o consumo.</div>
+                      <div className="mt-1 text-xs text-slate-400">O cliente será sempre o hóspede vinculado à hospedagem selecionada.</div>
                     </div>
                     <Badge className="bg-sky-500/15 text-sky-100 hover:bg-sky-500/15">Conta</Badge>
                   </div>

@@ -79,7 +79,7 @@ async function resolveOrderPayload(tx: any, data: CreatePOSOrderDto | UpdatePOSO
   if (stayId) {
     const stay = await tx.stay.findUnique({
       where: { id: stayId },
-      include: { roomUnit: true, folio: true },
+      include: { roomUnit: true, folio: true, reservation: true },
     });
 
     if (!stay || stay.status !== StayStatus.IN_HOUSE) {
@@ -94,6 +94,9 @@ async function resolveOrderPayload(tx: any, data: CreatePOSOrderDto | UpdatePOSO
       where: {
         roomUnitId,
         status: StayStatus.IN_HOUSE,
+      },
+      include: {
+        reservation: true,
       },
     });
 
@@ -110,6 +113,21 @@ async function resolveOrderPayload(tx: any, data: CreatePOSOrderDto | UpdatePOSO
 
   if (settlementType === POSSettlementType.FOLIO && !stayId) {
     throw new BadRequestError('Pedidos lançados em fólio exigem uma hospedagem ativa');
+  }
+
+  let resolvedCustomerName = data.customerName?.trim();
+
+  if (settlementType === POSSettlementType.FOLIO && stayId) {
+    const stay = await tx.stay.findUnique({
+      where: { id: stayId },
+      include: { reservation: true },
+    });
+
+    resolvedCustomerName = resolvedCustomerName || stay?.reservation?.guestName?.trim() || undefined;
+  }
+
+  if (settlementType === POSSettlementType.DIRECT && !resolvedCustomerName) {
+    throw new BadRequestError('Informe o cliente do pedido');
   }
 
   const products = await tx.posProduct.findMany({
@@ -150,6 +168,7 @@ async function resolveOrderPayload(tx: any, data: CreatePOSOrderDto | UpdatePOSO
     stayId,
     roomUnitId,
     settlementType,
+    resolvedCustomerName,
     itemsPayload,
     subtotalAmount,
     serviceFeeAmount,
@@ -497,6 +516,7 @@ export class POSService {
         stayId,
         roomUnitId,
         settlementType,
+        resolvedCustomerName,
         itemsPayload,
         subtotalAmount,
         serviceFeeAmount,
@@ -511,7 +531,7 @@ export class POSService {
           roomUnitId,
           origin: data.origin,
           settlementType,
-          customerName: data.customerName?.trim(),
+          customerName: resolvedCustomerName,
           tableNumber: data.tableNumber?.trim(),
           notes: data.notes?.trim(),
           subtotalAmount,
@@ -567,6 +587,7 @@ export class POSService {
         stayId,
         roomUnitId,
         settlementType,
+        resolvedCustomerName,
         itemsPayload,
         subtotalAmount,
         serviceFeeAmount,
@@ -581,7 +602,7 @@ export class POSService {
           roomUnitId,
           origin: data.origin,
           settlementType,
-          customerName: data.customerName?.trim(),
+          customerName: resolvedCustomerName,
           tableNumber: data.tableNumber?.trim(),
           notes: data.notes?.trim(),
           subtotalAmount,

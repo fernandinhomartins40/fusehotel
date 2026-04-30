@@ -169,12 +169,22 @@ export const createPOSOrderSchema = z.object({
 }).superRefine((data, ctx) => {
   const needsStayOrRoom =
     data.origin === 'ROOM_SERVICE' || data.settlementType === 'FOLIO';
+  const isDirectSale =
+    (data.settlementType ?? (data.origin === 'ROOM_SERVICE' ? 'FOLIO' : 'DIRECT')) === 'DIRECT';
 
   if (needsStayOrRoom && !data.stayId && !data.roomUnitId) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: 'Informe uma hospedagem ou quarto para o pedido',
       path: ['stayId'],
+    });
+  }
+
+  if (isDirectSale && !data.customerName?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Informe o cliente do pedido',
+      path: ['customerName'],
     });
   }
 });
@@ -201,12 +211,22 @@ export const updatePOSOrderSchema = z.object({
 }).superRefine((data, ctx) => {
   const needsStayOrRoom =
     data.origin === 'ROOM_SERVICE' || data.settlementType === 'FOLIO';
+  const isDirectSale =
+    (data.settlementType ?? (data.origin === 'ROOM_SERVICE' ? 'FOLIO' : 'DIRECT')) === 'DIRECT';
 
   if (needsStayOrRoom && !data.stayId && !data.roomUnitId) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: 'Informe uma hospedagem ou quarto para o pedido',
       path: ['stayId'],
+    });
+  }
+
+  if (isDirectSale && !data.customerName?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Informe o cliente do pedido',
+      path: ['customerName'],
     });
   }
 });
