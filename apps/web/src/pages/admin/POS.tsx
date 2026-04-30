@@ -1496,8 +1496,8 @@ export default function POS() {
               <SideAction icon={ShoppingCart} label="Pedidos" description="Abertos e recebimento" shortcut="Alt + 1" active={activeDialog === 'orders'} onClick={() => setActiveDialog('orders')} />
               <SideAction icon={Wallet} label="Caixa" description="Abertura e fechamento" shortcut="Alt + 2" active={activeDialog === 'cash'} onClick={() => setActiveDialog('cash')} />
               <SideAction icon={Hotel} label="Hotel" description="Check-in e quartos" shortcut="Alt + 3" active={activeDialog === 'hotel'} onClick={() => openHotelDialog('frontdesk')} />
-              <SideAction icon={Receipt} label="Pr?-venda" description="Suspensas e retomada" shortcut="Alt + 9" active={activeDialog === 'drafts'} onClick={() => setActiveDialog('drafts')} />
-              <SideAction icon={Search} label="Refer?ncias" description="Mesa, comanda ou h?spede" shortcut="Alt + 0" active={activeDialog === 'references'} onClick={() => setActiveDialog('references')} />
+              <SideAction icon={Receipt} label="Pré-venda" description="Suspensas e retomada" shortcut="Alt + 9" active={activeDialog === 'drafts'} onClick={() => setActiveDialog('drafts')} />
+              <SideAction icon={Search} label="Referências" description="Mesa, comanda ou hóspede" shortcut="Alt + 0" active={activeDialog === 'references'} onClick={() => setActiveDialog('references')} />
             </div>
           </div>
 
@@ -1552,8 +1552,8 @@ export default function POS() {
                 <div className="mt-4 space-y-3 text-sm">
                   <SummaryRow label="Cliente" value={resolvedCustomerName || 'Aguardando identifica??o'} />
                   <SummaryRow label="Origem" value={settlementType === 'FOLIO' ? 'Conta da hospedagem' : salePresetLabels[salePreset]} />
-                  <SummaryRow label="Refer?ncia" value={settlementType === 'FOLIO' ? (selectedStay ? `Quarto ${selectedStay.roomUnit?.code ?? 'Sem quarto'}` : 'Sem hospedagem') : (tableNumber || 'Balc?o')} />
-                  <SummaryRow label="Pagamento" value={settlementType === 'DIRECT' ? paymentMethodLabels[paymentMethod] : 'Lan?amento em conta'} />
+                  <SummaryRow label="Referência" value={settlementType === 'FOLIO' ? (selectedStay ? `Quarto ${selectedStay.roomUnit?.code ?? 'Sem quarto'}` : 'Sem hospedagem') : (tableNumber || 'Balcão')} />
+                  <SummaryRow label="Pagamento" value={settlementType === 'DIRECT' ? paymentMethodLabels[paymentMethod] : 'Lançamento em conta'} />
                 </div>
 
                 <ScrollArea className="mt-4 max-h-[260px] rounded-2xl border border-white/10 bg-white/5">
@@ -1602,7 +1602,7 @@ export default function POS() {
                   ) : null}
                   {currentStep !== 'review' ? (
                     <Button className="rounded-2xl" onClick={goToNextStep}>
-                      Pr?xima etapa
+                      Próxima etapa
                     </Button>
                   ) : (
                     <Button
@@ -1618,7 +1618,7 @@ export default function POS() {
                           : 'Atualizar e lan?ar consumo'
                         : settlementType === 'DIRECT'
                           ? 'Receber e finalizar'
-                          : 'Lan?ar consumo'}
+                          : 'Lançar consumo'}
                     </Button>
                   )}
                 </div>
