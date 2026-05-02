@@ -124,22 +124,22 @@ jobs:
 
             # Criar arquivo .env
             echo "Criando arquivo .env..."
-            cat > .env << 'ENVEOF'
-NODE_ENV=production
-PORT=3001
-POSTGRES_USER=fusehotel
-POSTGRES_PASSWORD=fusehotel2024secure
-POSTGRES_DB=fusehotel
-DATABASE_URL=postgresql://fusehotel:fusehotel2024secure@postgres:5432/fusehotel
-JWT_SECRET=fusehotel-production-jwt-secret-key-2024
-JWT_REFRESH_SECRET=fusehotel-production-refresh-secret-key-2024
-JWT_EXPIRES_IN=7d
-JWT_ADMIN_EXPIRES_IN=8h
-FRONTEND_URL=https://www.perolahotel.com
-CORS_ORIGIN=https://www.perolahotel.com,http://www.perolahotel.com,https://perolahotel.com,http://perolahotel.com,http://72.60.10.108:3091,http://localhost:3091
-LOG_LEVEL=info
-RUN_SEED=true
-ENVEOF
+            printf '%s\n' \
+              'NODE_ENV=production' \
+              'PORT=3001' \
+              'POSTGRES_USER=fusehotel' \
+              'POSTGRES_PASSWORD=fusehotel2024secure' \
+              'POSTGRES_DB=fusehotel' \
+              'DATABASE_URL=postgresql://fusehotel:fusehotel2024secure@postgres:5432/fusehotel' \
+              'JWT_SECRET=fusehotel-production-jwt-secret-key-2024' \
+              'JWT_REFRESH_SECRET=fusehotel-production-refresh-secret-key-2024' \
+              'JWT_EXPIRES_IN=7d' \
+              'JWT_ADMIN_EXPIRES_IN=8h' \
+              'FRONTEND_URL=https://www.perolahotel.com' \
+              'CORS_ORIGIN=https://www.perolahotel.com,http://www.perolahotel.com,https://perolahotel.com,http://perolahotel.com,http://72.60.10.108:3091,http://localhost:3091' \
+              'LOG_LEVEL=info' \
+              'RUN_SEED=true' \
+              > .env
 
             # Evitar prune global: esta VPS hospeda outros projetos.
             # O deploy deve tocar apenas nos recursos do FuseHotel.
