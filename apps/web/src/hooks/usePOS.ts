@@ -11,6 +11,7 @@ import type {
   POSProduct,
   POSSettlementType,
   ProductCategory,
+  ServiceCategory,
 } from '@/types/pms';
 
 function invalidatePOSQueries(queryClient: ReturnType<typeof useQueryClient>) {
@@ -22,6 +23,8 @@ function invalidatePOSQueries(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ['stays'] });
   queryClient.invalidateQueries({ queryKey: ['frontdesk-dashboard'] });
   queryClient.invalidateQueries({ queryKey: ['reports-operations'] });
+  queryClient.invalidateQueries({ queryKey: ['service-items'] });
+  queryClient.invalidateQueries({ queryKey: ['service-items-admin'] });
 }
 
 export function usePOSProducts() {
@@ -50,6 +53,10 @@ export function useCreatePOSProduct() {
       saleUnit?: string;
       trackStock?: boolean;
       description?: string;
+      showOnServicesPage?: boolean;
+      servicesPageCategory?: ServiceCategory;
+      servicesPageSubtitle?: string;
+      servicesPageFeatures?: string[];
     }) => {
       const { data } = await apiClient.post('/pos/products', payload);
       return data.data;
@@ -83,6 +90,10 @@ export function useUpdatePOSProduct() {
         trackStock?: boolean;
         isActive?: boolean;
         description?: string;
+        showOnServicesPage?: boolean;
+        servicesPageCategory?: ServiceCategory;
+        servicesPageSubtitle?: string;
+        servicesPageFeatures?: string[];
       };
     }) => {
       const { data } = await apiClient.put(`/pos/products/${id}`, payload);

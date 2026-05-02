@@ -50,6 +50,12 @@ export interface ReservationAccommodation {
   images: AccommodationImage[];
 }
 
+export interface ReservationRoomUnit {
+  id: string;
+  code: string;
+  name: string;
+}
+
 export interface ReservationUser {
   id: string;
   name: string;
@@ -69,6 +75,7 @@ export interface Reservation {
   id: string;
   reservationCode: string;
   accommodationId: string;
+  roomUnitId: string | null;
   userId: string | null;
   checkInDate: string;
   checkOutDate: string;
@@ -104,6 +111,7 @@ export interface Reservation {
   createdAt: string;
   updatedAt: string;
   accommodation?: ReservationAccommodation;
+  roomUnit?: ReservationRoomUnit | null;
   user?: ReservationUser;
   payments?: Payment[];
 }

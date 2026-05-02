@@ -100,21 +100,14 @@ const managementItems: MenuItem[] = [
 const catalogItems: MenuItem[] = [
   {
     path: '/admin/accommodations',
-    label: 'Acomodações',
+    label: 'Hospedagens',
     icon: Home,
     activeClassName:
       'data-[active=true]:bg-green-50 data-[active=true]:text-green-700 data-[active=true]:border-r-2 data-[active=true]:border-green-600',
   },
   {
-    path: '/admin/room-units',
-    label: 'Quartos',
-    icon: BedDouble,
-    activeClassName:
-      'data-[active=true]:bg-sky-50 data-[active=true]:text-sky-700 data-[active=true]:border-r-2 data-[active=true]:border-sky-600',
-  },
-  {
     path: '/admin/products',
-    label: 'Produtos',
+    label: 'Produtos e serviços',
     icon: ShoppingCart,
     activeClassName:
       'data-[active=true]:bg-amber-50 data-[active=true]:text-amber-700 data-[active=true]:border-r-2 data-[active=true]:border-amber-600',
@@ -145,7 +138,7 @@ const siteItems: MenuItem[] = [
   },
   {
     path: '/admin/services-customizer',
-    label: 'Serviços',
+    label: 'Página de serviços',
     icon: Palette,
     activeClassName:
       'data-[active=true]:bg-indigo-50 data-[active=true]:text-indigo-700 data-[active=true]:border-r-2 data-[active=true]:border-indigo-600',
@@ -289,4 +282,3 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 }
 
 export default AdminLayout;
-

@@ -4,7 +4,8 @@ import { prisma } from '../config/database';
 import { BadRequestError } from '../utils/errors';
 
 export interface PricingInput {
-  accommodationId: string;
+  accommodationId?: string;
+  roomUnitId?: string;
   checkInDate: Date | string;
   checkOutDate: Date | string;
   numberOfExtraBeds?: number;
@@ -47,8 +48,10 @@ export class PricingService {
       throw new BadRequestError('Data de check-out deve ser posterior ao check-in');
     }
 
+    const accommodationId = await this.resolveAccommodationId(input, db);
+
     const accommodation = await db.accommodation.findUnique({
-      where: { id: input.accommodationId },
+      where: { id: accommodationId },
     });
 
     if (!accommodation) {
@@ -56,7 +59,7 @@ export class PricingService {
     }
 
     const pricePerNight = await this.resolveNightlyRate(
-      input.accommodationId,
+      accommodationId,
       checkInDate,
       checkOutDate,
       db
@@ -88,6 +91,30 @@ export class PricingService {
       promotionId,
       totalAmount,
     };
+  }
+
+  private static async resolveAccommodationId(
+    input: PricingInput,
+    db: Prisma.TransactionClient | typeof prisma
+  ) {
+    if (input.roomUnitId) {
+      const roomUnit = await db.roomUnit.findUnique({
+        where: { id: input.roomUnitId },
+        select: { accommodationId: true },
+      });
+
+      if (!roomUnit) {
+        throw new BadRequestError('Quarto nao encontrado');
+      }
+
+      return roomUnit.accommodationId;
+    }
+
+    if (!input.accommodationId) {
+      throw new BadRequestError('accommodationId ou roomUnitId e obrigatorio');
+    }
+
+    return input.accommodationId;
   }
 
   private static async resolveNightlyRate(

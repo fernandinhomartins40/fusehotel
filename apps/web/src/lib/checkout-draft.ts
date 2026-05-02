@@ -3,7 +3,8 @@ export type CheckoutDraftContext = 'accommodation' | 'promotion';
 export interface CheckoutDraft {
   context: CheckoutDraftContext;
   routePath: string;
-  accommodationId: string;
+  roomUnitId: string;
+  accommodationId?: string;
   accommodationName: string;
   accommodationType: string;
   pricePerNight: number;

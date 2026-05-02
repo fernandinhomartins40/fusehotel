@@ -71,6 +71,27 @@ function toDecimal(value?: number | null) {
   return Number(value ?? 0);
 }
 
+async function getNextServicesPageOrder(category?: CreatePOSProductDto['servicesPageCategory'] | null) {
+  if (!category) {
+    return null;
+  }
+
+  const current = await prisma.pOSProduct.findFirst({
+    where: {
+      showOnServicesPage: true,
+      servicesPageCategory: category,
+    },
+    orderBy: {
+      servicesPageOrder: 'desc',
+    },
+    select: {
+      servicesPageOrder: true,
+    },
+  });
+
+  return Number(current?.servicesPageOrder ?? 0) + 1;
+}
+
 async function resolveOrderPayload(tx: any, data: CreatePOSOrderDto | UpdatePOSOrderDto) {
   let stayId = data.stayId;
   let roomUnitId = data.roomUnitId;
@@ -326,6 +347,10 @@ export class POSService {
   }
 
   static async createProduct(data: CreatePOSProductDto) {
+    const showOnServicesPage = data.showOnServicesPage === true;
+    const servicesPageCategory = showOnServicesPage ? data.servicesPageCategory ?? null : null;
+    const servicesPageOrder = showOnServicesPage ? await getNextServicesPageOrder(servicesPageCategory) : null;
+
     return prisma.pOSProduct.create({
       data: {
         name: data.name.trim(),
@@ -339,6 +364,13 @@ export class POSService {
         saleUnit: (data as any).saleUnit?.trim() || 'UN',
         trackStock: (data as any).trackStock ?? false,
         description: data.description?.trim(),
+        showOnServicesPage,
+        servicesPageCategory,
+        servicesPageOrder,
+        servicesPageSubtitle: showOnServicesPage ? data.servicesPageSubtitle?.trim() || null : null,
+        servicesPageFeatures: showOnServicesPage
+          ? data.servicesPageFeatures?.map((item) => item.trim()).filter(Boolean) ?? []
+          : [],
       },
       include: { category: true },
     });
@@ -346,7 +378,21 @@ export class POSService {
 
   static async updateProduct(id: string, data: CreatePOSProductDto) {
     const product = await prisma.pOSProduct.findUnique({ where: { id } });
-    if (!product) throw new NotFoundError('Produto não encontrado');
+    if (!product) throw new NotFoundError('Produto n?o encontrado');
+
+    const showOnServicesPage = data.showOnServicesPage ?? product.showOnServicesPage;
+    const nextServicesPageCategory = showOnServicesPage
+      ? data.servicesPageCategory ?? product.servicesPageCategory
+      : null;
+    const categoryChanged = nextServicesPageCategory !== product.servicesPageCategory;
+    const shouldAssignNewOrder =
+      showOnServicesPage &&
+      ((!product.showOnServicesPage && nextServicesPageCategory) || categoryChanged);
+    const servicesPageOrder = showOnServicesPage
+      ? shouldAssignNewOrder
+        ? await getNextServicesPageOrder(nextServicesPageCategory)
+        : product.servicesPageOrder
+      : null;
 
     return prisma.pOSProduct.update({
       where: { id },
@@ -363,6 +409,19 @@ export class POSService {
         trackStock: (data as any).trackStock ?? product.trackStock,
         isActive: (data as any).isActive ?? product.isActive,
         description: data.description?.trim() ?? product.description,
+        showOnServicesPage,
+        servicesPageCategory: nextServicesPageCategory,
+        servicesPageOrder,
+        servicesPageSubtitle: showOnServicesPage
+          ? data.servicesPageSubtitle !== undefined
+            ? data.servicesPageSubtitle?.trim() || null
+            : product.servicesPageSubtitle
+          : null,
+        servicesPageFeatures: showOnServicesPage
+          ? data.servicesPageFeatures !== undefined
+            ? data.servicesPageFeatures.map((item) => item.trim()).filter(Boolean)
+            : product.servicesPageFeatures
+          : [],
       },
       include: { category: true },
     });

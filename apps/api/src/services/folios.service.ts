@@ -168,10 +168,10 @@ export class FoliosService {
       if (!folio) throw new NotFoundError('Folio nao encontrado');
       if (folio.isClosed) throw new BadRequestError('Nao e possivel lancar em um folio fechado');
 
-      const service = await tx.serviceItem.findUnique({ where: { id: data.serviceItemId } });
+      const service = await tx.pOSProduct.findUnique({ where: { id: data.serviceItemId } });
       if (!service) throw new NotFoundError('Servico nao encontrado');
       if (!service.isActive) throw new BadRequestError('Servico inativo');
-      if (!service.isChargeable || !service.price) throw new BadRequestError('Este servico nao possui preco configurado');
+      if (!service.price || Number(service.price) <= 0) throw new BadRequestError('Este servico nao possui preco configurado');
 
       const quantity = data.quantity ?? 1;
       const unitPrice = Number(service.price);
@@ -182,7 +182,7 @@ export class FoliosService {
           folioId,
           type: FolioEntryType.ROOM_SERVICE,
           source: 'MANUAL',
-          description: quantity > 1 ? `${service.title} x${quantity}` : service.title,
+          description: quantity > 1 ? `${service.name} x${quantity}` : service.name,
           amount: totalAmount,
           quantity,
           referenceId: service.id,

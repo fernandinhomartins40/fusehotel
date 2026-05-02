@@ -45,7 +45,7 @@ import {
   useDeleteProductCategory,
 } from '@/hooks/usePOS';
 import { ImageCropUploader } from '@/components/admin/ImageCropUploader';
-import type { POSProduct, ProductCategory } from '@/types/pms';
+import type { POSProduct, ProductCategory, ServiceCategory } from '@/types/pms';
 
 const currency = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -65,6 +65,10 @@ type ProductFormData = {
   trackStock: boolean;
   isActive: boolean;
   description: string;
+  showOnServicesPage: boolean;
+  servicesPageCategory: ServiceCategory | '';
+  servicesPageSubtitle: string;
+  servicesPageFeatures: string;
 };
 
 const emptyForm: ProductFormData = {
@@ -80,6 +84,18 @@ const emptyForm: ProductFormData = {
   trackStock: false,
   isActive: true,
   description: '',
+  showOnServicesPage: false,
+  servicesPageCategory: '',
+  servicesPageSubtitle: '',
+  servicesPageFeatures: '',
+};
+
+const serviceCategoryLabels: Record<ServiceCategory, string> = {
+  ACCOMMODATION: 'Hospedagem',
+  GASTRONOMY: 'Gastronomia',
+  RECREATION: 'Lazer',
+  BUSINESS: 'Empresarial',
+  SPECIAL: 'Especiais',
 };
 
 function productToForm(product: POSProduct): ProductFormData {
@@ -96,6 +112,10 @@ function productToForm(product: POSProduct): ProductFormData {
     trackStock: product.trackStock,
     isActive: product.isActive,
     description: product.description ?? '',
+    showOnServicesPage: product.showOnServicesPage,
+    servicesPageCategory: product.servicesPageCategory ?? '',
+    servicesPageSubtitle: product.servicesPageSubtitle ?? '',
+    servicesPageFeatures: product.servicesPageFeatures.join('\n'),
   };
 }
 
@@ -183,6 +203,15 @@ export default function Products() {
       trackStock: form.trackStock,
       isActive: form.isActive,
       description: form.description.trim() || undefined,
+      showOnServicesPage: form.showOnServicesPage,
+      servicesPageCategory: form.showOnServicesPage ? (form.servicesPageCategory || undefined) : undefined,
+      servicesPageSubtitle: form.showOnServicesPage ? form.servicesPageSubtitle.trim() || undefined : undefined,
+      servicesPageFeatures: form.showOnServicesPage
+        ? form.servicesPageFeatures
+            .split('\n')
+            .map((item) => item.trim())
+            .filter(Boolean)
+        : undefined,
     };
 
     if (editingProduct) {
@@ -263,8 +292,10 @@ export default function Products() {
       <div className="space-y-6 p-4 md:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Produtos</h1>
-            <p className="text-sm text-muted-foreground">Cadastre e gerencie produtos vendidos no PDV e consumo direto.</p>
+            <h1 className="text-2xl font-bold tracking-tight">Produtos e serviços</h1>
+            <p className="text-sm text-muted-foreground">
+              Catálogo único do PDV. Itens publicados aqui também podem aparecer na página pública <code>/servicos</code>.
+            </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={openCreateCategoryDialog}>
@@ -379,6 +410,11 @@ export default function Products() {
                             <div className="font-medium">{product.name}</div>
                             {product.sku && <div className="text-xs text-muted-foreground">SKU: {product.sku}</div>}
                             {product.description && <div className="mt-1 line-clamp-1 text-xs text-muted-foreground">{product.description}</div>}
+                            {product.showOnServicesPage && product.servicesPageCategory && (
+                              <div className="mt-1 text-xs text-sky-700">
+                                Página de serviços: {serviceCategoryLabels[product.servicesPageCategory]}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </TableCell>
@@ -512,6 +548,62 @@ export default function Products() {
               <Textarea value={form.description} onChange={(e) => updateField('description', e.target.value)} placeholder="Descricao opcional do produto" className="min-h-20" />
             </div>
 
+            <div className="flex items-center gap-3 rounded-lg border p-4">
+              <Switch checked={form.showOnServicesPage} onCheckedChange={(v) => updateField('showOnServicesPage', v)} />
+              <div>
+                <Label>Exibir na página pública de serviços</Label>
+                <p className="text-xs text-muted-foreground">
+                  Usa este mesmo produto ou serviço no PDV e na página pública <code>/servicos</code>.
+                </p>
+              </div>
+            </div>
+
+            {form.showOnServicesPage && (
+              <div className="space-y-4 rounded-lg border border-sky-200 bg-sky-50/60 p-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Seção da página de serviços *</Label>
+                    <Select
+                      value={form.servicesPageCategory || undefined}
+                      onValueChange={(value) => updateField('servicesPageCategory', value as ServiceCategory)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a seção" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(serviceCategoryLabels).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Subtítulo da página</Label>
+                    <Input
+                      value={form.servicesPageSubtitle}
+                      onChange={(e) => updateField('servicesPageSubtitle', e.target.value)}
+                      placeholder="Texto auxiliar para a página pública"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Destaques da página</Label>
+                  <Textarea
+                    value={form.servicesPageFeatures}
+                    onChange={(e) => updateField('servicesPageFeatures', e.target.value)}
+                    placeholder="Um destaque por linha"
+                    className="min-h-24"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Exemplo: café da manhã incluso, atendimento 24h, traslado privativo.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {editingProduct && (
               <div className="flex items-center gap-3 rounded-lg border p-4">
                 <Switch checked={form.isActive} onCheckedChange={(v) => updateField('isActive', v)} />
@@ -524,10 +616,17 @@ export default function Products() {
 
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={!form.name.trim() || !form.price || !form.categoryId || createProduct.isPending || updateProduct.isPending}
-              >
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={
+                      !form.name.trim() ||
+                      form.price === '' ||
+                      !form.categoryId ||
+                      (form.showOnServicesPage && !form.servicesPageCategory) ||
+                      createProduct.isPending ||
+                      updateProduct.isPending
+                    }
+                  >
                 {(createProduct.isPending || updateProduct.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {editingProduct ? 'Salvar' : 'Cadastrar'}
               </Button>

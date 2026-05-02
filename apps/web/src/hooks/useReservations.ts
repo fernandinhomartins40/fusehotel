@@ -9,6 +9,7 @@ export function useReservations(filters?: any) {
       const params = new URLSearchParams();
       if (filters?.status) params.append('status', filters.status);
       if (filters?.accommodationId) params.append('accommodationId', filters.accommodationId);
+      if (filters?.roomUnitId) params.append('roomUnitId', filters.roomUnitId);
       if (filters?.userId) params.append('userId', filters.userId);
       if (filters?.reservationCode) params.append('reservationCode', filters.reservationCode);
 

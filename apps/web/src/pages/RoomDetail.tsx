@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAccommodationBySlug } from "@/hooks/useAccommodations";
-import { useCheckAvailability } from "@/hooks/useSchedule";
+import { useCheckRoomUnitAvailability } from "@/hooks/useSchedule";
 import { getMatchingCheckoutDraft } from "@/lib/checkout-draft";
 
 const RoomDetail: React.FC = () => {
@@ -44,7 +44,7 @@ const RoomDetail: React.FC = () => {
   const selectedCheckInDate = checkInDate.toISOString().split('T')[0];
   const selectedCheckOutDate = checkOutDate.toISOString().split('T')[0];
   const hasValidDateRange = checkOutDate > checkInDate;
-  const { data: availabilityCheck, isLoading: isCheckingAvailability } = useCheckAvailability(
+  const { data: availabilityCheck, isLoading: isCheckingAvailability } = useCheckRoomUnitAvailability(
     accommodation?.id || '',
     selectedCheckInDate,
     selectedCheckOutDate
@@ -59,7 +59,7 @@ const RoomDetail: React.FC = () => {
 
     const draft = getMatchingCheckoutDraft(`/acomodacoes/${roomId}`);
 
-    if (!draft || draft.accommodationId !== accommodation.id) {
+    if (!draft || draft.roomUnitId !== accommodation.id) {
       return;
     }
 
@@ -183,7 +183,8 @@ const RoomDetail: React.FC = () => {
               </Button>
 
               <SimpleCheckout
-                accommodationId={accommodation.id}
+                roomUnitId={accommodation.id}
+                accommodationId={accommodation.legacyAccommodationId}
                 accommodationName={accommodation.name}
                 accommodationType={accommodationType}
                 pricePerNight={Number(accommodation.pricePerNight)}

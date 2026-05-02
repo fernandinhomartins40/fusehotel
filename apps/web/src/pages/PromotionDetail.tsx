@@ -98,7 +98,7 @@ const PromotionDetail: React.FC = () => {
       return;
     }
 
-    setSelectedAccommodationId(draft.accommodationId);
+    setSelectedAccommodationId(draft.roomUnitId || draft.accommodationId || '');
     setCheckInDate(new Date(draft.checkInDate));
     setCheckOutDate(new Date(draft.checkOutDate));
     setNumberOfGuests(draft.numberOfGuests);
@@ -236,7 +236,8 @@ const PromotionDetail: React.FC = () => {
 
               <SimpleCheckout
                 context="promotion"
-                accommodationId={selectedAccommodation.id}
+                roomUnitId={selectedAccommodation.id}
+                accommodationId={selectedAccommodation.legacyAccommodationId}
                 accommodationName={selectedAccommodation.name}
                 accommodationType={
                   accommodationTypeLabels[selectedAccommodation.type] || selectedAccommodation.type

@@ -93,6 +93,7 @@ export type FinancialEntryStatus = 'OPEN' | 'PARTIALLY_PAID' | 'PAID' | 'OVERDUE
 export type MarkupType = 'FIXED' | 'PERCENT';
 export type BusinessAccountType = 'COMPANY' | 'OPERATOR' | 'AGENCY' | 'CORPORATE';
 export type ChannelConnectionType = 'BOOKING' | 'AIRBNB' | 'EXPEDIA' | 'DIRECT' | 'OTHER';
+export type ServiceCategory = 'ACCOMMODATION' | 'GASTRONOMY' | 'RECREATION' | 'BUSINESS' | 'SPECIAL';
 
 export interface RoomUnit {
   id: string;
@@ -316,6 +317,11 @@ export interface POSProduct {
   trackStock: boolean;
   isActive: boolean;
   description: string | null;
+  showOnServicesPage: boolean;
+  servicesPageCategory: ServiceCategory | null;
+  servicesPageOrder: number | null;
+  servicesPageSubtitle: string | null;
+  servicesPageFeatures: string[];
   createdAt: string;
   updatedAt: string;
 }

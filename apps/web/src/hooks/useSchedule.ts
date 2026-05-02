@@ -70,3 +70,25 @@ export const useCheckAvailability = (
     enabled: Boolean(accommodationId && startDate && endDate),
   });
 };
+
+export const useCheckRoomUnitAvailability = (
+  roomUnitId: string,
+  startDate: string,
+  endDate: string
+) => {
+  return useQuery<AvailabilityCheckResult>({
+    queryKey: ['room-unit-availability', roomUnitId, startDate, endDate],
+    queryFn: async () => {
+      const queryParams = new URLSearchParams({
+        startDate,
+        endDate,
+      });
+
+      const response = await apiClient.get(
+        `/schedule/room-unit-availability/${roomUnitId}?${queryParams}`
+      );
+      return response.data.data;
+    },
+    enabled: Boolean(roomUnitId && startDate && endDate),
+  });
+};

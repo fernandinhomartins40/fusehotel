@@ -7,6 +7,9 @@ import { createRoomUnitSchema, updateRoomUnitSchema } from '../validators/pms.va
 
 const router = Router();
 
+router.get('/public', RoomUnitsController.listPublic);
+router.get('/public/slug/:slug', RoomUnitsController.getPublicBySlug);
+router.get('/public/:id', RoomUnitsController.getPublicById);
 router.get('/', authenticate, requireRole(['ADMIN', 'MANAGER']), RoomUnitsController.list);
 router.get(
   '/available/:accommodationId',

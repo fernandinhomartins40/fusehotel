@@ -32,6 +32,7 @@ export class ReservationService {
 
     if (filters.userId) where.userId = filters.userId;
     if (filters.accommodationId) where.accommodationId = filters.accommodationId;
+    if (filters.roomUnitId) where.roomUnitId = filters.roomUnitId;
     if (filters.status) {
       where.status = Array.isArray(filters.status) ? { in: filters.status } : filters.status;
     }
@@ -48,6 +49,13 @@ export class ReservationService {
             images: { where: { isPrimary: true }, take: 1 },
           },
         },
+        roomUnit: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -60,6 +68,13 @@ export class ReservationService {
         accommodation: {
           include: {
             images: { where: { isPrimary: true }, take: 1 },
+          },
+        },
+        roomUnit: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
           },
         },
         user: {
@@ -92,6 +107,13 @@ export class ReservationService {
       where: { reservationCode: code },
       include: {
         accommodation: true,
+        roomUnit: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+          },
+        },
         payments: true,
       },
     });
@@ -104,12 +126,29 @@ export class ReservationService {
   }
 
   static async create(data: CreateReservationDto, userId?: string) {
-    const accommodation = await prisma.accommodation.findUnique({
-      where: { id: data.accommodationId },
-    });
+    const roomUnit =
+      data.roomUnitId
+        ? await prisma.roomUnit.findUnique({
+            where: { id: data.roomUnitId },
+            include: {
+              accommodation: true,
+            },
+          })
+        : null;
+
+    const accommodation = roomUnit?.accommodation
+      ?? (data.accommodationId
+        ? await prisma.accommodation.findUnique({
+            where: { id: data.accommodationId },
+          })
+        : null);
 
     if (!accommodation || !accommodation.isAvailable) {
       throw new BadRequestError('Acomodacao nao disponivel');
+    }
+
+    if (data.roomUnitId && (!roomUnit || !roomUnit.isActive)) {
+      throw new BadRequestError('Quarto nao disponivel');
     }
 
     const checkInDate = new Date(data.checkInDate);
@@ -120,11 +159,17 @@ export class ReservationService {
       throw new BadRequestError('Data de check-out deve ser posterior ao check-in');
     }
 
-    const isAvailableForStay = await scheduleService.checkAvailability(
-      data.accommodationId,
-      data.checkInDate,
-      data.checkOutDate
-    );
+    const isAvailableForStay = data.roomUnitId
+      ? await scheduleService.checkRoomUnitAvailability(
+          data.roomUnitId,
+          data.checkInDate,
+          data.checkOutDate
+        )
+      : await scheduleService.checkAvailability(
+          accommodation.id,
+          data.checkInDate,
+          data.checkOutDate
+        );
 
     if (!isAvailableForStay) {
       throw new BadRequestError('Ja existe uma reserva para esta acomodacao no periodo selecionado');
@@ -145,6 +190,7 @@ export class ReservationService {
 
     const pricing = await PricingService.calculate({
       accommodationId: data.accommodationId,
+      roomUnitId: data.roomUnitId,
       checkInDate,
       checkOutDate,
       numberOfExtraBeds: data.numberOfExtraBeds || 0,
@@ -201,7 +247,8 @@ export class ReservationService {
       const created = await tx.reservation.create({
         data: {
           reservationCode: `FH-${Date.now()}-${uuidv4().substring(0, 8).toUpperCase()}`,
-          accommodationId: data.accommodationId,
+          accommodationId: accommodation.id,
+          roomUnitId: data.roomUnitId || null,
           userId: finalUserId,
           checkInDate,
           checkOutDate,
@@ -224,6 +271,13 @@ export class ReservationService {
         },
         include: {
           accommodation: true,
+          roomUnit: {
+            select: {
+              id: true,
+              code: true,
+              name: true,
+            },
+          },
         },
       });
 
@@ -305,6 +359,13 @@ export class ReservationService {
             images: { where: { isPrimary: true }, take: 1 },
           },
         },
+        roomUnit: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+          },
+        },
       },
     });
   }
@@ -342,12 +403,19 @@ export class ReservationService {
           throw new BadRequestError('Acomodacao nao disponivel para alteracao de agenda');
         }
 
-        const isAvailableForUpdate = await scheduleService.checkAvailability(
-          reservation.accommodationId,
-          checkIn,
-          checkOut,
-          reservation.id
-        );
+        const isAvailableForUpdate = reservation.roomUnitId
+          ? await scheduleService.checkRoomUnitAvailability(
+              reservation.roomUnitId,
+              checkIn,
+              checkOut,
+              reservation.id
+            )
+          : await scheduleService.checkAvailability(
+              reservation.accommodationId,
+              checkIn,
+              checkOut,
+              reservation.id
+            );
 
         if (!isAvailableForUpdate) {
           throw new BadRequestError('Ja existe uma reserva para esta acomodacao no periodo selecionado');

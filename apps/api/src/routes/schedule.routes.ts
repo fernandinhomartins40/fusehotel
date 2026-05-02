@@ -7,6 +7,7 @@ const router = Router();
 
 router.get('/', authenticate, requireRole(['ADMIN', 'MANAGER']), scheduleController.getSchedule);
 router.get('/availability/:accommodationId', scheduleController.checkAvailability);
+router.get('/room-unit-availability/:roomUnitId', scheduleController.checkRoomUnitAvailability);
 router.get('/stats', authenticate, requireRole(['ADMIN', 'MANAGER']), scheduleController.getStats);
 
 export default router;

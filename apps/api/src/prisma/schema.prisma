@@ -413,6 +413,7 @@ model Reservation {
   id                String            @id @default(uuid())
   reservationCode   String            @unique
   accommodationId   String
+  roomUnitId        String?
   userId            String?
   businessAccountId String?
   checkInDate       DateTime
@@ -450,6 +451,7 @@ model Reservation {
   updatedAt         DateTime          @updatedAt
 
   accommodation Accommodation @relation(fields: [accommodationId], references: [id])
+  roomUnit       RoomUnit?     @relation(fields: [roomUnitId], references: [id], onDelete: SetNull)
   businessAccount BusinessAccount? @relation(fields: [businessAccountId], references: [id], onDelete: SetNull)
   user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   payments      Payment[]
@@ -462,6 +464,7 @@ model Reservation {
   @@index([reservationCode])
   @@index([userId])
   @@index([accommodationId])
+  @@index([roomUnitId])
   @@index([businessAccountId])
   @@index([status])
   @@index([checkInDate])
@@ -483,6 +486,7 @@ model RoomUnit {
   updatedAt          DateTime           @updatedAt
 
   accommodation      Accommodation      @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  reservations       Reservation[]
   stays              Stay[]
   housekeepingTasks  HousekeepingTask[]
   maintenanceOrders  MaintenanceOrder[]
@@ -648,6 +652,11 @@ model POSProduct {
   trackStock  Boolean            @default(false)
   isActive    Boolean            @default(true)
   description String?            @db.Text
+  showOnServicesPage Boolean     @default(false)
+  servicesPageCategory ServiceCategory?
+  servicesPageOrder Int?
+  servicesPageSubtitle String?
+  servicesPageFeatures String[]
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
@@ -656,6 +665,8 @@ model POSProduct {
 
   @@index([categoryId])
   @@index([isActive])
+  @@index([showOnServicesPage])
+  @@index([servicesPageCategory])
 }
 
 model POSOrder {

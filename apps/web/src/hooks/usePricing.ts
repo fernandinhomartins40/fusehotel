@@ -17,7 +17,8 @@ export interface PricingBreakdown {
 }
 
 interface PricingPreviewParams {
-  accommodationId: string;
+  accommodationId?: string;
+  roomUnitId?: string;
   checkInDate: string;
   checkOutDate: string;
   numberOfExtraBeds?: number;
@@ -27,7 +28,7 @@ interface PricingPreviewParams {
 
 export function usePricingPreview(params: PricingPreviewParams) {
   const enabled = Boolean(
-    params.accommodationId &&
+    (params.roomUnitId || params.accommodationId) &&
     params.checkInDate &&
     params.checkOutDate
   );

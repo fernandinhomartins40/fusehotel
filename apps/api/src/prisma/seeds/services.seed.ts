@@ -1,6 +1,96 @@
 import { PrismaClient, ServiceCategory } from '@prisma/client';
 
+const serviceCategoryToProductSlug: Record<ServiceCategory, string> = {
+  ACCOMMODATION: 'SERVICE',
+  GASTRONOMY: 'FOOD',
+  RECREATION: 'SERVICE',
+  BUSINESS: 'SERVICE',
+  SPECIAL: 'CONVENIENCE',
+};
+
 const prisma = new PrismaClient();
+
+
+async function resolveProductCategoryId(category: ServiceCategory) {
+  const preferredSlug = serviceCategoryToProductSlug[category];
+  const preferred = await prisma.productCategory.findFirst({
+    where: { slug: preferredSlug },
+  });
+
+  if (preferred) {
+    return preferred.id;
+  }
+
+  const fallback = await prisma.productCategory.findFirst({
+    orderBy: [{ order: 'asc' }, { label: 'asc' }],
+  });
+
+  if (fallback) {
+    return fallback.id;
+  }
+
+  const created = await prisma.productCategory.create({
+    data: {
+      slug: preferredSlug,
+      label: preferredSlug === 'FOOD' ? 'Alimentos' : preferredSlug === 'CONVENIENCE' ? 'Conveni?ncia' : 'Servi?os',
+      order: 0,
+      isActive: true,
+    },
+  });
+
+  return created.id;
+}
+
+async function upsertServiceProduct(item: {
+  id: string;
+  category: ServiceCategory;
+  title: string;
+  subtitle?: string;
+  description: string;
+  image: string;
+  features: string[];
+  order: number;
+  price?: number;
+  isActive: boolean;
+}) {
+  const categoryId = await resolveProductCategoryId(item.category);
+
+  await prisma.pOSProduct.upsert({
+    where: { id: item.id },
+    update: {
+      name: item.title,
+      categoryId,
+      image: item.image,
+      price: item.price ?? 0,
+      description: item.description,
+      isActive: item.isActive,
+      showOnServicesPage: true,
+      servicesPageCategory: item.category,
+      servicesPageOrder: item.order,
+      servicesPageSubtitle: item.subtitle ?? null,
+      servicesPageFeatures: item.features,
+    },
+    create: {
+      id: item.id,
+      name: item.title,
+      categoryId,
+      image: item.image,
+      price: item.price ?? 0,
+      costPrice: 0,
+      stockQuantity: 0,
+      minStockQuantity: 0,
+      saleUnit: 'UN',
+      trackStock: false,
+      isActive: item.isActive,
+      description: item.description,
+      showOnServicesPage: true,
+      servicesPageCategory: item.category,
+      servicesPageOrder: item.order,
+      servicesPageSubtitle: item.subtitle ?? null,
+      servicesPageFeatures: item.features,
+    },
+  });
+}
 
 export async function seedServices() {
   console.log('Seeding services page...');
@@ -154,11 +244,7 @@ export async function seedServices() {
   ];
 
   for (const item of accommodationItems) {
-    await prisma.serviceItem.upsert({
-      where: { id: item.id },
-      update: {},
-      create: item
-    });
+    await upsertServiceProduct(item);
   }
 
   console.log('Accommodation items created');
@@ -201,11 +287,7 @@ export async function seedServices() {
   ];
 
   for (const item of gastronomyItems) {
-    await prisma.serviceItem.upsert({
-      where: { id: item.id },
-      update: {},
-      create: item
-    });
+    await upsertServiceProduct(item);
   }
 
   console.log('Gastronomy items created');
@@ -275,11 +357,7 @@ export async function seedServices() {
   ];
 
   for (const item of recreationItems) {
-    await prisma.serviceItem.upsert({
-      where: { id: item.id },
-      update: {},
-      create: item
-    });
+    await upsertServiceProduct(item);
   }
 
   console.log('Recreation items created');
@@ -329,11 +407,7 @@ export async function seedServices() {
   ];
 
   for (const item of businessItems) {
-    await prisma.serviceItem.upsert({
-      where: { id: item.id },
-      update: {},
-      create: item
-    });
+    await upsertServiceProduct(item);
   }
 
   console.log('Business items created');
@@ -383,11 +457,7 @@ export async function seedServices() {
   ];
 
   for (const item of specialItems) {
-    await prisma.serviceItem.upsert({
-      where: { id: item.id },
-      update: {},
-      create: item
-    });
+    await upsertServiceProduct(item);
   }
 
   console.log('Special items created');

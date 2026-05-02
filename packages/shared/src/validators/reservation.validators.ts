@@ -13,7 +13,8 @@ import { ReservationStatus, PaymentStatus } from '../types';
  */
 export const createReservationSchema = z
   .object({
-    accommodationId: uuidSchema,
+    accommodationId: uuidSchema.optional(),
+    roomUnitId: uuidSchema.optional(),
     checkInDate: z.string().datetime('Data de check-in inválida'),
     checkOutDate: z.string().datetime('Data de check-out inválida'),
     numberOfGuests: z.number().int().positive('Número de hóspedes deve ser positivo').max(20),
@@ -29,6 +30,13 @@ export const createReservationSchema = z
     promotionId: uuidSchema.optional(),
     promotionCode: z.string().max(50).optional(),
   })
+  .refine(
+    (data) => Boolean(data.roomUnitId || data.accommodationId),
+    {
+      message: 'Selecione um quarto valido',
+      path: ['roomUnitId'],
+    }
+  )
   .refine(
     (data) => {
       const checkIn = new Date(data.checkInDate);
@@ -92,6 +100,7 @@ export const cancelReservationSchema = z.object({
 export const reservationFiltersSchema = z.object({
   userId: uuidSchema.optional(),
   accommodationId: uuidSchema.optional(),
+  roomUnitId: uuidSchema.optional(),
   status: z.union([
     z.nativeEnum(ReservationStatus),
     z.array(z.nativeEnum(ReservationStatus)),

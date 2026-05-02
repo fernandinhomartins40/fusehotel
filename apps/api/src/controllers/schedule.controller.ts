@@ -79,6 +79,43 @@ export class ScheduleController {
     }
   }
 
+  async checkRoomUnitAvailability(req: Request, res: Response) {
+    try {
+      const { roomUnitId } = req.params;
+      const { startDate, endDate } = req.query;
+
+      if (!startDate || !endDate) {
+        return res.status(400).json({
+          success: false,
+          message: 'startDate and endDate are required',
+        });
+      }
+
+      const isAvailable = await scheduleService.checkRoomUnitAvailability(
+        roomUnitId,
+        startDate as string,
+        endDate as string
+      );
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          roomUnitId,
+          startDate,
+          endDate,
+          isAvailable,
+        },
+      });
+    } catch (error: any) {
+      console.error('Error checking room unit availability:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error checking room unit availability',
+        error: error.message,
+      });
+    }
+  }
+
   /**
    * GET /api/schedule/stats
    * Get schedule statistics

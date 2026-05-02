@@ -28,10 +28,16 @@ const normalizeAccommodation = (accommodation: any): Accommodation => ({
 });
 
 export function useAccommodations(filters?: any) {
+  const adminView = filters?.adminView === true;
+
   return useQuery({
     queryKey: ['accommodations', filters],
     queryFn: async () => {
-      const { data } = await apiClient.get('/accommodations', { params: filters });
+      const { data } = await apiClient.get(adminView ? '/accommodations' : '/room-units/public', {
+        params: adminView ? filters : {
+          ...(filters?.isFeatured !== undefined ? { isFeatured: filters.isFeatured } : {}),
+        },
+      });
       return (data.data || []).map(normalizeAccommodation);
     },
   });
@@ -41,7 +47,7 @@ export function useAccommodation(id: string) {
   return useQuery({
     queryKey: ['accommodation', id],
     queryFn: async () => {
-      const { data } = await apiClient.get(`/accommodations/${id}`);
+      const { data } = await apiClient.get(`/room-units/public/${id}`);
       return normalizeAccommodation(data.data);
     },
     enabled: !!id,
@@ -52,7 +58,7 @@ export function useAccommodationBySlug(slug: string) {
   return useQuery({
     queryKey: ['accommodation', 'slug', slug],
     queryFn: async () => {
-      const { data } = await apiClient.get(`/accommodations/slug/${slug}`);
+      const { data } = await apiClient.get(`/room-units/public/slug/${slug}`);
       return normalizeAccommodation(data.data);
     },
     enabled: !!slug,

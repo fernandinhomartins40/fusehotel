@@ -76,6 +76,7 @@ export interface PriceBreakdown {
 export interface Reservation extends BaseEntity {
   reservationCode: string;
   accommodationId: string;
+  roomUnitId?: string | null;
   accommodationName: string;
   accommodationType: AccommodationType;
   userId: string | null;
@@ -102,7 +103,8 @@ export interface Reservation extends BaseEntity {
  * Dados para criação de reserva
  */
 export interface CreateReservationDto {
-  accommodationId: string;
+  accommodationId?: string;
+  roomUnitId?: string;
   checkInDate: string;
   checkOutDate: string;
   numberOfGuests: number;
@@ -144,6 +146,7 @@ export interface CancelReservationDto {
 export interface ReservationFilters {
   userId?: string;
   accommodationId?: string;
+  roomUnitId?: string;
   status?: ReservationStatus | ReservationStatus[];
   paymentStatus?: PaymentStatus;
   checkInDateFrom?: string;

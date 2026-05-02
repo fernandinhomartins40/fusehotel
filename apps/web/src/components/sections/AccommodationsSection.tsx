@@ -90,6 +90,7 @@ export const AccommodationsSection: React.FC = () => {
             {accommodations.slice(0, 6).map((accommodation) => (
               <RoomCard
                 key={accommodation.id}
+                slug={accommodation.slug}
                 title={accommodation.name}
                 description={accommodation.shortDescription || accommodation.description}
                 image={

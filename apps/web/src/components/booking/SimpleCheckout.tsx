@@ -23,7 +23,8 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 
 interface SimpleCheckoutProps {
-  accommodationId: string;
+  roomUnitId: string;
+  accommodationId?: string;
   accommodationName: string;
   accommodationType: string;
   pricePerNight: number;
@@ -64,6 +65,7 @@ function getPromotionDiscountRate(props: Pick<
 }
 
 export function SimpleCheckout({
+  roomUnitId,
   accommodationId,
   accommodationName,
   accommodationType,
@@ -94,6 +96,7 @@ export function SimpleCheckout({
   const numberOfNights = differenceInDays(checkOutDate, checkInDate);
 
   const { data: pricing } = usePricingPreview({
+    roomUnitId,
     accommodationId,
     checkInDate: checkInDate.toISOString().slice(0, 10),
     checkOutDate: checkOutDate.toISOString().slice(0, 10),
@@ -133,7 +136,7 @@ export function SimpleCheckout({
       return;
     }
 
-    const sameAccommodation = draft.accommodationId === accommodationId;
+    const sameAccommodation = draft.roomUnitId === roomUnitId;
     const samePromotion = !promotionId || draft.promotionId === promotionId;
 
     if (!sameAccommodation || !samePromotion) {
@@ -150,7 +153,7 @@ export function SimpleCheckout({
         description: 'Seus dados foram restaurados. Agora finalize a solicitacao da reserva.',
       });
     }
-  }, [accommodationId, location.pathname, location.search, promotionId]);
+  }, [roomUnitId, location.pathname, location.search, promotionId]);
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('pt-BR', {
@@ -166,6 +169,7 @@ export function SimpleCheckout({
     saveCheckoutDraft({
       context,
       routePath: location.pathname,
+      roomUnitId,
       accommodationId,
       accommodationName,
       accommodationType,
@@ -229,6 +233,7 @@ export function SimpleCheckout({
       }
 
       const reservation = await createReservation.mutateAsync({
+        roomUnitId,
         accommodationId,
         checkInDate: checkInDate.toISOString(),
         checkOutDate: checkOutDate.toISOString(),
@@ -468,4 +473,3 @@ Solicitação enviada. Aguardo o aceite do hotel.`.trim();
     </Card>
   );
 }
-

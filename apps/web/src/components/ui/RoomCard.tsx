@@ -7,6 +7,7 @@ import { AccommodationsConfig, defaultAccommodationsConfig } from '@/types/landi
 import { hydrateBrandColors } from '@/lib/brand-theme';
 
 interface RoomCardProps {
+  slug: string;
   title: string;
   description: string;
   image: string;
@@ -17,6 +18,7 @@ interface RoomCardProps {
 }
 
 export const RoomCard: React.FC<RoomCardProps> = ({
+  slug,
   title,
   description,
   image,
@@ -25,15 +27,6 @@ export const RoomCard: React.FC<RoomCardProps> = ({
   price,
   config
 }) => {
-  // Generate a URL-friendly slug from the title that matches roomsData keys
-  const slug = title
-    .toLowerCase()
-    .normalize('NFD') // Normalize to decomposed form
-    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics/accents
-    .replace(/[^\w\s-]/g, '') // Remove special characters except word chars, spaces, hyphens
-    .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
-    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
-
   const linkPath = `/acomodacoes/${slug}`;
 
   // Valores padrão das cores

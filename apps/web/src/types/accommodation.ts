@@ -22,6 +22,9 @@ export interface AccommodationAmenity {
 
 export interface Accommodation {
   id: string;
+  roomUnitId?: string;
+  legacyAccommodationId?: string;
+  code?: string;
   name: string;
   slug: string;
   type: AccommodationType;

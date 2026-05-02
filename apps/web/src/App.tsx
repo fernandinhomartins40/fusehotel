@@ -27,7 +27,6 @@ import AboutCustomizer from "./pages/admin/AboutCustomizer";
 import FAQCustomizer from "./pages/admin/FAQCustomizer";
 import ContactCustomizer from "./pages/admin/ContactCustomizer";
 import Frontdesk from "./pages/admin/Frontdesk";
-import RoomUnits from "./pages/admin/RoomUnits";
 import Housekeeping from "./pages/admin/Housekeeping";
 import Maintenance from "./pages/admin/Maintenance";
 import POS from "./pages/admin/POS";
@@ -124,7 +123,7 @@ const App = () => {
                 path="/admin/room-units"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
-                    <RoomUnits />
+                    <Navigate to="/admin/accommodations" replace />
                   </ProtectedRoute>
                 }
               />

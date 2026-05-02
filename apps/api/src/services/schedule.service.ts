@@ -219,6 +219,94 @@ export class ScheduleService {
     return overlappingReservations < availableUnits;
   }
 
+  async checkRoomUnitAvailability(
+    roomUnitId: string,
+    startDate: string | Date,
+    endDate: string | Date,
+    excludeReservationId?: string
+  ): Promise<boolean> {
+    const roomUnit = await prisma.roomUnit.findUnique({
+      where: { id: roomUnitId },
+      select: {
+        id: true,
+        accommodationId: true,
+        isActive: true,
+        status: true,
+        accommodation: {
+          select: {
+            isAvailable: true,
+          },
+        },
+      },
+    });
+
+    if (!roomUnit || !roomUnit.isActive || !roomUnit.accommodation.isAvailable) {
+      return false;
+    }
+
+    if (UNAVAILABLE_ROOM_STATUSES.includes(roomUnit.status)) {
+      return false;
+    }
+
+    const rangeStart = this.toDateKey(startDate);
+    const rangeEndExclusive = this.toDateKey(endDate);
+
+    if (rangeEndExclusive <= rangeStart) {
+      return false;
+    }
+
+    const [inventoryBlocks, candidateReservations] = await Promise.all([
+      prismaPms.inventoryBlock.findMany({
+        where: {
+          OR: [{ roomUnitId }, { roomUnitId: null, accommodationId: roomUnit.accommodationId }],
+          startsAt: {
+            lt: this.toDateBoundary(rangeEndExclusive),
+          },
+          endsAt: {
+            gt: this.toDateBoundary(rangeStart),
+          },
+          stopSell: true,
+        },
+        select: {
+          roomUnitId: true,
+        },
+      }),
+      prisma.reservation.findMany({
+        where: {
+          ...(excludeReservationId ? { id: { not: excludeReservationId } } : {}),
+          status: {
+            notIn: NON_BLOCKING_STATUSES,
+          },
+          checkInDate: {
+            lt: this.toDateBoundary(rangeEndExclusive),
+          },
+          checkOutDate: {
+            gt: this.toDateBoundary(rangeStart),
+          },
+          OR: [
+            { roomUnitId },
+            { roomUnitId: null, accommodationId: roomUnit.accommodationId },
+          ],
+        },
+        select: {
+          id: true,
+          checkInDate: true,
+          checkOutDate: true,
+        },
+      }),
+    ]);
+
+    if (inventoryBlocks.some((block: any) => !block.roomUnitId || block.roomUnitId === roomUnitId)) {
+      return false;
+    }
+
+    const hasOverlap = candidateReservations.some((reservation) =>
+      this.doesReservationOverlapRange(reservation, rangeStart, rangeEndExclusive)
+    );
+
+    return !hasOverlap;
+  }
+
   async getScheduleStats(startDate: string, endDate: string) {
     const rangeStart = this.toDateKey(startDate);
     const rangeEndInclusive = this.toDateKey(endDate);

@@ -5,15 +5,16 @@ const router = Router();
 
 router.post('/preview', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { accommodationId, checkInDate, checkOutDate, numberOfExtraBeds, promotionId, promotionCode } = req.body;
+    const { accommodationId, roomUnitId, checkInDate, checkOutDate, numberOfExtraBeds, promotionId, promotionCode } = req.body;
 
-    if (!accommodationId || !checkInDate || !checkOutDate) {
-      res.status(400).json({ message: 'accommodationId, checkInDate e checkOutDate sao obrigatorios' });
+    if ((!accommodationId && !roomUnitId) || !checkInDate || !checkOutDate) {
+      res.status(400).json({ message: 'roomUnitId ou accommodationId, checkInDate e checkOutDate sao obrigatorios' });
       return;
     }
 
     const breakdown = await PricingService.calculate({
       accommodationId,
+      roomUnitId,
       checkInDate,
       checkOutDate,
       numberOfExtraBeds: numberOfExtraBeds || 0,

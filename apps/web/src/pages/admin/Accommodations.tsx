@@ -1,5 +1,4 @@
-﻿import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,9 +28,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, BedDouble, Edit, Loader2, Plus, Star, Trash } from 'lucide-react';
-import { AccommodationForm } from '@/components/admin/AccommodationForm';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { BedDouble, Edit, Loader2, Plus, Star, Trash } from 'lucide-react';
+import { AccommodationForm } from '@/components/admin/AccommodationForm';
 import { Accommodation, AccommodationFormData } from '@/types/accommodation';
 import { useAccommodations } from '@/hooks/useAccommodations';
 import {
@@ -39,28 +40,63 @@ import {
   useDeleteAccommodation,
   useUpdateAccommodation,
 } from '@/hooks/useAccommodationMutations';
+import { useCreateRoomUnit, useRoomUnits, useUpdateRoomUnit } from '@/hooks/useRoomUnits';
+import type { HousekeepingStatus, RoomUnit, RoomUnitStatus } from '@/types/pms';
 
 const accommodationTypeLabels: Record<string, string> = {
   ROOM: 'Quarto',
-  SUITE: 'Suíte',
-  CHALET: 'Chalé',
+  SUITE: 'Su?te',
+  CHALET: 'Chal?',
   VILLA: 'Vila',
   APARTMENT: 'Apartamento',
+};
+
+const roomStatusLabels: Record<RoomUnitStatus, string> = {
+  AVAILABLE: 'Dispon?vel',
+  OCCUPIED: 'Ocupado',
+  DIRTY: 'Sujo',
+  CLEANING: 'Em limpeza',
+  INSPECTED: 'Inspecionado',
+  OUT_OF_ORDER: 'Fora de ordem',
+  OUT_OF_SERVICE: 'Fora de servi?o',
+  BLOCKED: 'Bloqueado',
+};
+
+const housekeepingLabels: Record<HousekeepingStatus, string> = {
+  CLEAN: 'Limpo',
+  DIRTY: 'Sujo',
+  IN_PROGRESS: 'Limpando',
+  INSPECTED: 'Inspecionado',
 };
 
 export function Accommodations() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentAccommodation, setCurrentAccommodation] = useState<Accommodation | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [roomUnitForm, setRoomUnitForm] = useState({
+    accommodationId: '',
+    name: '',
+    code: '',
+    floor: '',
+    notes: '',
+  });
 
   const { data: accommodations, isLoading, error } = useAccommodations({ adminView: true });
+  const { data: roomUnits = [], isLoading: loadingRoomUnits } = useRoomUnits();
   const createMutation = useCreateAccommodation();
   const updateMutation = useUpdateAccommodation();
   const deleteMutation = useDeleteAccommodation();
+  const createRoomUnit = useCreateRoomUnit();
+  const updateRoomUnit = useUpdateRoomUnit();
 
   const publishedCount = useMemo(
     () => (accommodations || []).filter((item) => item.isPublishedOnSite).length,
     [accommodations]
+  );
+
+  const activeRoomUnitsCount = useMemo(
+    () => roomUnits.filter((item) => item.isActive).length,
+    [roomUnits]
   );
 
   const handleAddEditAccommodation = (data: AccommodationFormData) => {
@@ -106,6 +142,47 @@ export function Accommodations() {
     });
   };
 
+  const handleCreateRoomUnit = () => {
+    if (!roomUnitForm.accommodationId || !roomUnitForm.name || !roomUnitForm.code) {
+      return;
+    }
+
+    createRoomUnit.mutate(
+      {
+        accommodationId: roomUnitForm.accommodationId,
+        name: roomUnitForm.name,
+        code: roomUnitForm.code,
+        floor: roomUnitForm.floor ? Number(roomUnitForm.floor) : undefined,
+        notes: roomUnitForm.notes || undefined,
+      },
+      {
+        onSuccess: () => {
+          setRoomUnitForm({
+            accommodationId: '',
+            name: '',
+            code: '',
+            floor: '',
+            notes: '',
+          });
+        },
+      }
+    );
+  };
+
+  const handleRoomUnitStatusChange = (roomUnit: RoomUnit, status: RoomUnitStatus) => {
+    updateRoomUnit.mutate({
+      id: roomUnit.id,
+      data: { status },
+    });
+  };
+
+  const handleHousekeepingChange = (roomUnit: RoomUnit, housekeepingStatus: HousekeepingStatus) => {
+    updateRoomUnit.mutate({
+      id: roomUnit.id,
+      data: { housekeepingStatus },
+    });
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -127,10 +204,9 @@ export function Accommodations() {
               />
             </svg>
           </div>
-          <h2 className="mb-2 text-xl font-bold">Erro ao carregar tipos de hospedagem</h2>
+          <h2 className="mb-2 text-xl font-bold">Erro ao carregar hospedagens</h2>
           <p className="text-gray-600">
-            {(error as any)?.response?.data?.message ||
-              'Ocorreu um erro ao carregar os tipos de hospedagem.'}
+            {(error as any)?.response?.data?.message || 'Ocorreu um erro ao carregar os tipos de hospedagem.'}
           </p>
         </div>
       </AdminLayout>
@@ -142,15 +218,18 @@ export function Accommodations() {
       <div className="flex flex-col gap-6 p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Tipos de hospedagem do site</h1>
+            <h1 className="text-3xl font-bold">Hospedagens e unidades</h1>
             <p className="mt-1 text-gray-600">
-              Catálogo comercial usado no site, nas reservas e no inventário operacional.
+              Cadastre o que o site vende e as unidades f?sicas usadas na opera??o do hotel em um ?nico lugar.
             </p>
           </div>
-          <Button onClick={() => {
-            setCurrentAccommodation(null);
-            setIsDialogOpen(true);
-          }} size="lg">
+          <Button
+            onClick={() => {
+              setCurrentAccommodation(null);
+              setIsDialogOpen(true);
+            }}
+            size="lg"
+          >
             <Plus className="mr-2 h-4 w-4" /> Novo tipo de hospedagem
           </Button>
         </div>
@@ -158,7 +237,7 @@ export function Accommodations() {
         <div className="grid gap-4 lg:grid-cols-3">
           <Card>
             <CardHeader className="pb-3">
-              <CardDescription>Total cadastrado</CardDescription>
+              <CardDescription>Tipos cadastrados</CardDescription>
               <CardTitle>{isLoading ? '...' : accommodations?.length || 0}</CardTitle>
             </CardHeader>
           </Card>
@@ -170,9 +249,9 @@ export function Accommodations() {
           </Card>
           <Card className="border-blue-200 bg-blue-50">
             <CardHeader className="pb-3">
-              <CardDescription className="text-blue-700">Regra de publicação</CardDescription>
+              <CardDescription className="text-blue-700">Unidades f?sicas ativas</CardDescription>
               <CardTitle className="text-base text-blue-950">
-                Só aparece no site quando o tipo está disponível e possui ao menos 1 quarto físico ativo.
+                {loadingRoomUnits ? '...' : activeRoomUnitsCount}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -195,11 +274,11 @@ export function Accommodations() {
                     <TableHead>Nome</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Capacidade</TableHead>
-                    <TableHead>Preço</TableHead>
+                    <TableHead>Pre?o</TableHead>
                     <TableHead>Site</TableHead>
-                    <TableHead>Quartos físicos</TableHead>
+                    <TableHead>Unidades</TableHead>
                     <TableHead>Comodidades</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead className="text-right">A??es</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -226,20 +305,14 @@ export function Accommodations() {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 font-medium">
                             {accommodation.name}
-                            {accommodation.isFeatured && (
-                              <Star className="h-4 w-4 fill-current text-yellow-500" />
-                            )}
+                            {accommodation.isFeatured && <Star className="h-4 w-4 fill-current text-yellow-500" />}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {accommodation.shortDescription || 'Sem descrição'}
-                          </div>
+                          <div className="text-sm text-gray-500">{accommodation.shortDescription || 'Sem descri??o'}</div>
                         </div>
                       </TableCell>
                       <TableCell>{accommodationTypeLabels[accommodation.type] || accommodation.type}</TableCell>
                       <TableCell>{accommodation.capacity} pessoas</TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(Number(accommodation.pricePerNight))}
-                      </TableCell>
+                      <TableCell className="font-medium">{formatCurrency(Number(accommodation.pricePerNight))}</TableCell>
                       <TableCell>
                         {accommodation.isPublishedOnSite ? (
                           <Badge variant="default">Publicado</Badge>
@@ -247,17 +320,15 @@ export function Accommodations() {
                           <div className="space-y-1">
                             <Badge variant="secondary">Fora do site</Badge>
                             <div className="text-xs text-muted-foreground">
-                              {!accommodation.isAvailable ? 'Tipo indisponível' : 'Sem quarto físico ativo'}
+                              {!accommodation.isAvailable ? 'Tipo indispon?vel' : 'Sem unidade ativa'}
                             </div>
                           </div>
                         )}
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="font-medium">{accommodation.activeRoomUnitCount || 0} ativos</div>
-                          <div className="text-xs text-muted-foreground">
-                            {accommodation.totalRoomUnitCount || 0} cadastrados
-                          </div>
+                          <div className="font-medium">{accommodation.activeRoomUnitCount || 0} ativas</div>
+                          <div className="text-xs text-muted-foreground">{accommodation.totalRoomUnitCount || 0} cadastradas</div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -282,11 +353,6 @@ export function Accommodations() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button asChild variant="outline" size="sm">
-                            <Link to="/admin/room-units">
-                              <BedDouble className="mr-2 h-4 w-4" /> Quartos
-                            </Link>
-                          </Button>
                           <Button variant="ghost" size="sm" onClick={() => handleEditClick(accommodation)} title="Editar">
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -321,11 +387,13 @@ export function Accommodations() {
                 </svg>
               </div>
               <h3 className="mb-2 text-lg font-semibold">Nenhum tipo de hospedagem cadastrado</h3>
-              <p className="mb-4 text-gray-600">Comece criando a categoria que será vendida no site.</p>
-              <Button onClick={() => {
-                setCurrentAccommodation(null);
-                setIsDialogOpen(true);
-              }}>
+              <p className="mb-4 text-gray-600">Comece criando a categoria que ser? vendida no site.</p>
+              <Button
+                onClick={() => {
+                  setCurrentAccommodation(null);
+                  setIsDialogOpen(true);
+                }}
+              >
                 <Plus className="mr-2 h-4 w-4" /> Criar primeiro tipo de hospedagem
               </Button>
             </CardContent>
@@ -336,35 +404,157 @@ export function Accommodations() {
           <CardHeader>
             <CardTitle>Fluxo unificado</CardTitle>
             <CardDescription>
-              O site vende tipos de hospedagem. A operação usa quartos físicos vinculados a esses tipos.
+              O site vende o tipo de hospedagem. A opera??o usa unidades f?sicas vinculadas ao mesmo cadastro.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-3">
             <div className="rounded-xl border p-4">
               <div className="font-medium">1. Cadastre o tipo</div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Nome, preço, capacidade, imagens e descrição que serão exibidos no site.
+                Nome, pre?o, capacidade, imagens e descri??o que ser?o exibidos no site.
               </p>
             </div>
             <div className="rounded-xl border p-4">
-              <div className="font-medium">2. Vincule quartos físicos</div>
+              <div className="font-medium">2. Vincule unidades reais</div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Cada quarto real deve apontar para um tipo de hospedagem desta tela.
+                Cada unidade real aponta para um tipo desta mesma tela e passa a valer na opera??o.
               </p>
             </div>
             <div className="rounded-xl border p-4">
-              <div className="font-medium">3. Publicação automática</div>
+              <div className="font-medium">3. Publica??o autom?tica</div>
               <p className="mt-2 text-sm text-muted-foreground">
-                O site só oferece tipos com pelo menos um quarto ativo e disponibilidade comercial.
+                O site s? oferece tipos com pelo menos uma unidade ativa e disponibilidade comercial.
               </p>
             </div>
-            <div className="md:col-span-3">
-              <Button asChild variant="outline">
-                <Link to="/admin/room-units">
-                  Vincular quartos físicos agora
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BedDouble className="h-5 w-5" />
+              Unidades f?sicas do hotel
+            </CardTitle>
+            <CardDescription>Cadastre e atualize os quartos reais sem sair desta tela.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-5">
+              <Select
+                value={roomUnitForm.accommodationId}
+                onValueChange={(value) => setRoomUnitForm((current) => ({ ...current, accommodationId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Tipo de hospedagem" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(accommodations || []).map((accommodation) => (
+                    <SelectItem key={accommodation.id} value={accommodation.id}>
+                      {accommodation.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                placeholder="Nome interno do quarto"
+                value={roomUnitForm.name}
+                onChange={(event) => setRoomUnitForm((current) => ({ ...current, name: event.target.value }))}
+              />
+              <Input
+                placeholder="C?digo"
+                value={roomUnitForm.code}
+                onChange={(event) => setRoomUnitForm((current) => ({ ...current, code: event.target.value }))}
+              />
+              <Input
+                placeholder="Andar"
+                type="number"
+                value={roomUnitForm.floor}
+                onChange={(event) => setRoomUnitForm((current) => ({ ...current, floor: event.target.value }))}
+              />
+              <Button onClick={handleCreateRoomUnit} disabled={createRoomUnit.isPending || !(accommodations || []).length}>
+                Cadastrar unidade
               </Button>
+              <div className="md:col-span-5">
+                <Input
+                  placeholder="Observa??es operacionais"
+                  value={roomUnitForm.notes}
+                  onChange={(event) => setRoomUnitForm((current) => ({ ...current, notes: event.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>C?digo</TableHead>
+                    <TableHead>Unidade</TableHead>
+                    <TableHead>Tipo vendido</TableHead>
+                    <TableHead>Andar</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Governan?a</TableHead>
+                    <TableHead>Ativo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loadingRoomUnits ? (
+                    <TableRow>
+                      <TableCell colSpan={7}>Carregando unidades...</TableCell>
+                    </TableRow>
+                  ) : roomUnits.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7}>Nenhuma unidade f?sica cadastrada.</TableCell>
+                    </TableRow>
+                  ) : (
+                    roomUnits.map((roomUnit) => (
+                      <TableRow key={roomUnit.id}>
+                        <TableCell className="font-mono">{roomUnit.code}</TableCell>
+                        <TableCell>{roomUnit.name}</TableCell>
+                        <TableCell>{roomUnit.accommodation?.name}</TableCell>
+                        <TableCell>{roomUnit.floor ?? '-'}</TableCell>
+                        <TableCell>
+                          <Select
+                            value={roomUnit.status}
+                            onValueChange={(value) => handleRoomUnitStatusChange(roomUnit, value as RoomUnitStatus)}
+                          >
+                            <SelectTrigger className="w-[170px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(roomStatusLabels).map(([value, label]) => (
+                                <SelectItem key={value} value={value}>
+                                  {label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={roomUnit.housekeepingStatus}
+                            onValueChange={(value) => handleHousekeepingChange(roomUnit, value as HousekeepingStatus)}
+                          >
+                            <SelectTrigger className="w-[170px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.entries(housekeepingLabels).map(([value, label]) => (
+                                <SelectItem key={value} value={value}>
+                                  {label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={roomUnit.isActive ? 'default' : 'outline'}>
+                            {roomUnit.isActive ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
@@ -372,13 +562,11 @@ export function Accommodations() {
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
             <DialogHeader>
-              <DialogTitle>
-                {currentAccommodation ? 'Editar tipo de hospedagem' : 'Novo tipo de hospedagem'}
-              </DialogTitle>
+              <DialogTitle>{currentAccommodation ? 'Editar tipo de hospedagem' : 'Novo tipo de hospedagem'}</DialogTitle>
               <DialogDescription>
                 {currentAccommodation
-                  ? 'Modifique o produto que será vendido no site e usado nas reservas.'
-                  : 'Cadastre a categoria comercial que será exibida no site.'}
+                  ? 'Modifique o produto que ser? vendido no site e usado nas reservas.'
+                  : 'Cadastre a categoria comercial que ser? exibida no site.'}
               </DialogDescription>
             </DialogHeader>
             <AccommodationForm
@@ -389,22 +577,18 @@ export function Accommodations() {
           </DialogContent>
         </Dialog>
 
-        <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+              <AlertDialogTitle>Excluir tipo de hospedagem?</AlertDialogTitle>
               <AlertDialogDescription>
-                Esta ação não pode ser desfeita. O tipo de hospedagem será removido do sistema.
+                Essa a??o remove o tipo de hospedagem. Use com cuidado para n?o afetar reservas ou unidades j? vinculadas.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={confirmDelete}
-                className="bg-red-600 hover:bg-red-700"
-                disabled={deleteMutation.isPending}
-              >
-                {deleteMutation.isPending ? 'Removendo...' : 'Remover'}
+              <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+                Excluir
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

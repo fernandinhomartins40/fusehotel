@@ -41,6 +41,7 @@ const stockMovementTypeSchema = z.enum([
 ]);
 const financialEntryTypeSchema = z.enum(['RECEIVABLE', 'PAYABLE']);
 const financialEntryStatusSchema = z.enum(['OPEN', 'PARTIALLY_PAID', 'PAID', 'OVERDUE', 'CANCELLED']);
+const serviceCategorySchema = z.enum(['ACCOMMODATION', 'GASTRONOMY', 'RECREATION', 'BUSINESS', 'SPECIAL']);
 
 export const createRoomUnitSchema = z.object({
   accommodationId: uuidSchema,
@@ -143,19 +144,33 @@ export const updateMaintenanceOrderSchema = z.object({
   actualCost: z.number().nonnegative().optional(),
 });
 
-export const createPOSProductSchema = z.object({
-  name: z.string().min(2).max(120),
-  sku: z.string().max(50).optional(),
-  categoryId: uuidSchema,
-  image: z.string().max(500).optional(),
-  price: z.number().positive(),
-  costPrice: z.number().nonnegative().optional(),
-  stockQuantity: z.number().nonnegative().optional(),
-  minStockQuantity: z.number().nonnegative().optional(),
-  saleUnit: z.string().max(10).optional(),
-  trackStock: z.boolean().optional(),
-  description: z.string().max(500).optional(),
-});
+export const createPOSProductSchema = z
+  .object({
+    name: z.string().min(2).max(120),
+    sku: z.string().max(50).optional(),
+    categoryId: uuidSchema,
+    image: z.string().max(500).optional(),
+    price: z.number().nonnegative(),
+    costPrice: z.number().nonnegative().optional(),
+    stockQuantity: z.number().nonnegative().optional(),
+    minStockQuantity: z.number().nonnegative().optional(),
+    saleUnit: z.string().max(10).optional(),
+    trackStock: z.boolean().optional(),
+    description: z.string().max(500).optional(),
+    showOnServicesPage: z.boolean().optional(),
+    servicesPageCategory: serviceCategorySchema.optional(),
+    servicesPageSubtitle: z.string().max(120).optional(),
+    servicesPageFeatures: z.array(z.string().max(120)).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.showOnServicesPage && !data.servicesPageCategory) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['servicesPageCategory'],
+        message: 'Selecione a seção da página de serviços',
+      });
+    }
+  });
 
 export const createPOSOrderSchema = z.object({
   stayId: uuidSchema.optional(),
