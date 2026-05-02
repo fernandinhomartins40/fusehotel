@@ -125,8 +125,8 @@ async function resolveOrderPayload(tx: any, data: CreatePOSOrderDto | UpdatePOSO
     resolvedCustomerName = resolvedCustomerName || stay?.reservation?.guestName?.trim() || undefined;
   }
 
-  if (settlementType === POSSettlementType.DIRECT && !resolvedCustomerName) {
-    throw new BadRequestError('Informe o cliente do pedido');
+  if (!resolvedCustomerName) {
+    resolvedCustomerName = 'Consumidor';
   }
 
   const products = await tx.posProduct.findMany({
