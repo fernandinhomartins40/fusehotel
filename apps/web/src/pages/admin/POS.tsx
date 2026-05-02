@@ -69,7 +69,7 @@ const categoryLabels: Record<POSProductCategory | 'ALL', string> = {
 
 const originLabels: Record<POSOrderOrigin, string> = {
   FRONTDESK: 'Balcão',
-  ROOM_SERVICE: 'Room service',
+  ROOM_SERVICE: 'Serviço de quarto',
   RESTAURANT: 'Restaurante',
   BAR: 'Bar',
 };
@@ -84,7 +84,7 @@ const orderStatusLabels: Record<POSOrderStatus, string> = {
 
 const settlementLabels: Record<POSSettlementType, string> = {
   DIRECT: 'Pagamento direto',
-  FOLIO: 'Lançar na conta',
+  FOLIO: 'Conta do hóspede',
 };
 
 const paymentMethodLabels: Record<PaymentMethod, string> = {
@@ -103,14 +103,13 @@ type CartItem = {
 
 type NumericField = 'serviceFee' | 'discount' | 'payment';
 type DialogKey = 'cash' | 'orders' | 'drafts' | 'references' | 'details' | null;
-type SalePreset = 'BALCAO' | 'MESA' | 'COMANDA' | 'QUARTO';
+type SalePreset = 'BALCAO' | 'COMANDA' | 'QUARTO';
 type POSStep = 'customer' | 'items' | 'settlement' | 'review';
 
 const salePresetLabels: Record<SalePreset, string> = {
   BALCAO: 'Balcão',
-  MESA: 'Mesa',
-  COMANDA: 'Comanda',
-  QUARTO: 'Quarto',
+  COMANDA: 'Mesa / Comanda',
+  QUARTO: 'Conta do hóspede',
 };
 
 const posStepLabels: Record<POSStep, string> = {
@@ -297,7 +296,7 @@ export default function POS() {
 
     if (customerName.trim().length < 2) return false;
 
-    if ((salePreset === 'MESA' || salePreset === 'COMANDA') && tableNumber.trim().length < 1) {
+    if (salePreset === 'COMANDA' && tableNumber.trim().length < 1) {
       return false;
     }
 
@@ -374,7 +373,7 @@ export default function POS() {
       return;
     }
 
-    if (preset === 'MESA' || preset === 'COMANDA') {
+    if (preset === 'COMANDA') {
       setOrigin('RESTAURANT');
       setSettlementType('DIRECT');
       setSelectedStayId('');
@@ -468,7 +467,7 @@ export default function POS() {
   };
 
   const restoreDraft = (draft: SavedDraft) => {
-    setSalePreset(draft.salePreset);
+    setSalePreset(draft.salePreset === ('MESA' as SalePreset) ? 'COMANDA' : draft.salePreset);
     setSettlementType(draft.settlementType);
     setOrigin(draft.origin);
     setCustomerName(draft.customerName);
@@ -640,15 +639,10 @@ export default function POS() {
 
       if (event.altKey && event.key === '6') {
         event.preventDefault();
-        applySalePreset('MESA');
-      }
-
-      if (event.altKey && event.key === '7') {
-        event.preventDefault();
         applySalePreset('COMANDA');
       }
 
-      if (event.altKey && event.key === '8') {
+      if (event.altKey && event.key === '7') {
         event.preventDefault();
         applySalePreset('QUARTO');
       }
@@ -1001,12 +995,12 @@ export default function POS() {
         <ModeCard
           title="Mesa / comanda"
           description="Venda direta com referência de atendimento."
-          active={settlementType === 'DIRECT' && (salePreset === 'MESA' || salePreset === 'COMANDA')}
+          active={settlementType === 'DIRECT' && salePreset === 'COMANDA'}
           onClick={() => applySalePreset('COMANDA')}
         />
         <ModeCard
-          title="Conta da hospedagem"
-          description="Lançamento direto na conta do hóspede."
+          title="Conta do hóspede"
+          description="Lançamento direto na conta da hospedagem."
           active={settlementType === 'FOLIO'}
           onClick={() => applySalePreset('QUARTO')}
         />
@@ -1025,7 +1019,7 @@ export default function POS() {
             <p className="text-xs text-slate-500">Toda venda direta precisa ficar vinculada a um cliente.</p>
           </div>
 
-          {(salePreset === 'MESA' || salePreset === 'COMANDA') ? (
+          {salePreset === 'COMANDA' ? (
             <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
               <div className="text-sm font-medium text-slate-900">Mesa ou comanda</div>
               <Input
@@ -1280,9 +1274,9 @@ export default function POS() {
         </div>
       ) : (
         <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-          <div className="text-sm font-medium text-slate-900">Cobrança pela conta da hospedagem</div>
+          <div className="text-sm font-medium text-slate-900">Lançamento na conta do hóspede</div>
           <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
-            O lançamento será enviado para a conta do hóspede selecionado e poderá ser fechado no check-out.
+            O consumo será lançado diretamente na conta da hospedagem e poderá ser fechado no check-out.
           </div>
           <Button variant="outline" className="rounded-2xl" onClick={() => setActiveDialog('details')}>
             Ajustes e detalhes
@@ -1303,7 +1297,7 @@ export default function POS() {
         <DialogStat label="Cliente" value={resolvedCustomerName || 'Não definido'} />
         <DialogStat
           label="Tipo"
-          value={settlementType === 'FOLIO' ? 'Conta da hospedagem' : salePresetLabels[salePreset]}
+          value={settlementType === 'FOLIO' ? 'Conta do hóspede' : salePresetLabels[salePreset]}
         />
         <DialogStat label="Itens" value={`${cartDetailedItems.length}`} />
       </div>
@@ -1345,13 +1339,13 @@ export default function POS() {
               <div className="flex min-w-0 items-center gap-3">
                 <div className="rounded-2xl bg-slate-950 px-3 py-2 text-sm font-semibold text-white">PDV</div>
                 <div className="min-w-0">
-                  <h1 className="truncate text-xl font-semibold tracking-tight text-slate-900">PDV do hotel</h1>
-                  <p className="text-sm text-slate-500">Venda direta e lançamento na conta da hospedagem.</p>
+                  <h1 className="truncate text-xl font-semibold tracking-tight text-slate-900">Caixa / PDV</h1>
+                  <p className="text-sm text-slate-500">Venda direta e consumo na conta do hóspede.</p>
                 </div>
               </div>
               <div className="inline-flex max-w-full items-center gap-2 overflow-hidden rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-600 xl:flex-none">
                 <Keyboard className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate whitespace-nowrap">Alt + 1 pedidos • Alt + 2 caixa • Alt + 3 hospedagens • Ctrl + Enter finalizar</span>
+                <span className="truncate whitespace-nowrap">Alt+1 pedidos • Alt+2 caixa • Alt+3 hospedagens • Alt+5 balcão • Alt+6 comanda • Alt+7 quarto • Ctrl+Enter finalizar</span>
               </div>
             </div>
 
@@ -1432,9 +1426,9 @@ export default function POS() {
 
                 <div className="mt-4 space-y-3 text-sm">
                   <SummaryRow label="Cliente" value={resolvedCustomerName || 'Aguardando identificação'} />
-                  <SummaryRow label="Origem" value={settlementType === 'FOLIO' ? 'Conta da hospedagem' : salePresetLabels[salePreset]} />
+                  <SummaryRow label="Origem" value={settlementType === 'FOLIO' ? 'Conta do hóspede' : salePresetLabels[salePreset]} />
                   <SummaryRow label="Referência" value={settlementType === 'FOLIO' ? (selectedStay ? `Quarto ${selectedStay.roomUnit?.code ?? 'Sem quarto'}` : 'Sem hospedagem') : (tableNumber || 'Balcão')} />
-                  <SummaryRow label="Pagamento" value={settlementType === 'DIRECT' ? paymentMethodLabels[paymentMethod] : 'Lançamento em conta'} />
+                  <SummaryRow label="Pagamento" value={settlementType === 'DIRECT' ? paymentMethodLabels[paymentMethod] : 'Conta do hóspede'} />
                 </div>
 
                 <ScrollArea className="mt-4 max-h-[260px] rounded-2xl border border-white/10 bg-white/5">
@@ -1936,7 +1930,7 @@ export default function POS() {
                       </div>
                     ) : (
                       <div className="rounded-2xl border bg-slate-50 p-4 text-sm text-slate-600">
-                        Este pedido está configurado para lançamento na conta da hospedagem.
+                        Este pedido será lançado na conta do hóspede.
                       </div>
                     )}
 
