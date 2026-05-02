@@ -1,20 +1,15 @@
-import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   BedDouble,
   CreditCard,
   Grid2x2,
-  Hotel,
   Keyboard,
   Maximize2,
-  Minus,
   Minimize2,
-  Plus,
   Receipt,
   Search,
   ShoppingCart,
   Wallet,
-  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AdminLayout } from '@/components/admin/AdminLayout';
@@ -29,18 +24,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { useCheckIn, useCheckOut, useFrontdeskDashboard, useStays } from '@/hooks/useFrontdesk';
-import { useHousekeepingTasks, useUpdateHousekeepingStatus } from '@/hooks/useHousekeeping';
-import {
-  useCreateMaintenanceOrder,
-  useMaintenanceOrders,
-  useUpdateMaintenanceOrder,
-} from '@/hooks/useMaintenance';
+import { useStays } from '@/hooks/useFrontdesk';
 import {
   useActiveCashSession,
   useCancelPOSOrder,
@@ -56,21 +43,15 @@ import {
   useUpdatePOSOrderStatus,
 } from '@/hooks/usePOS';
 import { useOperationsReport } from '@/hooks/useReports';
-import { useRoomUnits } from '@/hooks/useRoomUnits';
 import type {
   CashMovementType,
-  HousekeepingTaskStatus,
-  MaintenanceOrderPriority,
-  MaintenanceOrderStatus,
   PaymentMethod,
   POSOrderOrigin,
   POSOrderStatus,
   POSProduct,
   POSProductCategory,
   POSSettlementType,
-  RoomUnit,
 } from '@/types/pms';
-import type { Reservation } from '@/types/reservation';
 
 const currency = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -115,37 +96,14 @@ const paymentMethodLabels: Record<PaymentMethod, string> = {
   VOUCHER: 'Voucher',
 };
 
-const housekeepingStatusLabels: Record<HousekeepingTaskStatus, string> = {
-  PENDING: 'Pendente',
-  IN_PROGRESS: 'Em andamento',
-  COMPLETED: 'Concluída',
-  INSPECTED: 'Inspecionada',
-  CANCELLED: 'Cancelada',
-};
-
-const maintenancePriorityLabels: Record<MaintenanceOrderPriority, string> = {
-  LOW: 'Baixa',
-  MEDIUM: 'Média',
-  HIGH: 'Alta',
-  URGENT: 'Urgente',
-};
-
-const maintenanceStatusLabels: Record<MaintenanceOrderStatus, string> = {
-  OPEN: 'Aberta',
-  IN_PROGRESS: 'Em andamento',
-  COMPLETED: 'Concluída',
-  CANCELLED: 'Cancelada',
-};
-
 type CartItem = {
   productId: string;
   quantity: number;
 };
 
 type NumericField = 'serviceFee' | 'discount' | 'payment';
-type DialogKey = 'cash' | 'hotel' | 'orders' | 'drafts' | 'references' | 'details' | null;
+type DialogKey = 'cash' | 'orders' | 'drafts' | 'references' | 'details' | null;
 type SalePreset = 'BALCAO' | 'MESA' | 'COMANDA' | 'QUARTO';
-type HotelTab = 'frontdesk' | 'housekeeping' | 'maintenance';
 type POSStep = 'customer' | 'items' | 'settlement' | 'review';
 
 const salePresetLabels: Record<SalePreset, string> = {
@@ -183,17 +141,11 @@ type SavedDraft = {
 
 export default function POS() {
   const { data: report } = useOperationsReport();
-  const { data: dashboard } = useFrontdeskDashboard();
   const { data: stays = [] } = useStays();
-  const { data: roomUnits = [] } = useRoomUnits();
   const { data: products = [] } = usePOSProducts();
   const { data: orders = [] } = usePOSOrders();
   const { data: activeCashSession } = useActiveCashSession();
-  const { data: housekeepingTasks = [] } = useHousekeepingTasks();
-  const { data: maintenanceOrders = [] } = useMaintenanceOrders();
 
-  const checkIn = useCheckIn();
-  const checkOut = useCheckOut();
   const createOrder = useCreatePOSOrder();
   const updateOrder = useUpdatePOSOrder();
   const registerPayment = useRegisterPOSPayment();
@@ -203,18 +155,13 @@ export default function POS() {
   const openCashSession = useOpenCashSession();
   const closeCashSession = useCloseCashSession();
   const createCashMovement = useCreateCashMovement();
-  const updateHousekeeping = useUpdateHousekeepingStatus();
-  const createMaintenanceOrder = useCreateMaintenanceOrder();
-  const updateMaintenanceOrder = useUpdateMaintenanceOrder();
 
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<POSProductCategory | 'ALL'>('ALL');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [editingOrderId, setEditingOrderId] = useState('');
   const [activeDialog, setActiveDialog] = useState<DialogKey>(null);
-  const [hotelTab, setHotelTab] = useState<HotelTab>('frontdesk');
   const [selectedOrderId, setSelectedOrderId] = useState('');
-  const [selectedRooms, setSelectedRooms] = useState<Record<string, string>>({});
   const [settlementType, setSettlementType] = useState<POSSettlementType>('DIRECT');
   const [origin, setOrigin] = useState<POSOrderOrigin>('FRONTDESK');
   const [customerName, setCustomerName] = useState('');
@@ -246,15 +193,10 @@ export default function POS() {
   );
   const [cashMovementAmount, setCashMovementAmount] = useState('');
   const [cashMovementDescription, setCashMovementDescription] = useState('');
-  const [maintenanceRoomUnitId, setMaintenanceRoomUnitId] = useState('');
-  const [maintenanceTitle, setMaintenanceTitle] = useState('');
-  const [maintenancePriority, setMaintenancePriority] = useState<MaintenanceOrderPriority>('MEDIUM');
-  const [maintenanceDescription, setMaintenanceDescription] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
   const scannerBufferRef = useRef('');
   const scannerTimeoutRef = useRef<number | null>(null);
 
-  const arrivals = useMemo(() => dashboard?.arrivals ?? [], [dashboard]);
   const inHouseStays = useMemo(() => stays.filter((stay) => stay.status === 'IN_HOUSE'), [stays]);
   const activeProducts = useMemo(() => products.filter((product) => product.isActive), [products]);
   const openOrders = useMemo(
@@ -361,28 +303,6 @@ export default function POS() {
 
     return true;
   }, [customerName, salePreset, selectedStayId, settlementType, tableNumber]);
-
-  const availableRoomUnitsByAccommodation = useMemo(() => {
-    return roomUnits.reduce<Record<string, RoomUnit[]>>((accumulator, roomUnit) => {
-      const availableStatuses = ['AVAILABLE', 'INSPECTED'];
-      const availableHousekeeping = ['CLEAN', 'INSPECTED'];
-
-      if (
-        !roomUnit.isActive ||
-        !availableStatuses.includes(roomUnit.status) ||
-        !availableHousekeeping.includes(roomUnit.housekeepingStatus)
-      ) {
-        return accumulator;
-      }
-
-      if (!accumulator[roomUnit.accommodationId]) {
-        accumulator[roomUnit.accommodationId] = [];
-      }
-
-      accumulator[roomUnit.accommodationId].push(roomUnit);
-      return accumulator;
-    }, {});
-  }, [roomUnits]);
 
   const setNumericValue = (field: NumericField, value: string) => {
     if (field === 'serviceFee') setServiceFeeAmount(value);
@@ -710,12 +630,7 @@ export default function POS() {
 
       if (event.altKey && event.key === '3') {
         event.preventDefault();
-        openHotelDialog('frontdesk');
-      }
-
-      if (event.altKey && event.key === '4') {
-        event.preventDefault();
-        openHotelDialog('housekeeping');
+        window.open('/admin/frontdesk', '_blank');
       }
 
       if (event.altKey && event.key === '5') {
@@ -951,15 +866,6 @@ export default function POS() {
     }
   };
 
-  const handleCheckIn = (reservation: Reservation) => {
-    const roomUnitId = selectedRooms[reservation.id];
-    if (!roomUnitId) {
-      toast.error('Selecione um quarto para o check-in');
-      return;
-    }
-    checkIn.mutate({ reservationId: reservation.id, roomUnitId });
-  };
-
   const handleRegisterPayment = async () => {
     if (!selectedOrder) {
       toast.error('Selecione um pedido');
@@ -1076,31 +982,6 @@ export default function POS() {
 
     setCashMovementAmount('');
     setCashMovementDescription('');
-  };
-
-  const handleCreateMaintenance = () => {
-    if (!maintenanceRoomUnitId || !maintenanceTitle.trim()) {
-      toast.error('Informe quarto e título');
-      return;
-    }
-
-    createMaintenanceOrder.mutate({
-      roomUnitId: maintenanceRoomUnitId,
-      title: maintenanceTitle,
-      description: maintenanceDescription || undefined,
-      priority: maintenancePriority,
-      markRoomOutOfOrder: true,
-    });
-
-    setMaintenanceRoomUnitId('');
-    setMaintenanceTitle('');
-    setMaintenanceDescription('');
-    setMaintenancePriority('MEDIUM');
-  };
-
-  const openHotelDialog = (tab: HotelTab = 'frontdesk') => {
-    setHotelTab(tab);
-    setActiveDialog('hotel');
   };
 
   const renderCustomerStep = () => (
@@ -1465,12 +1346,12 @@ export default function POS() {
                 <div className="rounded-2xl bg-slate-950 px-3 py-2 text-sm font-semibold text-white">PDV</div>
                 <div className="min-w-0">
                   <h1 className="truncate text-xl font-semibold tracking-tight text-slate-900">PDV do hotel</h1>
-                  <p className="text-sm text-slate-500">Venda, conta da hospedagem e operação rápida do hotel.</p>
+                  <p className="text-sm text-slate-500">Venda direta e lançamento na conta da hospedagem.</p>
                 </div>
               </div>
               <div className="inline-flex max-w-full items-center gap-2 overflow-hidden rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-600 xl:flex-none">
                 <Keyboard className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate whitespace-nowrap">Alt + 1 pedidos • Alt + 2 caixa • Alt + 3 hotel • Ctrl + Enter finalizar</span>
+                <span className="truncate whitespace-nowrap">Alt + 1 pedidos • Alt + 2 caixa • Alt + 3 hospedagens • Ctrl + Enter finalizar</span>
               </div>
             </div>
 
@@ -1495,7 +1376,7 @@ export default function POS() {
             <div className="flex flex-wrap items-center gap-2">
               <SideAction icon={ShoppingCart} label="Pedidos" description="Abertos e recebimento" shortcut="Alt + 1" active={activeDialog === 'orders'} onClick={() => setActiveDialog('orders')} />
               <SideAction icon={Wallet} label="Caixa" description="Abertura e fechamento" shortcut="Alt + 2" active={activeDialog === 'cash'} onClick={() => setActiveDialog('cash')} />
-              <SideAction icon={Hotel} label="Hotel" description="Check-in e quartos" shortcut="Alt + 3" active={activeDialog === 'hotel'} onClick={() => openHotelDialog('frontdesk')} />
+              <SideAction icon={BedDouble} label="Hospedagens" description="Abrir em nova aba" shortcut="Alt + 3" active={false} onClick={() => window.open('/admin/frontdesk', '_blank')} />
               <SideAction icon={Receipt} label="Pré-venda" description="Suspensas e retomada" shortcut="Alt + 9" active={activeDialog === 'drafts'} onClick={() => setActiveDialog('drafts')} />
               <SideAction icon={Search} label="Referências" description="Mesa, comanda ou hóspede" shortcut="Alt + 0" active={activeDialog === 'references'} onClick={() => setActiveDialog('references')} />
             </div>
@@ -1550,7 +1431,7 @@ export default function POS() {
                 </div>
 
                 <div className="mt-4 space-y-3 text-sm">
-                  <SummaryRow label="Cliente" value={resolvedCustomerName || 'Aguardando identifica??o'} />
+                  <SummaryRow label="Cliente" value={resolvedCustomerName || 'Aguardando identificação'} />
                   <SummaryRow label="Origem" value={settlementType === 'FOLIO' ? 'Conta da hospedagem' : salePresetLabels[salePreset]} />
                   <SummaryRow label="Referência" value={settlementType === 'FOLIO' ? (selectedStay ? `Quarto ${selectedStay.roomUnit?.code ?? 'Sem quarto'}` : 'Sem hospedagem') : (tableNumber || 'Balcão')} />
                   <SummaryRow label="Pagamento" value={settlementType === 'DIRECT' ? paymentMethodLabels[paymentMethod] : 'Lançamento em conta'} />
@@ -1615,7 +1496,7 @@ export default function POS() {
                           ? Number(paymentAmount || 0) > 0
                             ? 'Salvar e receber'
                             : 'Salvar comanda'
-                          : 'Atualizar e lan?ar consumo'
+                          : 'Atualizar e lançar consumo'
                         : settlementType === 'DIRECT'
                           ? 'Receber e finalizar'
                           : 'Lançar consumo'}
@@ -1645,7 +1526,7 @@ export default function POS() {
               <Input
                 value={paymentReference}
                 onChange={(event) => setPaymentReference(event.target.value)}
-                placeholder="NSU ou refer?ncia"
+                placeholder="NSU ou referência"
               />
             ) : null}
 
@@ -1738,236 +1619,6 @@ export default function POS() {
               </CardContent>
             </Card>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={activeDialog === 'hotel'} onOpenChange={(open) => setActiveDialog(open ? 'hotel' : null)}>
-        <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Operação do hotel</DialogTitle>
-            <DialogDescription>Recepção, governança e manutenção no mesmo fluxo.</DialogDescription>
-          </DialogHeader>
-          <Tabs value={hotelTab} onValueChange={(value) => setHotelTab(value as HotelTab)} className="space-y-4">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <TabsList className="h-auto flex-wrap rounded-2xl bg-slate-100 p-1">
-                <TabsTrigger value="frontdesk" className="rounded-xl px-4 py-2">Recepção</TabsTrigger>
-                <TabsTrigger value="housekeeping" className="rounded-xl px-4 py-2">Governança</TabsTrigger>
-                <TabsTrigger value="maintenance" className="rounded-xl px-4 py-2">Manutenção</TabsTrigger>
-              </TabsList>
-              <div className="grid gap-2 sm:grid-cols-3">
-                <DialogStat label="Chegadas" value={String(arrivals.length)} />
-                <DialogStat label="Hospedados" value={String(inHouseStays.length)} />
-                <DialogStat
-                  label="Limpeza pendente"
-                  value={String(
-                    housekeepingTasks.filter((task) => task.status !== 'INSPECTED' && task.status !== 'CANCELLED').length
-                  )}
-                />
-              </div>
-            </div>
-
-            <TabsContent value="frontdesk" className="mt-0">
-              <div className="grid gap-4 xl:grid-cols-2">
-                <Card>
-                  <CardContent className="space-y-3 p-4">
-                    <div className="font-medium">Chegadas</div>
-                    {!arrivals.length ? (
-                      <EmptyInline text="Nenhuma chegada pendente." />
-                    ) : (
-                      arrivals.map((reservation) => (
-                        <div key={reservation.id} className="rounded-2xl border p-3">
-                          <div className="font-medium">{reservation.guestName}</div>
-                          <div className="mt-1 text-sm text-slate-500">
-                            {reservation.reservationCode} • {reservation.accommodation?.name ?? 'Acomodação'}
-                          </div>
-                          <div className="mt-3 flex gap-3">
-                            <Select
-                              value={selectedRooms[reservation.id] ?? ''}
-                              onValueChange={(value) =>
-                                setSelectedRooms((current) => ({ ...current, [reservation.id]: value }))
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecionar quarto" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {(availableRoomUnitsByAccommodation[reservation.accommodationId] ?? []).map((roomUnit) => (
-                                  <SelectItem key={roomUnit.id} value={roomUnit.id}>
-                                    {roomUnit.code} • {roomUnit.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <Button onClick={() => handleCheckIn(reservation)} disabled={checkIn.isPending}>
-                              Check-in
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="space-y-3 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="font-medium">Hospedados</div>
-                      <Button asChild variant="outline">
-                        <Link to="/admin/frontdesk">Abrir recepção</Link>
-                      </Button>
-                    </div>
-                    {!inHouseStays.length ? (
-                      <EmptyInline text="Nenhuma hospedagem ativa." />
-                    ) : (
-                      inHouseStays.map((stay) => (
-                        <div key={stay.id} className="rounded-2xl border p-3">
-                          <div className="font-medium">{stay.reservation.guestName}</div>
-                          <div className="mt-1 text-sm text-slate-500">
-                            Quarto {stay.roomUnit?.code ?? 'Sem quarto'} • Saída {new Date(stay.reservation.checkOutDate).toLocaleDateString('pt-BR')}
-                          </div>
-                          <div className="mt-3 flex items-center justify-between gap-3">
-                            <span className="text-sm text-slate-500">
-                              Conta {currency.format(Number(stay.folio?.balance ?? 0))}
-                            </span>
-                            <Button
-                              variant="outline"
-                              onClick={() => checkOut.mutate({ stayId: stay.id })}
-                              disabled={checkOut.isPending}
-                            >
-                              Check-out
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="housekeeping" className="mt-0">
-              <div className="space-y-3">
-                {!housekeepingTasks.length ? (
-                  <EmptyInline text="Nenhuma tarefa aberta." />
-                ) : (
-                  housekeepingTasks.map((task) => (
-                    <div key={task.id} className="rounded-2xl border p-4">
-                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                        <div>
-                          <div className="font-medium">
-                            {task.roomUnit.code} • {task.title}
-                          </div>
-                          <div className="mt-1 text-sm text-slate-500">
-                            {task.reservation?.guestName ?? 'Sem hóspede'} • {task.priority}
-                          </div>
-                        </div>
-                        <Select
-                          value={task.status}
-                          onValueChange={(value) =>
-                            updateHousekeeping.mutate({ id: task.id, status: value as HousekeepingTaskStatus })
-                          }
-                        >
-                          <SelectTrigger className="w-full md:w-[210px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(housekeepingStatusLabels).map(([value, label]) => (
-                              <SelectItem key={value} value={value}>
-                                {label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="maintenance" className="mt-0">
-              <div className="grid gap-4 xl:grid-cols-[340px_1fr]">
-                <Card>
-                  <CardContent className="space-y-3 p-4">
-                    <div className="font-medium">Nova ordem</div>
-                    <Select value={maintenanceRoomUnitId} onValueChange={setMaintenanceRoomUnitId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecionar quarto" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {roomUnits.map((roomUnit) => (
-                          <SelectItem key={roomUnit.id} value={roomUnit.id}>
-                            {roomUnit.code} • {roomUnit.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Input value={maintenanceTitle} onChange={(event) => setMaintenanceTitle(event.target.value)} placeholder="Título da ocorrência" />
-                    <Select value={maintenancePriority} onValueChange={(value) => setMaintenancePriority(value as MaintenanceOrderPriority)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(maintenancePriorityLabels).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Textarea value={maintenanceDescription} onChange={(event) => setMaintenanceDescription(event.target.value)} placeholder="Descrição do problema" />
-                    <Button onClick={handleCreateMaintenance} disabled={createMaintenanceOrder.isPending}>
-                      Criar ordem
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="space-y-3 p-4">
-                    <div className="font-medium">Ordens abertas</div>
-                    {!maintenanceOrders.length ? (
-                      <EmptyInline text="Nenhuma ordem cadastrada." />
-                    ) : (
-                      maintenanceOrders.map((order) => (
-                        <div key={order.id} className="rounded-2xl border p-4">
-                          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                            <div>
-                              <div className="font-medium">
-                                {order.roomUnit.code} • {order.title}
-                              </div>
-                              <div className="mt-1 text-sm text-slate-500">
-                                {maintenancePriorityLabels[order.priority]} • {new Date(order.openedAt).toLocaleString('pt-BR')}
-                              </div>
-                            </div>
-                            <Select
-                              value={order.status}
-                              onValueChange={(value) =>
-                                updateMaintenanceOrder.mutate({
-                                  id: order.id,
-                                  data: { status: value as MaintenanceOrderStatus },
-                                })
-                              }
-                            >
-                              <SelectTrigger className="w-full md:w-[210px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {Object.entries(maintenanceStatusLabels).map(([value, label]) => (
-                                  <SelectItem key={value} value={value}>
-                                    {label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
         </DialogContent>
       </Dialog>
 
