@@ -11,6 +11,7 @@ router.use(authenticate, requireRole(['ADMIN', 'MANAGER']));
 
 router.get('/dashboard', FrontdeskController.dashboard);
 router.get('/stays', FrontdeskController.listStays);
+router.get('/room-map', FrontdeskController.roomMap);
 router.post('/check-in', validateBody(checkInSchema), FrontdeskController.checkIn);
 router.post('/walk-in', validateBody(walkInCheckInSchema), FrontdeskController.walkIn);
 router.post('/check-out', validateBody(checkOutSchema), FrontdeskController.checkOut);

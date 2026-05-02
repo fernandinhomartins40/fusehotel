@@ -1,30 +1,31 @@
-﻿import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useMemo, useState } from 'react';
-import { Banknote } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { CreateCustomerDialog } from '@/components/admin/customers/CreateCustomerDialog';
+import { StaysList } from '@/components/admin/frontdesk/StaysList';
+import { GuestSheet } from '@/components/admin/frontdesk/GuestSheet';
+import { RoomMap } from '@/components/admin/frontdesk/RoomMap';
 import { useAccommodations } from '@/hooks/useAccommodations';
 import { useCustomers } from '@/hooks/useCustomers';
-import { useAddFolioEntry, useFolio } from '@/hooks/useFolios';
-import { useCheckIn, useCheckOut, useFrontdeskDashboard, useWalkInCheckIn } from '@/hooks/useFrontdesk';
+import { useCheckIn, useFrontdeskDashboard, useRoomMap, useWalkInCheckIn } from '@/hooks/useFrontdesk';
+import { usePromotions } from '@/hooks/usePromotions';
 import { useRoomUnits } from '@/hooks/useRoomUnits';
-import type { FolioEntryType, RoomUnit, Stay } from '@/types/pms';
+import type { RoomUnit, Stay } from '@/types/pms';
 import type { Reservation } from '@/types/reservation';
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
@@ -32,32 +33,25 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', {
   currency: 'BRL',
 });
 
-const entryTypeLabels: Record<FolioEntryType, string> = {
-  DAILY_RATE: 'Diária',
-  EXTRA_BED: 'Cama extra',
-  SERVICE_FEE: 'Taxa',
-  TAX: 'Imposto',
-  DISCOUNT: 'Desconto',
-  PAYMENT: 'Pagamento',
-  REFUND: 'Reembolso',
-  ROOM_SERVICE: 'Room service',
-  POS: 'PDV',
-  ADJUSTMENT: 'Ajuste',
-};
-
 export default function Frontdesk() {
   const { data: dashboard, isLoading } = useFrontdeskDashboard();
+  const { data: roomMapData, isLoading: isRoomMapLoading } = useRoomMap();
   const { data: roomUnits = [] } = useRoomUnits();
   const { data: accommodations = [] } = useAccommodations({ adminView: true });
   const { data: customers = [] } = useCustomers({ role: 'CUSTOMER' });
+  const { data: promotions = [] } = usePromotions({ isActive: true });
   const checkIn = useCheckIn();
   const walkInCheckIn = useWalkInCheckIn();
-  const checkOut = useCheckOut();
-  const addFolioEntry = useAddFolioEntry();
 
-  const [selectedRooms, setSelectedRooms] = useState<Record<string, string>>({});
-  const [folioStayId, setFólioStayId] = useState<string | null>(null);
-  const [accountAction, setAccountAction] = useState<'PAYMENT' | 'ROOM_SERVICE' | 'ADJUSTMENT'>('PAYMENT');
+  // Guest sheet state
+  const [selectedStay, setSelectedStay] = useState<Stay | null>(null);
+  const [guestSheetOpen, setGuestSheetOpen] = useState(false);
+
+  // Check-in dialog state (for arrivals)
+  const [checkInReservation, setCheckInReservation] = useState<Reservation | null>(null);
+  const [checkInRoomId, setCheckInRoomId] = useState('');
+
+  // Walk-in dialog state
   const [walkInDialogOpen, setWalkInDialogOpen] = useState(false);
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
   const [walkInSearch, setWalkInSearch] = useState('');
@@ -74,132 +68,94 @@ export default function Frontdesk() {
     adults: '1',
     children: '0',
     notes: '',
+    promotionId: '',
   });
-  const [entryForm, setEntryForm] = useState({
-    type: 'PAYMENT' as FolioEntryType,
-    amount: '',
-    description: '',
-  });
-
-  const { data: folio } = useFolio(folioStayId ?? undefined);
 
   const availableRoomUnitsByAccommodation = useMemo(() => {
-    return roomUnits.reduce<Record<string, RoomUnit[]>>((accumulator, roomUnit) => {
-      if (!roomUnit.isActive) {
-        return accumulator;
-      }
-
-      const isAvailable =
-        ['AVAILABLE', 'INSPECTED'].includes(roomUnit.status) &&
-        ['CLEAN', 'INSPECTED'].includes(roomUnit.housekeepingStatus);
-
-      if (!isAvailable) {
-        return accumulator;
-      }
-
-      if (!accumulator[roomUnit.accommodationId]) {
-        accumulator[roomUnit.accommodationId] = [];
-      }
-
-      accumulator[roomUnit.accommodationId].push(roomUnit);
-      return accumulator;
+    return roomUnits.reduce<Record<string, RoomUnit[]>>((acc, ru) => {
+      if (!ru.isActive) return acc;
+      const ok =
+        ['AVAILABLE', 'INSPECTED'].includes(ru.status) &&
+        ['CLEAN', 'INSPECTED'].includes(ru.housekeepingStatus);
+      if (!ok) return acc;
+      if (!acc[ru.accommodationId]) acc[ru.accommodationId] = [];
+      acc[ru.accommodationId].push(ru);
+      return acc;
     }, {});
   }, [roomUnits]);
 
   const availableWalkInRooms = useMemo(
     () =>
       roomUnits.filter(
-        (roomUnit) =>
-          roomUnit.isActive &&
-          ['AVAILABLE', 'INSPECTED'].includes(roomUnit.status) &&
-          ['CLEAN', 'INSPECTED'].includes(roomUnit.housekeepingStatus)
+        (ru) =>
+          ru.isActive &&
+          ['AVAILABLE', 'INSPECTED'].includes(ru.status) &&
+          ['CLEAN', 'INSPECTED'].includes(ru.housekeepingStatus)
       ),
     [roomUnits]
   );
 
   const selectedWalkInCustomer = useMemo(
-    () => customers.find((customer) => customer.id === walkInForm.customerId),
+    () => customers.find((c) => c.id === walkInForm.customerId),
     [customers, walkInForm.customerId]
   );
 
   const selectedWalkInRoom = useMemo(
-    () => availableWalkInRooms.find((roomUnit) => roomUnit.id === walkInForm.roomUnitId),
+    () => availableWalkInRooms.find((ru) => ru.id === walkInForm.roomUnitId),
     [availableWalkInRooms, walkInForm.roomUnitId]
   );
 
   const customerSearchResults = useMemo(() => {
-    const query = walkInSearch.trim().toLowerCase();
-
-    if (!query) {
-      return [];
-    }
-
-    return customers.filter((customer) => {
-      const haystack = [customer.name, customer.email, customer.phone, customer.whatsapp, customer.cpf]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-
-      return haystack.includes(query);
-    });
+    const q = walkInSearch.trim().toLowerCase();
+    if (!q) return [];
+    return customers.filter((c) =>
+      [c.name, c.email, c.phone, c.whatsapp, c.cpf].filter(Boolean).join(' ').toLowerCase().includes(q)
+    );
   }, [customers, walkInSearch]);
 
   const selectedSearchCustomer = useMemo(
-    () => customers.find((customer) => customer.id === walkInForm.customerId),
+    () => customers.find((c) => c.id === walkInForm.customerId),
     [customers, walkInForm.customerId]
   );
 
-  const selectedFolioStay = useMemo(
-    () => dashboard?.inHouse.find((stay) => stay.id === folioStayId) ?? null,
-    [dashboard?.inHouse, folioStayId]
-  );
-
-  const folioSummary = useMemo(() => {
-    if (!folio) {
-      return {
-        charges: 0,
-        credits: 0,
-      };
-    }
-
-    return folio.entries.reduce(
-      (summary, entry) => {
-        if (Number(entry.amount) >= 0) {
-          summary.charges += Number(entry.amount);
-        } else {
-          summary.credits += Math.abs(Number(entry.amount));
-        }
-
-        return summary;
-      },
-      { charges: 0, credits: 0 }
-    );
-  }, [folio]);
-
-  const handleCheckIn = (reservation: Reservation) => {
-    const roomUnitId = selectedRooms[reservation.id];
-
-    if (!roomUnitId) {
-      return;
-    }
-
-    checkIn.mutate({
-      reservationId: reservation.id,
-      roomUnitId,
-    });
+  // Handlers
+  const handleSelectStay = (stay: Stay) => {
+    setSelectedStay(stay);
+    setGuestSheetOpen(true);
   };
 
-  const handleCheckOut = (stay: Stay) => {
-    checkOut.mutate({
-      stayId: stay.id,
-    });
+  const handleSelectStayById = (stayId: string) => {
+    const stay = (dashboard?.inHouse ?? []).find((s) => s.id === stayId);
+    if (stay) {
+      setSelectedStay(stay);
+      setGuestSheetOpen(true);
+    }
+  };
+
+  const handleSelectArrival = (reservation: Reservation) => {
+    setCheckInReservation(reservation);
+    setCheckInRoomId('');
+  };
+
+  const handleRoomMapCheckIn = (reservationId: string, roomUnitId: string) => {
+    checkIn.mutate({ reservationId, roomUnitId });
+  };
+
+  const handleConfirmCheckIn = () => {
+    if (!checkInReservation || !checkInRoomId) return;
+    checkIn.mutate(
+      { reservationId: checkInReservation.id, roomUnitId: checkInRoomId },
+      {
+        onSuccess: () => {
+          setCheckInReservation(null);
+          setCheckInRoomId('');
+        },
+      }
+    );
   };
 
   const handleWalkInCheckIn = () => {
-    if (!walkInForm.roomUnitId) {
-      return;
-    }
-
+    if (!walkInForm.roomUnitId) return;
     walkInCheckIn.mutate(
       {
         roomUnitId: walkInForm.roomUnitId,
@@ -214,22 +170,17 @@ export default function Frontdesk() {
         adults: Number(walkInForm.adults),
         children: Number(walkInForm.children || 0),
         notes: walkInForm.notes.trim() || undefined,
+        promotionId: walkInForm.promotionId || undefined,
       },
       {
         onSuccess: () => {
+          setWalkInDialogOpen(false);
           setWalkInForm({
-            roomUnitId: '',
-            customerId: '',
-            guestName: '',
-            guestEmail: '',
-            guestPhone: '',
-            guestWhatsApp: '',
-            guestCpf: '',
+            roomUnitId: '', customerId: '', guestName: '', guestEmail: '', guestPhone: '',
+            guestWhatsApp: '', guestCpf: '',
             checkInDate: new Date().toISOString().slice(0, 10),
             checkOutDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
-            adults: '1',
-            children: '0',
-            notes: '',
+            adults: '1', children: '0', notes: '', promotionId: '',
           });
         },
       }
@@ -238,117 +189,66 @@ export default function Frontdesk() {
 
   const openWalkInDialog = () => {
     const firstMatch = selectedSearchCustomer ?? customerSearchResults[0];
-
-    setWalkInForm((current) => ({
-      ...current,
+    setWalkInForm((cur) => ({
+      ...cur,
       customerId: firstMatch?.id ?? '',
       guestName: firstMatch ? '' : walkInSearch.trim(),
-      guestEmail: firstMatch ? '' : current.guestEmail,
-      guestPhone: firstMatch ? '' : current.guestPhone,
-      guestWhatsApp: firstMatch ? '' : current.guestWhatsApp,
-      guestCpf: firstMatch ? '' : current.guestCpf,
+      guestEmail: firstMatch ? '' : cur.guestEmail,
+      guestPhone: firstMatch ? '' : cur.guestPhone,
+      guestWhatsApp: firstMatch ? '' : cur.guestWhatsApp,
+      guestCpf: firstMatch ? '' : cur.guestCpf,
     }));
-
     setWalkInDialogOpen(true);
   };
 
   const handleWalkInSearchChange = (value: string) => {
     setWalkInSearch(value);
-
     if (walkInForm.customerId) {
-      setWalkInForm((current) => ({
-        ...current,
-        customerId: '',
-      }));
+      setWalkInForm((cur) => ({ ...cur, customerId: '' }));
     }
   };
 
   const handleSelectCustomerFromSearch = (customerId: string) => {
-    const customer = customers.find((item) => item.id === customerId);
-
-    if (!customer) {
-      return;
-    }
-
+    const customer = customers.find((c) => c.id === customerId);
+    if (!customer) return;
     setWalkInSearch(customer.name);
-    setWalkInForm((current) => ({
-      ...current,
-      customerId: customer.id,
-      guestName: '',
-      guestEmail: '',
-      guestPhone: '',
-      guestWhatsApp: '',
-      guestCpf: '',
+    setWalkInForm((cur) => ({
+      ...cur, customerId: customer.id,
+      guestName: '', guestEmail: '', guestPhone: '', guestWhatsApp: '', guestCpf: '',
     }));
   };
 
-  const handleAddEntry = () => {
-    if (!folio || !entryForm.amount || !entryForm.description) {
-      return;
-    }
-
-    addFolioEntry.mutate({
-      folioId: folio.id,
-      payload: {
-        type: entryForm.type,
-        source: 'MANUAL',
-        description: entryForm.description,
-        amount: Number(entryForm.amount),
-      },
-    });
-
-    setEntryForm({
-      type: 'PAYMENT',
-      amount: '',
-      description: '',
-    });
-    setAccountAction('PAYMENT');
-  };
-
-  const openAccount = (stayId: string) => {
-    setFólioStayId(stayId);
-    setAccountAction('PAYMENT');
-    setEntryForm({
-      type: 'PAYMENT',
-      amount: '',
-      description: '',
-    });
-  };
-
-  const selectAccountAction = (action: 'PAYMENT' | 'ROOM_SERVICE' | 'ADJUSTMENT') => {
-    setAccountAction(action);
-    setEntryForm((current) => ({
-      ...current,
-      type: action,
-      description:
-        action === 'PAYMENT'
-          ? current.type === 'PAYMENT'
-            ? current.description
-            : 'Pagamento recebido na recepção'
-          : action === 'ROOM_SERVICE'
-            ? current.type === 'ROOM_SERVICE'
-              ? current.description
-              : 'Consumo lançado manualmente pela recepção'
-            : current.type === 'ADJUSTMENT'
-              ? current.description
-              : 'Ajuste manual da conta',
-    }));
-  };
+  const checkInCandidateRooms = checkInReservation
+    ? availableRoomUnitsByAccommodation[checkInReservation.accommodationId] ?? []
+    : [];
 
   return (
     <AdminLayout>
       <div className="flex flex-col gap-6 p-6">
-        <div>
-          <h1 className="text-3xl font-bold">Recepção</h1>
-          <p className="text-gray-600 mt-1">
-            Operação do dia conectada diretamente às reservas do site.
-          </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Hospedagens</h1>
+            <p className="text-gray-600 mt-1">
+              Visao completa centrada no hospede.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link to="/admin/reservations">Calendario</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/admin/housekeeping">Governanca</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/admin/room-units">Quartos</Link>
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle>Ação rápida</CardTitle>
+              <CardTitle>Acao rapida</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
@@ -357,7 +257,7 @@ export default function Frontdesk() {
                   <Input
                     id="walkin-search"
                     value={walkInSearch}
-                    onChange={(event) => handleWalkInSearchChange(event.target.value)}
+                    onChange={(e) => handleWalkInSearchChange(e.target.value)}
                     placeholder="Nome, WhatsApp, telefone, email ou CPF"
                   />
                   {walkInSearch.trim() ? (
@@ -382,14 +282,14 @@ export default function Frontdesk() {
                         </div>
                       ) : (
                         <div className="px-3 py-2 text-sm text-gray-500">
-                          Nenhum hóspede encontrado para essa pesquisa.
+                          Nenhum hospede encontrado para essa pesquisa.
                         </div>
                       )}
                     </div>
                   ) : null}
                 </div>
                 <div className="flex gap-2 lg:pt-7">
-                  <Button onClick={openWalkInDialog}>Fazer check-in</Button>
+                  <Button onClick={openWalkInDialog}>Walk-in</Button>
                   <Button variant="outline" onClick={() => setCustomerDialogOpen(true)}>
                     Cadastrar cliente
                   </Button>
@@ -416,374 +316,99 @@ export default function Frontdesk() {
             <CardContent className="space-y-3">
               <CompactMetric label="Chegadas" value={String(dashboard?.arrivals.length ?? 0)} />
               <CompactMetric label="Hospedados" value={String(dashboard?.inHouse.length ?? 0)} />
-              <CompactMetric label="Saídas" value={String(dashboard?.departures.length ?? 0)} />
+              <CompactMetric label="Saidas" value={String(dashboard?.departures.length ?? 0)} />
               <CompactMetric label="Quartos livres" value={String(dashboard?.roomStats.available ?? 0)} />
               <CompactMetric label="Quartos sujos" value={String(dashboard?.roomStats.dirty ?? 0)} />
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="arrivals" className="space-y-4">
-          <TabsList className="h-auto flex-wrap rounded-2xl bg-slate-100 p-1">
-            <TabsTrigger value="arrivals" className="rounded-xl px-4 py-2">Chegadas</TabsTrigger>
-            <TabsTrigger value="in-house" className="rounded-xl px-4 py-2">Hospedados</TabsTrigger>
-            <TabsTrigger value="rooms" className="rounded-xl px-4 py-2">Quartos e saídas</TabsTrigger>
+        <Tabs defaultValue="guests" className="w-full">
+          <TabsList>
+            <TabsTrigger value="guests">Hospedes</TabsTrigger>
+            <TabsTrigger value="rooms">Quartos</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="arrivals" className="mt-0">
-            <Card>
-              <CardHeader>
-                <CardTitle>Chegadas do dia</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Reserva</TableHead>
-                      <TableHead>Hóspede</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Período</TableHead>
-                      <TableHead>Quarto</TableHead>
-                      <TableHead className="text-right">Ação</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={6}>Carregando recepção...</TableCell>
-                      </TableRow>
-                    ) : !dashboard?.arrivals.length ? (
-                      <TableRow>
-                        <TableCell colSpan={6}>Nenhuma chegada pendente hoje.</TableCell>
-                      </TableRow>
-                    ) : (
-                      dashboard.arrivals.map((reservation) => {
-                        const candidateRooms = availableRoomUnitsByAccommodation[reservation.accommodationId] ?? [];
-
-                        return (
-                          <TableRow key={reservation.id}>
-                            <TableCell className="font-mono">{reservation.reservationCode}</TableCell>
-                            <TableCell>{reservation.guestName}</TableCell>
-                            <TableCell>{reservation.accommodation?.name}</TableCell>
-                            <TableCell>
-                              {new Date(reservation.checkInDate).toLocaleDateString('pt-BR')} até{' '}
-                              {new Date(reservation.checkOutDate).toLocaleDateString('pt-BR')}
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                value={selectedRooms[reservation.id] ?? ''}
-                                onValueChange={(value) =>
-                                  setSelectedRooms((current) => ({ ...current, [reservation.id]: value }))
-                                }
-                              >
-                                <SelectTrigger className="w-[220px]">
-                                  <SelectValue placeholder="Selecionar quarto" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {candidateRooms.map((roomUnit) => (
-                                    <SelectItem key={roomUnit.id} value={roomUnit.id}>
-                                      {roomUnit.code} - {roomUnit.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                onClick={() => handleCheckIn(reservation)}
-                                disabled={!selectedRooms[reservation.id] || checkIn.isPending}
-                              >
-                                Fazer check-in
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+          <TabsContent value="guests">
+            <StaysList
+              inHouse={dashboard?.inHouse ?? []}
+              arrivals={dashboard?.arrivals ?? []}
+              departures={dashboard?.departures ?? []}
+              isLoading={isLoading}
+              onSelectStay={handleSelectStay}
+              onSelectArrival={handleSelectArrival}
+            />
           </TabsContent>
-
-          <TabsContent value="in-house" className="mt-0">
-            <Card>
-              <CardHeader>
-                <CardTitle>Hospedagens ativas</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Reserva</TableHead>
-                      <TableHead>Hóspede</TableHead>
-                      <TableHead>Quarto</TableHead>
-                      <TableHead>Saída prevista</TableHead>
-                      <TableHead>Saldo</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {!dashboard?.inHouse.length ? (
-                      <TableRow>
-                        <TableCell colSpan={6}>Nenhuma hospedagem ativa.</TableCell>
-                      </TableRow>
-                    ) : (
-                      dashboard.inHouse.map((stay) => (
-                        <TableRow key={stay.id}>
-                          <TableCell className="font-mono">{stay.reservation.reservationCode}</TableCell>
-                          <TableCell>{stay.reservation.guestName}</TableCell>
-                          <TableCell>{stay.roomUnit?.code || '-'}</TableCell>
-                          <TableCell>
-                            {new Date(stay.reservation.checkOutDate).toLocaleDateString('pt-BR')}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={Number(stay.folio?.balance || 0) > 0 ? 'destructive' : 'default'}>
-                              {currencyFormatter.format(Number(stay.folio?.balance || 0))}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button variant="outline" onClick={() => openAccount(stay.id)}>
-                                <Banknote className="mr-2 h-4 w-4" />
-                                Conta
-                              </Button>
-                              <Button onClick={() => handleCheckOut(stay)} disabled={checkOut.isPending}>
-                                Check-out
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="rooms" className="mt-0">
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Saídas do dia</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Reserva</TableHead>
-                        <TableHead>Hóspede</TableHead>
-                        <TableHead>Quarto</TableHead>
-                        <TableHead className="text-right">Saldo</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {!dashboard?.departures.length ? (
-                        <TableRow>
-                          <TableCell colSpan={4}>Nenhuma saída pendente hoje.</TableCell>
-                        </TableRow>
-                      ) : (
-                        dashboard.departures.map((stay) => (
-                          <TableRow key={stay.id}>
-                            <TableCell className="font-mono">{stay.reservation.reservationCode}</TableCell>
-                            <TableCell>{stay.reservation.guestName}</TableCell>
-                            <TableCell>{stay.roomUnit?.code || '-'}</TableCell>
-                            <TableCell className="text-right">
-                              {currencyFormatter.format(Number(stay.folio?.balance || 0))}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Operação de quartos</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <CompactMetric label="Disponíveis para walk-in" value={String(availableWalkInRooms.length)} />
-                  <CompactMetric label="Quartos livres" value={String(dashboard?.roomStats.available ?? 0)} />
-                  <CompactMetric label="Quartos sujos" value={String(dashboard?.roomStats.dirty ?? 0)} />
-                  <div className="grid gap-2 pt-2">
-                    <Button asChild variant="outline"><Link to="/admin/reservations">Calendário operacional</Link></Button>
-                    <Button asChild variant="outline"><Link to="/admin/housekeeping">Abrir governança</Link></Button>
-                    <Button asChild variant="outline"><Link to="/admin/maintenance">Abrir manutenção</Link></Button>
-                    <Button asChild variant="outline"><Link to="/admin/room-units">Abrir quartos</Link></Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          <TabsContent value="rooms">
+            <RoomMap
+              rooms={roomMapData?.rooms ?? []}
+              floors={roomMapData?.floors ?? []}
+              isLoading={isRoomMapLoading}
+              onSelectStay={handleSelectStayById}
+              onCheckInArrival={handleRoomMapCheckIn}
+            />
           </TabsContent>
         </Tabs>
       </div>
 
-      <Dialog open={Boolean(folioStayId)} onOpenChange={(open) => !open && setFólioStayId(null)}>
-        <DialogContent className="max-w-4xl">
+      <GuestSheet
+        stay={selectedStay}
+        open={guestSheetOpen}
+        onOpenChange={setGuestSheetOpen}
+      />
+
+      {/* Check-in dialog for arrivals */}
+      <Dialog open={Boolean(checkInReservation)} onOpenChange={(open) => !open && setCheckInReservation(null)}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Conta da hospedagem</DialogTitle>
+            <DialogTitle>Check-in</DialogTitle>
             <DialogDescription>
-              Recebimentos, consumos extras e ajustes da hospedagem.
+              {checkInReservation?.guestName} - {checkInReservation?.reservationCode}
             </DialogDescription>
           </DialogHeader>
-
-          {!folio ? (
-            <div>Carregando conta...</div>
-          ) : (
-            <div className="grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
-              <div className="space-y-4">
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <CompactMetric label="Hóspede" value={selectedFolioStay?.reservation.guestName || '-'} />
-                  <CompactMetric label="Quarto" value={selectedFolioStay?.roomUnit?.code || '-'} />
-                  <CompactMetric label="Saldo atual" value={currencyFormatter.format(Number(folio.balance))} />
-                  <CompactMetric
-                    label="Saída prevista"
-                    value={
-                      selectedFolioStay
-                        ? new Date(selectedFolioStay.reservation.checkOutDate).toLocaleDateString('pt-BR')
-                        : '-'
-                    }
-                  />
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border bg-slate-50 p-4">
-                    <div className="text-xs uppercase tracking-[0.08em] text-slate-500">Débitos</div>
-                    <div className="mt-2 text-xl font-semibold text-slate-900">
-                      {currencyFormatter.format(folioSummary.charges)}
-                    </div>
-                  </div>
-                  <div className="rounded-xl border bg-slate-50 p-4">
-                    <div className="text-xs uppercase tracking-[0.08em] text-slate-500">Créditos</div>
-                    <div className="mt-2 text-xl font-semibold text-slate-900">
-                      {currencyFormatter.format(folioSummary.credits)}
-                    </div>
-                  </div>
-                </div>
-
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle>Histórico da conta</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {!folio.entries.length ? (
-                      <div className="rounded-xl border border-dashed p-6 text-center text-sm text-slate-500">
-                        Nenhum lançamento encontrado.
-                      </div>
-                    ) : (
-                      folio.entries.map((entry) => {
-                        const isCredit = Number(entry.amount) < 0;
-
-                        return (
-                          <div key={entry.id} className="rounded-xl border p-3">
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <div className="font-medium text-slate-900">{entry.description}</div>
-                                <div className="mt-1 text-sm text-slate-500">
-                                  {entryTypeLabels[entry.type]} • {new Date(entry.postedAt).toLocaleString('pt-BR')}
-                                </div>
-                              </div>
-                              <div className={`shrink-0 text-right text-sm font-semibold ${isCredit ? 'text-emerald-600' : 'text-slate-900'}`}>
-                                {currencyFormatter.format(Number(entry.amount))}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Ação rápida na conta</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-2">
-                    <Button
-                      type="button"
-                      variant={accountAction === 'PAYMENT' ? 'default' : 'outline'}
-                      onClick={() => selectAccountAction('PAYMENT')}
-                    >
-                      Receber pagamento
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={accountAction === 'ROOM_SERVICE' ? 'default' : 'outline'}
-                      onClick={() => selectAccountAction('ROOM_SERVICE')}
-                    >
-                      Lançar consumo manual
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={accountAction === 'ADJUSTMENT' ? 'default' : 'outline'}
-                      onClick={() => selectAccountAction('ADJUSTMENT')}
-                    >
-                      Fazer ajuste
-                    </Button>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>
-                      {accountAction === 'PAYMENT'
-                        ? 'Valor recebido'
-                        : accountAction === 'ROOM_SERVICE'
-                          ? 'Valor do consumo'
-                          : 'Valor do ajuste'}
-                    </Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={entryForm.amount}
-                      onChange={(event) => setEntryForm((current) => ({ ...current, amount: event.target.value }))}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Descrição</Label>
-                    <Textarea
-                      placeholder={
-                        accountAction === 'PAYMENT'
-                          ? 'Ex.: pagamento em dinheiro na recepção'
-                          : accountAction === 'ROOM_SERVICE'
-                            ? 'Ex.: consumo extra lançado pela recepção'
-                            : 'Ex.: ajuste de tarifa ou correção manual'
-                      }
-                      value={entryForm.description}
-                      onChange={(event) => setEntryForm((current) => ({ ...current, description: event.target.value }))}
-                    />
-                  </div>
-
-                  <Button className="w-full" onClick={handleAddEntry} disabled={addFolioEntry.isPending}>
-                    {accountAction === 'PAYMENT'
-                      ? 'Registrar pagamento'
-                      : accountAction === 'ROOM_SERVICE'
-                        ? 'Registrar consumo'
-                        : 'Registrar ajuste'}
-                  </Button>
-
-                  <div className="rounded-xl border bg-slate-50 p-3 text-sm text-slate-600">
-                    Use o <strong>PDV</strong> para lançamentos normais de consumo. Esta tela fica para cobrança,
-                    consumo manual excepcional e ajustes da recepção.
-                  </div>
-                </CardContent>
-              </Card>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Selecionar quarto</Label>
+              <Select value={checkInRoomId || 'none'} onValueChange={(v) => setCheckInRoomId(v === 'none' ? '' : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar quarto disponivel" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Selecione</SelectItem>
+                  {checkInCandidateRooms.map((ru) => (
+                    <SelectItem key={ru.id} value={ru.id}>
+                      {ru.code} - {ru.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!checkInCandidateRooms.length && (
+                <p className="text-sm text-amber-600">
+                  Nenhum quarto disponivel para esta acomodacao.
+                </p>
+              )}
             </div>
-          )}
+            <div className="text-sm text-gray-500">
+              {checkInReservation?.accommodation?.name} &bull;{' '}
+              {checkInReservation && new Date(checkInReservation.checkInDate).toLocaleDateString('pt-BR')} -{' '}
+              {checkInReservation && new Date(checkInReservation.checkOutDate).toLocaleDateString('pt-BR')}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCheckInReservation(null)}>Cancelar</Button>
+            <Button onClick={handleConfirmCheckIn} disabled={!checkInRoomId || checkIn.isPending}>
+              Confirmar check-in
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Walk-in dialog */}
       <Dialog open={walkInDialogOpen} onOpenChange={setWalkInDialogOpen}>
         <DialogContent className="max-w-5xl">
           <DialogHeader>
-            <DialogTitle>Check-in de balcão</DialogTitle>
+            <DialogTitle>Check-in de balcao</DialogTitle>
             <DialogDescription>
-              Selecione o hóspede e o quarto disponível para abrir a hospedagem na recepção.
+              Selecione o hospede e o quarto disponivel para abrir a hospedagem na recepcao.
             </DialogDescription>
           </DialogHeader>
 
@@ -794,10 +419,10 @@ export default function Frontdesk() {
                 <Select
                   value={walkInForm.customerId || 'none'}
                   onValueChange={(value) =>
-                    setWalkInForm((current) => ({
-                      ...current,
+                    setWalkInForm((cur) => ({
+                      ...cur,
                       customerId: value === 'none' ? '' : value,
-                      guestName: value === 'none' ? current.guestName : '',
+                      guestName: value === 'none' ? cur.guestName : '',
                     }))
                   }
                 >
@@ -805,7 +430,7 @@ export default function Frontdesk() {
                     <SelectValue placeholder="Selecionar cliente existente" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">Informar hóspede manualmente</SelectItem>
+                    <SelectItem value="none">Informar hospede manualmente</SelectItem>
                     {customers.map((customer) => (
                       <SelectItem key={customer.id} value={customer.id}>
                         {customer.name} {customer.whatsapp ? `- ${customer.whatsapp}` : ''}
@@ -824,45 +449,24 @@ export default function Frontdesk() {
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="walkin-name">Nome do hóspede</Label>
-                    <Input
-                      id="walkin-name"
-                      value={walkInForm.guestName}
-                      onChange={(event) => setWalkInForm((current) => ({ ...current, guestName: event.target.value }))}
-                    />
+                    <Label htmlFor="walkin-name">Nome do hospede</Label>
+                    <Input id="walkin-name" value={walkInForm.guestName} onChange={(e) => setWalkInForm((cur) => ({ ...cur, guestName: e.target.value }))} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="walkin-email">Email</Label>
-                    <Input
-                      id="walkin-email"
-                      type="email"
-                      value={walkInForm.guestEmail}
-                      onChange={(event) => setWalkInForm((current) => ({ ...current, guestEmail: event.target.value }))}
-                    />
+                    <Input id="walkin-email" type="email" value={walkInForm.guestEmail} onChange={(e) => setWalkInForm((cur) => ({ ...cur, guestEmail: e.target.value }))} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="walkin-phone">Telefone</Label>
-                    <Input
-                      id="walkin-phone"
-                      value={walkInForm.guestPhone}
-                      onChange={(event) => setWalkInForm((current) => ({ ...current, guestPhone: event.target.value }))}
-                    />
+                    <Input id="walkin-phone" value={walkInForm.guestPhone} onChange={(e) => setWalkInForm((cur) => ({ ...cur, guestPhone: e.target.value }))} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="walkin-whatsapp">WhatsApp</Label>
-                    <Input
-                      id="walkin-whatsapp"
-                      value={walkInForm.guestWhatsApp}
-                      onChange={(event) => setWalkInForm((current) => ({ ...current, guestWhatsApp: event.target.value }))}
-                    />
+                    <Input id="walkin-whatsapp" value={walkInForm.guestWhatsApp} onChange={(e) => setWalkInForm((cur) => ({ ...cur, guestWhatsApp: e.target.value }))} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="walkin-cpf">CPF</Label>
-                    <Input
-                      id="walkin-cpf"
-                      value={walkInForm.guestCpf}
-                      onChange={(event) => setWalkInForm((current) => ({ ...current, guestCpf: event.target.value }))}
-                    />
+                    <Input id="walkin-cpf" value={walkInForm.guestCpf} onChange={(e) => setWalkInForm((cur) => ({ ...cur, guestCpf: e.target.value }))} />
                   </div>
                 </div>
               )}
@@ -870,24 +474,19 @@ export default function Frontdesk() {
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Quarto disponível</Label>
+                <Label>Quarto disponivel</Label>
                 <Select
                   value={walkInForm.roomUnitId || 'none'}
-                  onValueChange={(value) =>
-                    setWalkInForm((current) => ({
-                      ...current,
-                      roomUnitId: value === 'none' ? '' : value,
-                    }))
-                  }
+                  onValueChange={(v) => setWalkInForm((cur) => ({ ...cur, roomUnitId: v === 'none' ? '' : v }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecionar quarto disponível" />
+                    <SelectValue placeholder="Selecionar quarto disponivel" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Selecione</SelectItem>
-                    {availableWalkInRooms.map((roomUnit) => (
-                      <SelectItem key={roomUnit.id} value={roomUnit.id}>
-                        {roomUnit.code} - {roomUnit.name} - {roomUnit.accommodation?.name}
+                    {availableWalkInRooms.map((ru) => (
+                      <SelectItem key={ru.id} value={ru.id}>
+                        {ru.code} - {ru.name} - {ru.accommodation?.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -897,51 +496,50 @@ export default function Frontdesk() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="walkin-checkin">Check-in</Label>
-                  <Input
-                    id="walkin-checkin"
-                    type="date"
-                    value={walkInForm.checkInDate}
-                    onChange={(event) => setWalkInForm((current) => ({ ...current, checkInDate: event.target.value }))}
-                  />
+                  <Input id="walkin-checkin" type="date" value={walkInForm.checkInDate} onChange={(e) => setWalkInForm((cur) => ({ ...cur, checkInDate: e.target.value }))} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="walkin-checkout">Check-out</Label>
-                  <Input
-                    id="walkin-checkout"
-                    type="date"
-                    value={walkInForm.checkOutDate}
-                    onChange={(event) => setWalkInForm((current) => ({ ...current, checkOutDate: event.target.value }))}
-                  />
+                  <Input id="walkin-checkout" type="date" value={walkInForm.checkOutDate} onChange={(e) => setWalkInForm((cur) => ({ ...cur, checkOutDate: e.target.value }))} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="walkin-adults">Adultos</Label>
-                  <Input
-                    id="walkin-adults"
-                    type="number"
-                    min={1}
-                    value={walkInForm.adults}
-                    onChange={(event) => setWalkInForm((current) => ({ ...current, adults: event.target.value }))}
-                  />
+                  <Input id="walkin-adults" type="number" min={1} value={walkInForm.adults} onChange={(e) => setWalkInForm((cur) => ({ ...cur, adults: e.target.value }))} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="walkin-children">Crianças</Label>
-                  <Input
-                    id="walkin-children"
-                    type="number"
-                    min={0}
-                    value={walkInForm.children}
-                    onChange={(event) => setWalkInForm((current) => ({ ...current, children: event.target.value }))}
-                  />
+                  <Label htmlFor="walkin-children">Criancas</Label>
+                  <Input id="walkin-children" type="number" min={0} value={walkInForm.children} onChange={(e) => setWalkInForm((cur) => ({ ...cur, children: e.target.value }))} />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="walkin-notes">Observações</Label>
+                <Label>Promocao / Pacote</Label>
+                <Select
+                  value={walkInForm.promotionId || 'none'}
+                  onValueChange={(v) => setWalkInForm((cur) => ({ ...cur, promotionId: v === 'none' ? '' : v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Nenhuma promocao" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhuma promocao</SelectItem>
+                    {promotions.map((promo: any) => (
+                      <SelectItem key={promo.id} value={promo.id}>
+                        {promo.title}
+                        {promo.discountPercent ? ` (-${promo.discountPercent}%)` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="walkin-notes">Observacoes</Label>
                 <Textarea
                   id="walkin-notes"
                   value={walkInForm.notes}
-                  onChange={(event) => setWalkInForm((current) => ({ ...current, notes: event.target.value }))}
-                  placeholder="Preferências, garantia, observações da recepção..."
+                  onChange={(e) => setWalkInForm((cur) => ({ ...cur, notes: e.target.value }))}
+                  placeholder="Preferencias, garantia, observacoes da recepcao..."
                 />
               </div>
 
@@ -951,10 +549,10 @@ export default function Frontdesk() {
                 </div>
                 <div>{selectedWalkInRoom ? `${selectedWalkInRoom.code} - ${selectedWalkInRoom.name}` : 'Sem quarto definido'}</div>
                 <div>
-                  Diária padrão:{' '}
+                  Diaria padrao:{' '}
                   {selectedWalkInRoom
                     ? currencyFormatter.format(
-                        accommodations.find((item) => item.id === selectedWalkInRoom.accommodationId)?.pricePerNight || 0
+                        accommodations.find((a) => a.id === selectedWalkInRoom.accommodationId)?.pricePerNight || 0
                       )
                     : currencyFormatter.format(0)}
                 </div>
@@ -991,6 +589,3 @@ function CompactMetric({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
-
-

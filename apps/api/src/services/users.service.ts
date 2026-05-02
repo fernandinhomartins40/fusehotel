@@ -123,7 +123,7 @@ export class UserService {
         ? filters.role
         : undefined;
 
-    return prisma.user.findMany({
+    const users = await prisma.user.findMany({
       where: {
         role: normalizedRole,
         isActive: filters.isActive !== undefined ? filters.isActive === 'true' : undefined,
@@ -154,8 +154,24 @@ export class UserService {
             reservations: true,
           },
         },
+        reservations: {
+          select: {
+            totalAmount: true,
+            stay: {
+              select: { id: true, status: true },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
+    });
+
+    return users.map((user) => {
+      const totalSpent = user.reservations.reduce((sum, r) => sum + Number(r.totalAmount ?? 0), 0);
+      const stayCount = user.reservations.filter((r) => r.stay).length;
+      const hasActiveStay = user.reservations.some((r) => r.stay?.status === 'IN_HOUSE');
+      const { reservations: _, ...rest } = user;
+      return { ...rest, totalSpent, stayCount, hasActiveStay };
     });
   }
 
@@ -234,6 +250,59 @@ export class UserService {
         isActive: true,
       },
     });
+  }
+
+  static async getStayHistory(userId: string) {
+    await this.getById(userId);
+
+    const stays = await prisma.stay.findMany({
+      where: {
+        reservation: { userId },
+      },
+      select: {
+        id: true,
+        status: true,
+        actualCheckInAt: true,
+        actualCheckOutAt: true,
+        adults: true,
+        children: true,
+        roomUnit: {
+          select: { id: true, code: true, name: true },
+        },
+        reservation: {
+          select: {
+            id: true,
+            reservationCode: true,
+            checkInDate: true,
+            checkOutDate: true,
+            numberOfNights: true,
+            totalAmount: true,
+            source: true,
+            accommodation: {
+              select: { id: true, name: true, type: true },
+            },
+          },
+        },
+        folio: {
+          select: { id: true, balance: true, isClosed: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const totalSpent = stays.reduce((sum, s) => sum + Number(s.reservation.totalAmount ?? 0), 0);
+    const totalStays = stays.length;
+    const activeStay = stays.find((s) => s.status === 'IN_HOUSE') ?? null;
+
+    return {
+      stays,
+      summary: {
+        totalStays,
+        totalSpent,
+        hasActiveStay: Boolean(activeStay),
+        activeStayId: activeStay?.id ?? null,
+      },
+    };
   }
 
   static async delete(id: string) {

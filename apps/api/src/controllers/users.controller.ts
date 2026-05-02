@@ -68,6 +68,15 @@ export class UserController {
     }
   }
 
+  static async stayHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await UserService.getStayHistory(req.params.id);
+      return sendSuccess(res, data);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async delete(req: Request, res: Response, next: NextFunction) {
     try {
       await UserService.delete(req.params.id);

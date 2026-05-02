@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
-import type { FrontdeskDashboard, Stay } from '@/types/pms';
+import type { FrontdeskDashboard, RoomMapData, Stay } from '@/types/pms';
 
 export function useFrontdeskDashboard(date?: string) {
   return useQuery<FrontdeskDashboard>({
@@ -10,6 +10,16 @@ export function useFrontdeskDashboard(date?: string) {
       const { data } = await apiClient.get('/frontdesk/dashboard', {
         params: date ? { date } : undefined,
       });
+      return data.data;
+    },
+  });
+}
+
+export function useRoomMap() {
+  return useQuery<RoomMapData>({
+    queryKey: ['room-map'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/frontdesk/room-map');
       return data.data;
     },
   });
@@ -37,6 +47,7 @@ export function useCheckIn() {
       queryClient.invalidateQueries({ queryKey: ['frontdesk-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['stays'] });
       queryClient.invalidateQueries({ queryKey: ['room-units'] });
+      queryClient.invalidateQueries({ queryKey: ['room-map'] });
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
       queryClient.invalidateQueries({ queryKey: ['admin-reservations'] });
       toast.success('Check-in realizado com sucesso');
@@ -64,6 +75,7 @@ export function useWalkInCheckIn() {
       adults: number;
       children?: number;
       notes?: string;
+      promotionId?: string;
     }) => {
       const { data } = await apiClient.post('/frontdesk/walk-in', payload);
       return data.data;
@@ -72,6 +84,7 @@ export function useWalkInCheckIn() {
       queryClient.invalidateQueries({ queryKey: ['frontdesk-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['stays'] });
       queryClient.invalidateQueries({ queryKey: ['room-units'] });
+      queryClient.invalidateQueries({ queryKey: ['room-map'] });
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
       queryClient.invalidateQueries({ queryKey: ['admin-reservations'] });
       queryClient.invalidateQueries({ queryKey: ['customers'] });
@@ -95,6 +108,7 @@ export function useCheckOut() {
       queryClient.invalidateQueries({ queryKey: ['frontdesk-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['stays'] });
       queryClient.invalidateQueries({ queryKey: ['room-units'] });
+      queryClient.invalidateQueries({ queryKey: ['room-map'] });
       queryClient.invalidateQueries({ queryKey: ['housekeeping-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['schedule'] });
       queryClient.invalidateQueries({ queryKey: ['admin-reservations'] });

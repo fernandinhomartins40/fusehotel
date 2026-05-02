@@ -6,6 +6,7 @@ import { Calendar, Loader2, Mail, MessageCircle, Ticket, Users } from 'lucide-re
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useCreateReservation } from '@/hooks/useReservations';
+import { usePricingPreview } from '@/hooks/usePricing';
 import { useSettings } from '@/hooks/useSettings';
 import { apiClient } from '@/lib/api-client';
 import {
@@ -91,16 +92,35 @@ export function SimpleCheckout({
   const { data: settings } = useSettings();
 
   const numberOfNights = differenceInDays(checkOutDate, checkInDate);
-  const subtotal = pricePerNight * numberOfNights;
-  const extraBedsCost = numberOfExtraBeds * extraBedPrice * numberOfNights;
-  const serviceFee = subtotal * 0.05;
-  const taxes = subtotal * 0.02;
-  const promotionDiscount = subtotal * getPromotionDiscountRate({
+
+  const { data: pricing } = usePricingPreview({
+    accommodationId,
+    checkInDate: checkInDate.toISOString().slice(0, 10),
+    checkOutDate: checkOutDate.toISOString().slice(0, 10),
+    numberOfExtraBeds,
+    promotionId: promotionId || undefined,
+    promotionCode: promotionCode || undefined,
+  });
+
+  // Use server pricing when available, fallback to local calculation for immediate display
+  const localSubtotal = pricePerNight * numberOfNights;
+  const localExtraBedsCost = numberOfExtraBeds * extraBedPrice * numberOfNights;
+  const localServiceFee = localSubtotal * 0.05;
+  const localTaxes = localSubtotal * 0.02;
+  const localPromotionDiscount = localSubtotal * getPromotionDiscountRate({
     promotionDiscountPercent,
     promotionOriginalPrice,
     promotionDiscountedPrice,
   });
-  const totalAmount = Math.max(subtotal + extraBedsCost + serviceFee + taxes - promotionDiscount, 0);
+  const localTotalAmount = Math.max(localSubtotal + localExtraBedsCost + localServiceFee + localTaxes - localPromotionDiscount, 0);
+
+  const subtotal = pricing?.subtotal ?? localSubtotal;
+  const extraBedsCost = pricing?.extraBedsCost ?? localExtraBedsCost;
+  const serviceFee = pricing?.serviceFee ?? localServiceFee;
+  const taxes = pricing?.taxes ?? localTaxes;
+  const promotionDiscount = pricing?.discount ?? localPromotionDiscount;
+  const totalAmount = pricing?.totalAmount ?? localTotalAmount;
+  const displayPricePerNight = pricing?.pricePerNight ?? pricePerNight;
 
   useEffect(() => {
     if (hydratedFromDraftRef.current) {
@@ -333,7 +353,7 @@ Solicitação enviada. Aguardo o aceite do hotel.`.trim();
             <div className="flex justify-between">
               <span>
                 {numberOfNights} {numberOfNights === 1 ? 'diária' : 'diárias'} x{' '}
-                {formatCurrency(pricePerNight)}
+                {formatCurrency(displayPricePerNight)}
               </span>
               <span>{formatCurrency(subtotal)}</span>
             </div>

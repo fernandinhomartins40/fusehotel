@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../config/database';
 import { BadRequestError, NotFoundError } from '../utils/errors';
 import { FoliosService } from './folios.service';
+import { PricingService } from './pricing.service';
 import { CheckInDto, CheckOutDto, WalkInCheckInDto } from '../types/pms';
 import { scheduleService } from './schedule.service';
 
@@ -64,6 +65,9 @@ export class FrontdeskService {
               type: true,
             },
           },
+          user: {
+            select: { id: true, name: true, email: true, phone: true, whatsapp: true, cpf: true },
+          },
         },
         orderBy: { checkInDate: 'asc' },
       }),
@@ -77,8 +81,20 @@ export class FrontdeskService {
               id: true,
               reservationCode: true,
               guestName: true,
+              guestEmail: true,
+              guestPhone: true,
+              guestWhatsApp: true,
+              guestCpf: true,
               checkInDate: true,
               checkOutDate: true,
+              numberOfNights: true,
+              totalAmount: true,
+              accommodation: {
+                select: { id: true, name: true, type: true },
+              },
+              user: {
+                select: { id: true, name: true, email: true, phone: true, whatsapp: true, cpf: true },
+              },
             },
           },
           roomUnit: {
@@ -90,7 +106,9 @@ export class FrontdeskService {
           },
           folio: {
             select: {
+              id: true,
               balance: true,
+              isClosed: true,
             },
           },
         },
@@ -112,7 +130,20 @@ export class FrontdeskService {
               id: true,
               reservationCode: true,
               guestName: true,
+              guestEmail: true,
+              guestPhone: true,
+              guestWhatsApp: true,
+              guestCpf: true,
+              checkInDate: true,
               checkOutDate: true,
+              numberOfNights: true,
+              totalAmount: true,
+              accommodation: {
+                select: { id: true, name: true, type: true },
+              },
+              user: {
+                select: { id: true, name: true, email: true, phone: true, whatsapp: true, cpf: true },
+              },
             },
           },
           roomUnit: {
@@ -124,7 +155,9 @@ export class FrontdeskService {
           },
           folio: {
             select: {
+              id: true,
               balance: true,
+              isClosed: true,
             },
           },
         },
@@ -356,10 +389,13 @@ export class FrontdeskService {
         throw new BadRequestError('WhatsApp ou telefone obrigatorio para walk-in');
       }
 
-      const subtotal = Number(accommodation.pricePerNight) * numberOfNights;
-      const serviceFee = subtotal * 0.05;
-      const taxes = subtotal * 0.02;
-      const totalAmount = Math.max(subtotal + serviceFee + taxes, 0);
+      const pricing = await PricingService.calculate({
+        accommodationId: accommodation.id,
+        checkInDate,
+        checkOutDate,
+        numberOfExtraBeds: 0,
+        promotionId: data.promotionId,
+      }, tx);
 
       const reservation = await tx.reservation.create({
         data: {
@@ -376,13 +412,13 @@ export class FrontdeskService {
           guestPhone,
           guestWhatsApp,
           guestCpf,
-          pricePerNight: accommodation.pricePerNight,
-          subtotal,
-          extraBedsCost: 0,
-          serviceFee,
-          taxes,
-          discount: 0,
-          totalAmount,
+          pricePerNight: pricing.pricePerNight,
+          subtotal: pricing.subtotal,
+          extraBedsCost: pricing.extraBedsCost,
+          serviceFee: pricing.serviceFee,
+          taxes: pricing.taxes,
+          discount: pricing.discount,
+          totalAmount: pricing.totalAmount,
           source: 'WALK_IN',
           status: ReservationStatus.CHECKED_IN,
           checkedInAt: new Date(),
@@ -416,6 +452,29 @@ export class FrontdeskService {
 
       await FoliosService.seedFromReservation(stay.id, tx);
 
+      const prismaTx = tx as any;
+      await prismaTx.financialEntry.create({
+        data: {
+          type: 'RECEIVABLE',
+          status: 'OPEN',
+          description: `Reserva ${reservation.reservationCode} (Walk-in)`,
+          category: 'Hospedagem',
+          amount: pricing.totalAmount,
+          dueDate: checkOutDate,
+          issuedAt: new Date(),
+          customerName: guestName,
+          referenceType: 'RESERVATION',
+          referenceId: reservation.id,
+        },
+      });
+
+      if (pricing.promotionId) {
+        await tx.promotion.update({
+          where: { id: pricing.promotionId },
+          data: { currentRedemptions: { increment: 1 } },
+        });
+      }
+
       await tx.roomUnit.update({
         where: { id: roomUnit.id },
         data: {
@@ -443,6 +502,136 @@ export class FrontdeskService {
         },
       });
     });
+  }
+
+  static async getRoomMap() {
+    const today = new Date();
+    const todayStart = new Date(today.toISOString().slice(0, 10) + 'T00:00:00.000Z');
+    const todayEnd = new Date(todayStart);
+    todayEnd.setUTCDate(todayEnd.getUTCDate() + 1);
+
+    const [roomUnits, activeStays, pendingTasks, openMaintenance, todayArrivals] = await Promise.all([
+      prisma.roomUnit.findMany({
+        where: { isActive: true },
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          floor: true,
+          status: true,
+          housekeepingStatus: true,
+          accommodationId: true,
+          accommodation: {
+            select: { id: true, name: true, type: true },
+          },
+        },
+        orderBy: [{ floor: 'asc' }, { code: 'asc' }],
+      }),
+      prisma.stay.findMany({
+        where: { status: StayStatus.IN_HOUSE },
+        select: {
+          id: true,
+          roomUnitId: true,
+          reservation: {
+            select: {
+              id: true,
+              reservationCode: true,
+              guestName: true,
+              checkOutDate: true,
+              checkInDate: true,
+              numberOfNights: true,
+            },
+          },
+          folio: {
+            select: { id: true, balance: true },
+          },
+        },
+      }),
+      prisma.housekeepingTask.findMany({
+        where: { status: { in: ['PENDING', 'IN_PROGRESS'] } },
+        select: {
+          id: true,
+          roomUnitId: true,
+          status: true,
+          priority: true,
+          title: true,
+        },
+      }),
+      prisma.maintenanceOrder.findMany({
+        where: { status: { in: ['OPEN', 'IN_PROGRESS'] } },
+        select: {
+          id: true,
+          roomUnitId: true,
+          status: true,
+          priority: true,
+          title: true,
+        },
+      }),
+      prisma.reservation.findMany({
+        where: {
+          status: ReservationStatus.CONFIRMED,
+          checkInDate: { gte: todayStart, lt: todayEnd },
+          stay: null,
+        },
+        select: {
+          id: true,
+          reservationCode: true,
+          guestName: true,
+          accommodationId: true,
+          checkInDate: true,
+          checkOutDate: true,
+        },
+      }),
+    ]);
+
+    const stayByRoom = new Map(activeStays.filter((s) => s.roomUnitId).map((s) => [s.roomUnitId!, s]));
+    const tasksByRoom = new Map<string, typeof pendingTasks>();
+    for (const task of pendingTasks) {
+      const arr = tasksByRoom.get(task.roomUnitId) ?? [];
+      arr.push(task);
+      tasksByRoom.set(task.roomUnitId, arr);
+    }
+    const maintenanceByRoom = new Map<string, typeof openMaintenance>();
+    for (const order of openMaintenance) {
+      const arr = maintenanceByRoom.get(order.roomUnitId) ?? [];
+      arr.push(order);
+      maintenanceByRoom.set(order.roomUnitId, arr);
+    }
+    const arrivalsByAccommodation = new Map<string, typeof todayArrivals>();
+    for (const arrival of todayArrivals) {
+      const arr = arrivalsByAccommodation.get(arrival.accommodationId) ?? [];
+      arr.push(arrival);
+      arrivalsByAccommodation.set(arrival.accommodationId, arr);
+    }
+
+    const rooms = roomUnits.map((room) => {
+      const stay = stayByRoom.get(room.id);
+      const tasks = tasksByRoom.get(room.id) ?? [];
+      const maintenance = maintenanceByRoom.get(room.id) ?? [];
+      const arrivals = arrivalsByAccommodation.get(room.accommodationId) ?? [];
+
+      return {
+        ...room,
+        guest: stay
+          ? {
+              stayId: stay.id,
+              guestName: stay.reservation.guestName,
+              reservationCode: stay.reservation.reservationCode,
+              checkOutDate: stay.reservation.checkOutDate,
+              checkInDate: stay.reservation.checkInDate,
+              numberOfNights: stay.reservation.numberOfNights,
+              folioBalance: stay.folio ? Number(stay.folio.balance) : 0,
+            }
+          : null,
+        housekeepingTasks: tasks,
+        maintenanceOrders: maintenance,
+        todayArrivals: arrivals,
+      };
+    });
+
+    const floors = [...new Set(rooms.map((r) => r.floor ?? 0))].sort((a, b) => a - b);
+
+    return { rooms, floors };
   }
 
   static async checkOut(data: CheckOutDto) {

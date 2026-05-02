@@ -35,6 +35,8 @@ import { useCreateReservation } from '@/hooks/useReservations';
 import { useAccommodations } from '@/hooks/useAccommodations';
 import { Customer, useCustomers } from '@/hooks/useCustomers';
 import { useCheckAvailability } from '@/hooks/useSchedule';
+import { usePromotions } from '@/hooks/usePromotions';
+import { usePricingPreview } from '@/hooks/usePricing';
 import { cn } from '@/lib/utils';
 import {
   Check,
@@ -56,6 +58,7 @@ interface ReservationFormData {
   numberOfGuests: number;
   numberOfExtraBeds: number;
   userId: string;
+  promotionId: string;
   specialRequests?: string;
   paymentMethod?: string;
 }
@@ -67,6 +70,7 @@ const defaultValues: ReservationFormData = {
   numberOfGuests: 1,
   numberOfExtraBeds: 0,
   userId: '',
+  promotionId: '',
   specialRequests: '',
   paymentMethod: undefined,
 };
@@ -98,11 +102,14 @@ export const CreateReservationDialog: React.FC<CreateReservationDialogProps> = (
     isActive: true,
   });
 
+  const { data: promotions = [] } = usePromotions({ isActive: true });
+
   const selectedAccommodationId = watch('accommodationId');
   const checkInDate = watch('checkInDate');
   const checkOutDate = watch('checkOutDate');
   const numberOfExtraBeds = watch('numberOfExtraBeds') || 0;
   const selectedCustomerId = watch('userId');
+  const selectedPromotionId = watch('promotionId');
 
   const selectedAccommodation = accommodations.find(
     (accommodation: any) => accommodation.id === selectedAccommodationId
@@ -114,17 +121,14 @@ export const CreateReservationDialog: React.FC<CreateReservationDialogProps> = (
       ? differenceInDays(new Date(checkOutDate), new Date(checkInDate))
       : 0;
 
-  const subtotal = selectedAccommodation
-    ? Number(selectedAccommodation.pricePerNight) * numberOfNights
-    : 0;
+  const { data: pricing, isLoading: isLoadingPricing } = usePricingPreview({
+    accommodationId: selectedAccommodationId || '',
+    checkInDate: checkInDate || '',
+    checkOutDate: checkOutDate || '',
+    numberOfExtraBeds,
+    promotionId: selectedPromotionId || undefined,
+  });
 
-  const extraBedsCost = selectedAccommodation
-    ? Number(selectedAccommodation.extraBedPrice) * numberOfExtraBeds * numberOfNights
-    : 0;
-
-  const serviceFee = subtotal * 0.05;
-  const taxes = subtotal * 0.02;
-  const totalAmount = subtotal + extraBedsCost + serviceFee + taxes;
   const shouldCheckAvailability =
     Boolean(selectedAccommodationId) &&
     Boolean(checkInDate) &&
@@ -194,6 +198,7 @@ export const CreateReservationDialog: React.FC<CreateReservationDialogProps> = (
       guestWhatsApp: selectedCustomer.whatsapp,
       guestCpf: selectedCustomer.cpf || undefined,
       specialRequests: data.specialRequests?.trim() || undefined,
+      promotionId: data.promotionId || undefined,
     });
 
     reset(defaultValues);
@@ -342,6 +347,30 @@ export const CreateReservationDialog: React.FC<CreateReservationDialogProps> = (
                   </p>
                 )}
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="promotionId">Promoção / Pacote</Label>
+              <Controller
+                name="promotionId"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value || 'none'} onValueChange={(v) => field.onChange(v === 'none' ? '' : v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Nenhuma promoção" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhuma promoção</SelectItem>
+                      {promotions.map((promo: any) => (
+                        <SelectItem key={promo.id} value={promo.id}>
+                          {promo.title}
+                          {promo.discountPercent ? ` (-${promo.discountPercent}%)` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </div>
 
             <div className="space-y-4 border-t pt-4">
@@ -498,28 +527,43 @@ export const CreateReservationDialog: React.FC<CreateReservationDialogProps> = (
             {selectedAccommodation && numberOfNights > 0 && (
               <div className="space-y-2 border-t pt-4">
                 <h3 className="mb-3 font-semibold">Resumo Financeiro</h3>
-                <div className="flex justify-between text-sm">
-                  <span>Subtotal ({numberOfNights} noites):</span>
-                  <span>R$ {subtotal.toFixed(2)}</span>
-                </div>
-                {extraBedsCost > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span>Camas extras:</span>
-                    <span>R$ {extraBedsCost.toFixed(2)}</span>
+                {isLoadingPricing ? (
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Calculando preços...
                   </div>
-                )}
-                <div className="flex justify-between text-sm">
-                  <span>Taxa de serviço (5%):</span>
-                  <span>R$ {serviceFee.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Impostos (2%):</span>
-                  <span>R$ {taxes.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between border-t pt-2 text-lg font-bold">
-                  <span>Total:</span>
-                  <span>R$ {totalAmount.toFixed(2)}</span>
-                </div>
+                ) : pricing ? (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span>Subtotal ({pricing.numberOfNights} noites x R$ {pricing.pricePerNight.toFixed(2)}):</span>
+                      <span>R$ {pricing.subtotal.toFixed(2)}</span>
+                    </div>
+                    {pricing.extraBedsCost > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span>Camas extras:</span>
+                        <span>R$ {pricing.extraBedsCost.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm">
+                      <span>Taxa de serviço ({(pricing.serviceFeeRate * 100).toFixed(0)}%):</span>
+                      <span>R$ {pricing.serviceFee.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Impostos ({(pricing.taxRate * 100).toFixed(0)}%):</span>
+                      <span>R$ {pricing.taxes.toFixed(2)}</span>
+                    </div>
+                    {pricing.discount > 0 && (
+                      <div className="flex justify-between text-sm text-green-700">
+                        <span>Desconto promocional:</span>
+                        <span>- R$ {pricing.discount.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between border-t pt-2 text-lg font-bold">
+                      <span>Total:</span>
+                      <span>R$ {pricing.totalAmount.toFixed(2)}</span>
+                    </div>
+                  </>
+                ) : null}
               </div>
             )}
 

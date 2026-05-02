@@ -49,6 +49,19 @@ export class MaintenanceService {
             status: RoomUnitStatus.OUT_OF_ORDER,
           },
         });
+
+        // Auto-create InventoryBlock to reflect in schedule/availability
+        await txPms.inventoryBlock.create({
+          data: {
+            accommodationId: roomUnit.accommodationId,
+            roomUnitId: roomUnit.id,
+            title: `Manutenção: ${data.title.trim()}`,
+            reason: 'OUT_OF_ORDER',
+            startsAt: new Date(),
+            endsAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year ahead, closed on completion
+            stopSell: true,
+          },
+        });
       }
 
       return txPms.maintenanceOrder.create({
@@ -143,6 +156,14 @@ export class MaintenanceService {
               : order.roomUnit.housekeepingStatus === HousekeepingStatus.DIRTY
                 ? HousekeepingStatus.DIRTY
                 : HousekeepingStatus.INSPECTED,
+          },
+        });
+
+        // Remove InventoryBlocks created for this room's OUT_OF_ORDER maintenance
+        await txPms.inventoryBlock.deleteMany({
+          where: {
+            roomUnitId: order.roomUnitId,
+            reason: 'OUT_OF_ORDER',
           },
         });
       }

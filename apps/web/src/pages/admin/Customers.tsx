@@ -270,7 +270,8 @@ const Customers: React.FC = () => {
                       <TableHead>Tipo</TableHead>
                       <TableHead>Perfil</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Reservas</TableHead>
+                      <TableHead>Estadias</TableHead>
+                      <TableHead>Total gasto</TableHead>
                       <TableHead>Cadastro</TableHead>
                       <TableHead>Acoes</TableHead>
                     </TableRow>
@@ -278,7 +279,16 @@ const Customers: React.FC = () => {
                   <TableBody>
                     {customers.map((customer) => (
                       <TableRow key={customer.id}>
-                        <TableCell className="font-medium">{customer.name}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {customer.name}
+                            {customer.hasActiveStay && (
+                              <Badge variant="outline" className="border-sky-300 bg-sky-50 text-sky-700 text-[10px]">
+                                Em casa
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div className="text-sm">
                             <div>{customer.email}</div>
@@ -312,7 +322,12 @@ const Customers: React.FC = () => {
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell>{customer._count?.reservations || 0}</TableCell>
+                        <TableCell>{customer.stayCount ?? customer._count?.reservations ?? 0}</TableCell>
+                        <TableCell className="text-sm">
+                          {customer.totalSpent
+                            ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(customer.totalSpent)
+                            : '-'}
+                        </TableCell>
                         <TableCell className="text-sm text-gray-600">
                           {format(new Date(customer.createdAt), 'dd/MM/yyyy', { locale: ptBR })}
                         </TableCell>
@@ -443,8 +458,16 @@ const Customers: React.FC = () => {
                   <p className="text-base">{selectedCustomer.emailVerified ? 'Sim' : 'Nao'}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total de Reservas</p>
-                  <p className="text-base">{selectedCustomer._count?.reservations || 0}</p>
+                  <p className="text-sm font-medium text-gray-600">Estadias</p>
+                  <p className="text-base">{selectedCustomer.stayCount ?? selectedCustomer._count?.reservations ?? 0}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total gasto</p>
+                  <p className="text-base">
+                    {selectedCustomer.totalSpent
+                      ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedCustomer.totalSpent)
+                      : 'R$ 0,00'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Data de Cadastro</p>

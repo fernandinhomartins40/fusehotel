@@ -28,6 +28,7 @@ import distributionRoutes from './distribution.routes';
 import inventoryRoutes from './inventory.routes';
 import financeRoutes from './finance.routes';
 import crmRoutes from './crm.routes';
+import pricingRoutes from './pricing.routes';
 
 const router = Router();
 
@@ -60,5 +61,6 @@ router.use('/distribution', distributionRoutes);
 router.use('/inventory', inventoryRoutes);
 router.use('/finance', financeRoutes);
 router.use('/crm', crmRoutes);
+router.use('/pricing', pricingRoutes);
 
 export default router;

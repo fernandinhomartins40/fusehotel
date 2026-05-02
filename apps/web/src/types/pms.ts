@@ -209,6 +209,53 @@ export interface LostFoundItem {
   stay?: Stay | null;
 }
 
+export interface RoomMapRoom {
+  id: string;
+  code: string;
+  name: string;
+  floor: number | null;
+  status: RoomUnitStatus;
+  housekeepingStatus: HousekeepingStatus;
+  accommodationId: string;
+  accommodation: { id: string; name: string; type: string };
+  guest: {
+    stayId: string;
+    guestName: string;
+    reservationCode: string;
+    checkOutDate: string;
+    checkInDate: string;
+    numberOfNights: number;
+    folioBalance: number;
+  } | null;
+  housekeepingTasks: Array<{
+    id: string;
+    roomUnitId: string;
+    status: string;
+    priority: string;
+    title: string;
+  }>;
+  maintenanceOrders: Array<{
+    id: string;
+    roomUnitId: string;
+    status: string;
+    priority: string;
+    title: string;
+  }>;
+  todayArrivals: Array<{
+    id: string;
+    reservationCode: string;
+    guestName: string;
+    accommodationId: string;
+    checkInDate: string;
+    checkOutDate: string;
+  }>;
+}
+
+export interface RoomMapData {
+  rooms: RoomMapRoom[];
+  floors: number[];
+}
+
 export interface FrontdeskDashboard {
   referenceDate: string;
   arrivals: Reservation[];

@@ -14,6 +14,37 @@ export function useFolio(stayId?: string) {
   });
 }
 
+export function useConsumeProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      folioId,
+      productId,
+      quantity,
+    }: {
+      folioId: string;
+      productId: string;
+      quantity?: number;
+    }) => {
+      const { data } = await apiClient.post(`/folios/${folioId}/consume`, {
+        productId,
+        quantity: quantity ?? 1,
+      });
+      return data.data;
+    },
+    onSuccess: (folio) => {
+      queryClient.invalidateQueries({ queryKey: ['stays'] });
+      queryClient.invalidateQueries({ queryKey: ['frontdesk-dashboard'] });
+      queryClient.setQueryData(['folio', folio.stayId], folio);
+      toast.success('Consumo registrado com sucesso');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao registrar consumo');
+    },
+  });
+}
+
 export function useAddFolioEntry() {
   const queryClient = useQueryClient();
 

@@ -32,6 +32,7 @@ export function useCreateMaintenanceOrder() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] });
       queryClient.invalidateQueries({ queryKey: ['room-units'] });
+      queryClient.invalidateQueries({ queryKey: ['room-map'] });
       queryClient.invalidateQueries({ queryKey: ['reports-operations'] });
       toast.success('Ordem de manutenção criada com sucesso');
     },
@@ -63,6 +64,7 @@ export function useUpdateMaintenanceOrder() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['maintenance-orders'] });
       queryClient.invalidateQueries({ queryKey: ['room-units'] });
+      queryClient.invalidateQueries({ queryKey: ['room-map'] });
       queryClient.invalidateQueries({ queryKey: ['reports-operations'] });
       toast.success('Ordem de manutenção atualizada com sucesso');
     },

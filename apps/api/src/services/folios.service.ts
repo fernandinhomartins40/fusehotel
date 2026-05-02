@@ -1,7 +1,7 @@
 import { FolioEntryType, Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { BadRequestError, NotFoundError } from '../utils/errors';
-import { CreateFolioEntryDto } from '../types/pms';
+import { ConsumeProductDto, CreateFolioEntryDto } from '../types/pms';
 
 const CREDIT_ENTRY_TYPES = new Set<FolioEntryType>([
   FolioEntryType.DISCOUNT,
@@ -86,6 +86,76 @@ export class FoliosService {
         data: {
           balance,
         },
+      });
+
+      return this.getByIdWithRelations(folioId, tx);
+    });
+  }
+
+  static async consumeProduct(folioId: string, data: ConsumeProductDto) {
+    const prismaPms = prisma as any;
+
+    return prisma.$transaction(async (tx) => {
+      const txPms = tx as any;
+
+      const folio = await tx.folio.findUnique({ where: { id: folioId } });
+      if (!folio) throw new NotFoundError('Folio nao encontrado');
+      if (folio.isClosed) throw new BadRequestError('Nao e possivel lancar em um folio fechado');
+
+      const product = await txPms.posProduct.findUnique({ where: { id: data.productId } });
+      if (!product) throw new NotFoundError('Produto nao encontrado');
+      if (!product.isActive) throw new BadRequestError('Produto inativo');
+
+      const quantity = data.quantity ?? 1;
+      const unitPrice = Number(product.price);
+      const totalAmount = unitPrice * quantity;
+
+      // Adjust stock if tracked
+      if (product.trackStock) {
+        const nextQuantity = Number(product.stockQuantity) - quantity;
+        if (nextQuantity < 0) {
+          throw new BadRequestError(`Estoque insuficiente para ${product.name}`);
+        }
+
+        await txPms.posProduct.update({
+          where: { id: product.id },
+          data: { stockQuantity: nextQuantity },
+        });
+
+        await txPms.inventoryMovement.create({
+          data: {
+            productId: product.id,
+            type: 'CONSUMPTION',
+            quantity,
+            referenceId: folioId,
+            notes: `Consumo direto na conta do hospede`,
+          },
+        });
+      }
+
+      // Create folio entry (POS type, positive = charge)
+      await tx.folioEntry.create({
+        data: {
+          folioId,
+          type: FolioEntryType.POS,
+          source: 'POS',
+          description: quantity > 1 ? `${product.name} x${quantity}` : product.name,
+          amount: totalAmount,
+          quantity,
+          referenceId: product.id,
+        },
+      });
+
+      // Recalculate balance
+      const aggregate = await tx.folioEntry.aggregate({
+        where: { folioId },
+        _sum: { amount: true },
+      });
+      const balance = Number(aggregate._sum.amount ?? 0);
+
+      await tx.folio.update({
+        where: { id: folioId },
+        data: { balance },
       });
 
       return this.getByIdWithRelations(folioId, tx);

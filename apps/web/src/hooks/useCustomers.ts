@@ -18,6 +18,9 @@ export interface Customer {
   _count?: {
     reservations: number;
   };
+  totalSpent?: number;
+  stayCount?: number;
+  hasActiveStay?: boolean;
 }
 
 export interface CustomerFilters {
@@ -115,6 +118,48 @@ export function useToggleCustomerStatus() {
         description: error.response?.data?.message || 'Tente novamente',
       });
     },
+  });
+}
+
+export interface StayHistoryEntry {
+  id: string;
+  status: string;
+  actualCheckInAt: string | null;
+  actualCheckOutAt: string | null;
+  adults: number;
+  children: number;
+  roomUnit: { id: string; code: string; name: string } | null;
+  reservation: {
+    id: string;
+    reservationCode: string;
+    checkInDate: string;
+    checkOutDate: string;
+    numberOfNights: number;
+    totalAmount: number;
+    source: string;
+    accommodation: { id: string; name: string; type: string };
+  };
+  folio: { id: string; balance: number; isClosed: boolean } | null;
+}
+
+export interface StayHistoryData {
+  stays: StayHistoryEntry[];
+  summary: {
+    totalStays: number;
+    totalSpent: number;
+    hasActiveStay: boolean;
+    activeStayId: string | null;
+  };
+}
+
+export function useStayHistory(userId?: string) {
+  return useQuery<StayHistoryData>({
+    queryKey: ['stay-history', userId],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/users/${userId}/stay-history`);
+      return data.data;
+    },
+    enabled: !!userId,
   });
 }
 

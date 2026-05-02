@@ -1,5 +1,11 @@
-import { Prisma, ReservationStatus } from '@prisma/client';
+import { Prisma, ReservationStatus, RoomUnitStatus } from '@prisma/client';
 import { prisma } from '../config/database';
+
+const UNAVAILABLE_ROOM_STATUSES: RoomUnitStatus[] = [
+  RoomUnitStatus.OUT_OF_ORDER,
+  RoomUnitStatus.OUT_OF_SERVICE,
+  RoomUnitStatus.BLOCKED,
+];
 
 const prismaPms = prisma as any;
 
@@ -60,6 +66,7 @@ export class ScheduleService {
         roomUnits: {
           where: {
             isActive: true,
+            status: { notIn: UNAVAILABLE_ROOM_STATUSES },
           },
           select: {
             id: true,
@@ -151,6 +158,7 @@ export class ScheduleService {
         roomUnits: {
           where: {
             isActive: true,
+            status: { notIn: UNAVAILABLE_ROOM_STATUSES },
           },
           select: {
             id: true,
@@ -224,6 +232,7 @@ export class ScheduleService {
           roomUnits: {
             where: {
               isActive: true,
+              status: { notIn: UNAVAILABLE_ROOM_STATUSES },
             },
             select: {
               id: true,

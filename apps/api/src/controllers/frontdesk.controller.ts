@@ -23,6 +23,15 @@ export class FrontdeskController {
     }
   }
 
+  static async roomMap(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await FrontdeskService.getRoomMap();
+      return sendSuccess(res, data);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async checkIn(req: Request, res: Response, next: NextFunction) {
     try {
       const stay = await FrontdeskService.checkIn(req.body);

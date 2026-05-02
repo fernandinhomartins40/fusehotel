@@ -112,6 +112,11 @@ export const createFolioEntrySchema = z.object({
   quantity: z.number().int().positive().default(1),
 });
 
+export const consumeProductSchema = z.object({
+  productId: uuidSchema,
+  quantity: z.number().int().positive().default(1),
+});
+
 export const updateHousekeepingTaskStatusSchema = z.object({
   status: z.nativeEnum(HousekeepingTaskStatus),
   assignedToId: uuidSchema.optional(),

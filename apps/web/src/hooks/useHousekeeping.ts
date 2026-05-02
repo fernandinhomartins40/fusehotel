@@ -38,6 +38,7 @@ export function useUpdateHousekeepingStatus() {
       queryClient.invalidateQueries({ queryKey: ['housekeeping-tasks'] });
       queryClient.invalidateQueries({ queryKey: ['housekeeping-staff'] });
       queryClient.invalidateQueries({ queryKey: ['room-units'] });
+      queryClient.invalidateQueries({ queryKey: ['room-map'] });
       queryClient.invalidateQueries({ queryKey: ['frontdesk-dashboard'] });
       toast.success('Status de governança atualizado');
     },

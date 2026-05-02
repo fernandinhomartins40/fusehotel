@@ -84,6 +84,7 @@ export interface WalkInCheckInDto {
   adults: number;
   children?: number;
   notes?: string;
+  promotionId?: string;
 }
 
 export interface CheckOutDto {
@@ -98,6 +99,11 @@ export interface CreateFolioEntryDto {
   amount: number;
   quantity?: number;
   referenceId?: string;
+}
+
+export interface ConsumeProductDto {
+  productId: string;
+  quantity?: number;
 }
 
 export interface UpdateHousekeepingTaskStatusDto {

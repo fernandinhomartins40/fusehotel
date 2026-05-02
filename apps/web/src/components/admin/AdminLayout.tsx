@@ -4,8 +4,6 @@ import {
   BarChart3,
   BedDouble,
   Calendar,
-  ClipboardCheck,
-  ConciergeBell,
   FileText,
   HelpCircle,
   Home,
@@ -16,7 +14,6 @@ import {
   ShoppingCart,
   Tag,
   Users,
-  Wrench,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PWAInstallPrompt } from '@/components/layout/PWAInstallPrompt';
@@ -45,58 +42,37 @@ interface MenuItem {
   activeClassName: string;
 }
 
-const primaryItems: MenuItem[] = [
+const operationItems: MenuItem[] = [
   {
     path: '/admin',
-    label: 'Painel do turno',
+    label: 'Painel',
     icon: LayoutDashboard,
     activeClassName:
       'data-[active=true]:bg-lime-50 data-[active=true]:text-lime-700 data-[active=true]:border-r-2 data-[active=true]:border-lime-600',
   },
   {
+    path: '/admin/frontdesk',
+    label: 'Hospedagens',
+    icon: BedDouble,
+    activeClassName:
+      'data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-700 data-[active=true]:border-r-2 data-[active=true]:border-emerald-600',
+  },
+  {
     path: '/admin/pos',
-    label: 'PDV',
+    label: 'Caixa / PDV',
     icon: ShoppingCart,
     activeClassName:
       'data-[active=true]:bg-cyan-50 data-[active=true]:text-cyan-700 data-[active=true]:border-r-2 data-[active=true]:border-cyan-600',
   },
-  {
-    path: '/admin/frontdesk',
-    label: 'Recepção',
-    icon: ConciergeBell,
-    activeClassName:
-      'data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-700 data-[active=true]:border-r-2 data-[active=true]:border-emerald-600',
-  },
+];
+
+const managementItems: MenuItem[] = [
   {
     path: '/admin/reservations',
     label: 'Reservas',
     icon: Calendar,
     activeClassName:
       'data-[active=true]:bg-purple-50 data-[active=true]:text-purple-700 data-[active=true]:border-r-2 data-[active=true]:border-purple-600',
-  },
-];
-
-const hotelItems: MenuItem[] = [
-  {
-    path: '/admin/room-units',
-    label: 'Quartos',
-    icon: BedDouble,
-    activeClassName:
-      'data-[active=true]:bg-sky-50 data-[active=true]:text-sky-700 data-[active=true]:border-r-2 data-[active=true]:border-sky-600',
-  },
-  {
-    path: '/admin/housekeeping',
-    label: 'Governança',
-    icon: ClipboardCheck,
-    activeClassName:
-      'data-[active=true]:bg-amber-50 data-[active=true]:text-amber-700 data-[active=true]:border-r-2 data-[active=true]:border-amber-600',
-  },
-  {
-    path: '/admin/maintenance',
-    label: 'Manutenção',
-    icon: Wrench,
-    activeClassName:
-      'data-[active=true]:bg-rose-50 data-[active=true]:text-rose-700 data-[active=true]:border-r-2 data-[active=true]:border-rose-600',
   },
   {
     path: '/admin/customers',
@@ -105,9 +81,6 @@ const hotelItems: MenuItem[] = [
     activeClassName:
       'data-[active=true]:bg-orange-50 data-[active=true]:text-orange-700 data-[active=true]:border-r-2 data-[active=true]:border-orange-600',
   },
-];
-
-const backofficeItems: MenuItem[] = [
   {
     path: '/admin/dashboard',
     label: 'Indicadores',
@@ -127,14 +100,21 @@ const backofficeItems: MenuItem[] = [
 const catalogItems: MenuItem[] = [
   {
     path: '/admin/accommodations',
-    label: 'Tipos de hospedagem',
+    label: 'Acomodações',
     icon: Home,
     activeClassName:
       'data-[active=true]:bg-green-50 data-[active=true]:text-green-700 data-[active=true]:border-r-2 data-[active=true]:border-green-600',
   },
   {
+    path: '/admin/room-units',
+    label: 'Quartos',
+    icon: BedDouble,
+    activeClassName:
+      'data-[active=true]:bg-sky-50 data-[active=true]:text-sky-700 data-[active=true]:border-r-2 data-[active=true]:border-sky-600',
+  },
+  {
     path: '/admin/packages-promotions',
-    label: 'Pacotes e promoções',
+    label: 'Promoções',
     icon: Tag,
     activeClassName:
       'data-[active=true]:bg-pink-50 data-[active=true]:text-pink-700 data-[active=true]:border-r-2 data-[active=true]:border-pink-600',
@@ -227,23 +207,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
           <SidebarContent className="bg-white">
             <SidebarGroup>
-              <SidebarGroupLabel className="font-medium text-slate-500">Principal</SidebarGroupLabel>
+              <SidebarGroupLabel className="font-medium text-slate-500">Operação</SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>{renderMenuItems(primaryItems, 'primary')}</SidebarMenu>
+                <SidebarMenu>{renderMenuItems(operationItems, 'primary')}</SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 
             <SidebarGroup>
-              <SidebarGroupLabel className="font-medium text-slate-500">Hotel</SidebarGroupLabel>
+              <SidebarGroupLabel className="font-medium text-slate-500">Gestão</SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>{renderMenuItems(hotelItems)}</SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-
-            <SidebarGroup>
-              <SidebarGroupLabel className="font-medium text-slate-500">Backoffice</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>{renderMenuItems(backofficeItems)}</SidebarMenu>
+                <SidebarMenu>{renderMenuItems(managementItems)}</SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
 

@@ -20,4 +20,13 @@ export class FoliosController {
       next(error);
     }
   }
+
+  static async consumeProduct(req: Request, res: Response, next: NextFunction) {
+    try {
+      const folio = await FoliosService.consumeProduct(req.params.folioId, req.body);
+      return sendSuccess(res, folio, 'Consumo registrado com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
 }

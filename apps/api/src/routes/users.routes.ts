@@ -10,6 +10,7 @@ router.get('/profile', authenticate, UserController.getProfile);
 router.put('/profile', authenticate, UserController.updateProfile);
 router.get('/', authenticate, requireRole(['ADMIN', 'MANAGER']), UserController.list);
 router.get('/:id', authenticate, requireRole(['ADMIN', 'MANAGER']), UserController.getById);
+router.get('/:id/stay-history', authenticate, requireRole(['ADMIN', 'MANAGER']), UserController.stayHistory);
 router.put('/:id', authenticate, requireRole(['ADMIN', 'MANAGER']), UserController.updateById);
 router.patch('/:id/status', authenticate, requireRole(['ADMIN', 'MANAGER']), UserController.updateStatus);
 router.delete('/:id', authenticate, requireRole(['ADMIN']), UserController.delete);

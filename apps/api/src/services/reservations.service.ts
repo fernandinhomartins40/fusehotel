@@ -8,6 +8,7 @@ import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors'
 import { logger } from '../utils/logger';
 import { EmailService } from './email.service';
 import { PasswordResetService } from './password-reset.service';
+import { PricingService } from './pricing.service';
 import { scheduleService } from './schedule.service';
 
 interface RequestUser {
@@ -129,18 +130,29 @@ export class ReservationService {
       throw new BadRequestError('Ja existe uma reserva para esta acomodacao no periodo selecionado');
     }
 
+    if (data.numberOfGuests > accommodation.capacity + (data.numberOfExtraBeds || 0)) {
+      throw new BadRequestError('Numero de hospedes excede a capacidade da acomodacao');
+    }
+
+    if ((data.numberOfExtraBeds || 0) > accommodation.maxExtraBeds) {
+      throw new BadRequestError('Numero de camas extras excede o maximo permitido');
+    }
+
     const promotion = await this.resolvePromotionForReservation(data, {
       checkInDate,
       checkOutDate,
     });
 
-    const subtotal = Number(accommodation.pricePerNight) * numberOfNights;
-    const extraBedsCost =
-      (data.numberOfExtraBeds || 0) * Number(accommodation.extraBedPrice) * numberOfNights;
-    const serviceFee = subtotal * 0.05;
-    const taxes = subtotal * 0.02;
-    const discount = promotion ? this.calculatePromotionDiscount(promotion, subtotal) : 0;
-    const totalAmount = Math.max(subtotal + extraBedsCost + serviceFee + taxes - discount, 0);
+    const pricing = await PricingService.calculate({
+      accommodationId: data.accommodationId,
+      checkInDate,
+      checkOutDate,
+      numberOfExtraBeds: data.numberOfExtraBeds || 0,
+      promotionId: data.promotionId,
+      promotionCode: data.promotionCode,
+    });
+
+    const { subtotal, extraBedsCost, serviceFee, taxes, discount, totalAmount } = pricing;
 
     let finalUserId = userId;
     const guestWhatsApp = data.guestWhatsApp.replace(/\D/g, '');
@@ -185,49 +197,60 @@ export class ReservationService {
       finalUserId = user.id;
     }
 
-    const reservation = await prisma.reservation.create({
-      data: {
-        reservationCode: `FH-${Date.now()}-${uuidv4().substring(0, 8).toUpperCase()}`,
-        accommodationId: data.accommodationId,
-        userId: finalUserId,
-        checkInDate,
-        checkOutDate,
-        numberOfNights,
-        numberOfGuests: data.numberOfGuests,
-        numberOfExtraBeds: data.numberOfExtraBeds || 0,
-        guestName: data.guestName,
-        guestWhatsApp,
-        guestEmail,
-        guestPhone: data.guestPhone,
-        guestCpf: data.guestCpf,
-        pricePerNight: accommodation.pricePerNight,
-        subtotal,
-        extraBedsCost,
-        serviceFee,
-        taxes,
-        discount,
-        totalAmount,
-        specialRequests: this.buildReservationSpecialRequests(data.specialRequests, promotion),
-      },
-      include: {
-        accommodation: true,
-      },
-    });
+    const reservation = await prisma.$transaction(async (tx) => {
+      const created = await tx.reservation.create({
+        data: {
+          reservationCode: `FH-${Date.now()}-${uuidv4().substring(0, 8).toUpperCase()}`,
+          accommodationId: data.accommodationId,
+          userId: finalUserId,
+          checkInDate,
+          checkOutDate,
+          numberOfNights,
+          numberOfGuests: data.numberOfGuests,
+          numberOfExtraBeds: data.numberOfExtraBeds || 0,
+          guestName: data.guestName,
+          guestWhatsApp,
+          guestEmail,
+          guestPhone: data.guestPhone,
+          guestCpf: data.guestCpf,
+          pricePerNight: pricing.pricePerNight,
+          subtotal,
+          extraBedsCost,
+          serviceFee,
+          taxes,
+          discount,
+          totalAmount,
+          specialRequests: this.buildReservationSpecialRequests(data.specialRequests, promotion),
+        },
+        include: {
+          accommodation: true,
+        },
+      });
 
-    const prismaPms = prisma as any;
-    await prismaPms.financialEntry.create({
-      data: {
-        type: 'RECEIVABLE',
-        status: 'OPEN',
-        description: `Reserva ${reservation.reservationCode}`,
-        category: 'Hospedagem',
-        amount: totalAmount,
-        dueDate: checkInDate,
-        issuedAt: new Date(),
-        customerName: reservation.guestName,
-        referenceType: 'RESERVATION',
-        referenceId: reservation.id,
-      },
+      const txPms = tx as any;
+      await txPms.financialEntry.create({
+        data: {
+          type: 'RECEIVABLE',
+          status: 'OPEN',
+          description: `Reserva ${created.reservationCode}`,
+          category: 'Hospedagem',
+          amount: totalAmount,
+          dueDate: checkInDate,
+          issuedAt: new Date(),
+          customerName: created.guestName,
+          referenceType: 'RESERVATION',
+          referenceId: created.id,
+        },
+      });
+
+      if (promotion) {
+        await tx.promotion.update({
+          where: { id: promotion.id },
+          data: { currentRedemptions: { increment: 1 } },
+        });
+      }
+
+      return created;
     });
 
     return reservation;
