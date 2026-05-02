@@ -104,6 +104,7 @@ async function clearOperationalData() {
   await prisma.pOSOrder.deleteMany();
   await prisma.inventoryMovement.deleteMany();
   await prisma.pOSProduct.deleteMany();
+  await prisma.productCategory.deleteMany();
   await prisma.maintenanceOrder.deleteMany();
   await prisma.lostFoundItem.deleteMany();
   await prisma.housekeepingTask.deleteMany();
