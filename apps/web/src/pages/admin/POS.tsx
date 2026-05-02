@@ -104,18 +104,17 @@ type CartItem = {
 type NumericField = 'serviceFee' | 'discount' | 'payment';
 type DialogKey = 'cash' | 'orders' | 'drafts' | 'references' | 'details' | null;
 type SalePreset = 'BALCAO' | 'COMANDA' | 'QUARTO';
-type POSStep = 'customer' | 'items' | 'settlement' | 'review';
+type POSStep = 'items' | 'payment' | 'review';
 
 const salePresetLabels: Record<SalePreset, string> = {
-  BALCAO: 'Venda rápida',
+  BALCAO: 'Pagamento direto',
   COMANDA: 'Mesa / Comanda',
   QUARTO: 'Conta do hóspede',
 };
 
 const posStepLabels: Record<POSStep, string> = {
-  customer: 'Tipo',
   items: 'Itens',
-  settlement: 'Cobrança',
+  payment: 'Pagamento',
   review: 'Revisão',
 };
 
@@ -179,7 +178,8 @@ export default function POS() {
   const [draftReference, setDraftReference] = useState('');
   const [savedDrafts, setSavedDrafts] = useState<SavedDraft[]>([]);
   const [referenceLookup, setReferenceLookup] = useState('');
-  const [currentStep, setCurrentStep] = useState<POSStep>('customer');
+  const [currentStep, setCurrentStep] = useState<POSStep>('items');
+  const [roomSearch, setRoomSearch] = useState('');
   const [refundPaymentId, setRefundPaymentId] = useState('');
   const [refundAmount, setRefundAmount] = useState('');
   const [refundNotes, setRefundNotes] = useState('');
@@ -279,6 +279,12 @@ export default function POS() {
     );
   }, [selectedOrder]);
 
+  const matchedStayByRoom = useMemo(() => {
+    const room = roomSearch.trim().toLowerCase();
+    if (!room) return null;
+    return inHouseStays.find((stay) => stay.roomUnit?.code?.toLowerCase() === room) ?? null;
+  }, [inHouseStays, roomSearch]);
+
   const resolvedCustomerName = useMemo(() => {
     if (settlementType === 'FOLIO') {
       return selectedStay?.reservation.guestName ?? '';
@@ -286,20 +292,8 @@ export default function POS() {
     return customerName.trim() || (salePreset === 'COMANDA' ? `Mesa ${tableNumber}` : 'Consumidor');
   }, [customerName, salePreset, selectedStay, settlementType, tableNumber]);
 
-  const stepSequence: POSStep[] = ['customer', 'items', 'settlement', 'review'];
+  const stepSequence: POSStep[] = ['items', 'payment', 'review'];
   const stepIndex = stepSequence.indexOf(currentStep);
-
-  const canMovePastCustomer = useMemo(() => {
-    if (settlementType === 'FOLIO') {
-      return Boolean(selectedStayId);
-    }
-
-    if (salePreset === 'COMANDA' && tableNumber.trim().length < 1) {
-      return false;
-    }
-
-    return true;
-  }, [salePreset, selectedStayId, settlementType, tableNumber]);
 
   const setNumericValue = (field: NumericField, value: string) => {
     if (field === 'serviceFee') setServiceFeeAmount(value);
@@ -357,7 +351,8 @@ export default function POS() {
     setOrderNotes('');
     setDraftReference('');
     setReferenceLookup('');
-    setCurrentStep('customer');
+    setRoomSearch('');
+    setCurrentStep('items');
   };
 
   const applySalePreset = (preset: SalePreset) => {
@@ -741,10 +736,10 @@ export default function POS() {
   };
 
   const canAdvanceCurrentStep = () => {
-    if (currentStep === 'customer') return canMovePastCustomer;
     if (currentStep === 'items') return cartDetailedItems.length > 0;
-    if (currentStep === 'settlement') {
+    if (currentStep === 'payment') {
       if (settlementType === 'FOLIO') return Boolean(selectedStayId);
+      if (salePreset === 'COMANDA' && !tableNumber.trim()) return false;
       return Boolean(paymentMethod);
     }
     return true;
@@ -752,18 +747,19 @@ export default function POS() {
 
   const goToNextStep = () => {
     if (!canAdvanceCurrentStep()) {
-      if (currentStep === 'customer') {
-        toast.error(settlementType === 'FOLIO' ? 'Selecione uma hospedagem antes de continuar' : 'Preencha a mesa ou comanda antes de continuar');
-        return;
-      }
-
       if (currentStep === 'items') {
         toast.error('Adicione ao menos um item antes de continuar');
         return;
       }
 
-      if (currentStep === 'settlement') {
-        toast.error('Revise a cobrança antes de continuar');
+      if (currentStep === 'payment') {
+        if (settlementType === 'FOLIO' && !selectedStayId) {
+          toast.error('Selecione uma hospedagem para lançar na conta');
+        } else if (salePreset === 'COMANDA' && !tableNumber.trim()) {
+          toast.error('Informe o número da mesa ou comanda');
+        } else {
+          toast.error('Selecione a forma de pagamento');
+        }
       }
       return;
     }
@@ -802,7 +798,7 @@ export default function POS() {
             : undefined,
         origin,
         settlementType,
-        customerName: settlementType === 'DIRECT' ? customerName.trim() : undefined,
+        customerName: customerName.trim() || undefined,
         tableNumber: tableNumber || undefined,
         serviceFeeAmount: Number(serviceFeeAmount || 0) || undefined,
         discountAmount: Number(discountAmount || 0) || undefined,
@@ -971,112 +967,10 @@ export default function POS() {
     setCashMovementDescription('');
   };
 
-  const renderCustomerStep = () => (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold text-slate-900">1. Tipo de venda</h2>
-        <p className="mt-1 text-sm text-slate-500">Selecione como esta venda será realizada.</p>
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-3">
-        <ModeCard
-          title="Venda rápida"
-          description="Pagamento direto no caixa, sem vínculo prévio."
-          active={settlementType === 'DIRECT' && salePreset === 'BALCAO'}
-          onClick={() => applySalePreset('BALCAO')}
-        />
-        <ModeCard
-          title="Mesa / comanda"
-          description="Consumo vinculado a uma mesa ou comanda."
-          active={settlementType === 'DIRECT' && salePreset === 'COMANDA'}
-          onClick={() => applySalePreset('COMANDA')}
-        />
-        <ModeCard
-          title="Conta do hóspede"
-          description="Debitar diretamente na conta do quarto."
-          active={settlementType === 'FOLIO'}
-          onClick={() => applySalePreset('QUARTO')}
-        />
-      </div>
-
-      {salePreset === 'BALCAO' && settlementType === 'DIRECT' && (
-        <div className="rounded-3xl border border-sky-200 bg-sky-50 p-4">
-          <div className="text-sm font-medium text-sky-900">Pronto para adicionar itens</div>
-          <div className="mt-1 text-sm text-sky-700">Venda rápida no balcão. Avance para selecionar os produtos.</div>
-        </div>
-      )}
-
-      {salePreset === 'COMANDA' && settlementType === 'DIRECT' && (
-        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
-          <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-sm font-medium text-slate-900">Mesa ou comanda</div>
-            <Input
-              value={tableNumber}
-              onChange={(event) => {
-                setTableNumber(event.target.value);
-                setDraftReference(event.target.value);
-              }}
-              placeholder="Número da mesa ou comanda"
-              className="h-12 rounded-2xl bg-white"
-            />
-            <p className="text-xs text-slate-500">Referência para acompanhar o consumo desta venda.</p>
-          </div>
-
-          <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-sm font-medium text-slate-900">Atalhos</div>
-            <div className="flex flex-col gap-2">
-              <Button variant="outline" onClick={() => setActiveDialog('references')}>
-                Buscar referência
-              </Button>
-              <Button variant="outline" onClick={() => setActiveDialog('drafts')}>
-                Vendas salvas
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {settlementType === 'FOLIO' && (
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-sm font-medium text-slate-900">Hospedagem vinculada</div>
-            <Select value={selectedStayId || 'none'} onValueChange={(value) => setSelectedStayId(value === 'none' ? '' : value)}>
-              <SelectTrigger className="h-12 rounded-2xl bg-white">
-                <SelectValue placeholder="Selecionar hospedagem" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Selecionar hospedagem</SelectItem>
-                {inHouseStays.map((stay) => (
-                  <SelectItem key={stay.id} value={stay.id}>
-                    {stay.reservation.guestName} • Quarto {stay.roomUnit?.code ?? 'Sem quarto'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-slate-500">O consumo será lançado na conta desta hospedagem.</p>
-          </div>
-
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-sm font-medium text-slate-900">Cliente da conta</div>
-            {selectedStay ? (
-              <div className="mt-3 space-y-2 text-sm text-slate-600">
-                <div><strong className="text-slate-900">{selectedStay.reservation.guestName}</strong></div>
-                <div>Quarto {selectedStay.roomUnit?.code ?? 'Sem quarto'}</div>
-                <div>Saída prevista em {new Date(selectedStay.reservation.checkOutDate).toLocaleDateString('pt-BR')}</div>
-              </div>
-            ) : (
-              <div className="mt-3 text-sm text-slate-500">Selecione uma hospedagem para continuar.</div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
   const renderItemsStep = () => (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">2. Inclua produtos e serviços</h2>
+        <h2 className="text-lg font-semibold text-slate-900">1. Inclua produtos e serviços</h2>
         <p className="mt-1 text-sm text-slate-500">Busque, filtre por categoria ou use leitura rápida para montar a venda.</p>
       </div>
 
@@ -1197,14 +1091,35 @@ export default function POS() {
     </div>
   );
 
-  const renderSettlementStep = () => (
+  const renderPaymentStep = () => (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">3. Defina a cobrança</h2>
-        <p className="mt-1 text-sm text-slate-500">Escolha como a venda será cobrada ou lançada antes de revisar.</p>
+        <h2 className="text-lg font-semibold text-slate-900">2. Como cobrar</h2>
+        <p className="mt-1 text-sm text-slate-500">Escolha a forma de pagamento ou lance na conta do hóspede.</p>
       </div>
 
-      {settlementType === 'DIRECT' ? (
+      <div className="grid gap-3 md:grid-cols-3">
+        <ModeCard
+          title="Pagamento direto"
+          description="Receber agora no caixa (PIX, dinheiro, cartão)."
+          active={settlementType === 'DIRECT' && salePreset === 'BALCAO'}
+          onClick={() => applySalePreset('BALCAO')}
+        />
+        <ModeCard
+          title="Mesa / comanda"
+          description="Abrir comanda para receber depois ou lançar na conta."
+          active={salePreset === 'COMANDA'}
+          onClick={() => applySalePreset('COMANDA')}
+        />
+        <ModeCard
+          title="Conta do hóspede"
+          description="Debitar na conta do quarto, acertar no check-out."
+          active={settlementType === 'FOLIO' && salePreset === 'QUARTO'}
+          onClick={() => applySalePreset('QUARTO')}
+        />
+      </div>
+
+      {salePreset === 'BALCAO' && settlementType === 'DIRECT' && (
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_180px]">
           <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
             <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_160px]">
@@ -1236,10 +1151,6 @@ export default function POS() {
                 </button>
               ))}
             </div>
-
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-3 text-sm text-slate-600">
-              Deixe o valor zerado apenas quando quiser salvar a venda como comanda para receber depois.
-            </div>
           </div>
 
           <div className="grid grid-cols-4 gap-2 xl:grid-cols-3">
@@ -1261,11 +1172,209 @@ export default function POS() {
             ))}
           </div>
         </div>
-      ) : (
-        <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-          <div className="text-sm font-medium text-slate-900">Lançamento na conta do hóspede</div>
+      )}
+
+      {salePreset === 'COMANDA' && (
+        <div className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-sm font-medium text-slate-900">Mesa ou comanda</div>
+              <Input
+                value={tableNumber}
+                onChange={(event) => {
+                  setTableNumber(event.target.value);
+                  setDraftReference(event.target.value);
+                }}
+                placeholder="Número da mesa ou comanda"
+                className="h-12 rounded-2xl bg-white"
+              />
+              <p className="text-xs text-slate-500">Referência para acompanhar o consumo.</p>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" onClick={() => setActiveDialog('references')}>
+                  Buscar referência
+                </Button>
+                <Button variant="outline" onClick={() => setActiveDialog('drafts')}>
+                  Vendas salvas
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-sm font-medium text-slate-900">Fechar comanda como</div>
+              <div className="grid gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setSettlementType('DIRECT'); setSelectedStayId(''); setRoomSearch(''); }}
+                  className={`rounded-2xl border p-3 text-left text-sm transition ${
+                    settlementType === 'DIRECT'
+                      ? 'border-sky-600 bg-sky-50 font-medium text-sky-700'
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                  }`}
+                >
+                  Pagamento direto no caixa
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSettlementType('FOLIO'); setOrigin('ROOM_SERVICE'); }}
+                  className={`rounded-2xl border p-3 text-left text-sm transition ${
+                    settlementType === 'FOLIO'
+                      ? 'border-sky-600 bg-sky-50 font-medium text-sky-700'
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                  }`}
+                >
+                  Lançar na conta do hóspede
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {settlementType === 'DIRECT' && (
+            <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_160px]">
+                <FieldButton
+                  label="Pagamento"
+                  value={paymentAmount}
+                  active={activeNumericField === 'payment'}
+                  onClick={() => setActiveNumericField('payment')}
+                  dark={false}
+                />
+                <Button variant="outline" className="rounded-2xl" onClick={() => setActiveDialog('details')}>
+                  Ajustes e detalhes
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {(['PIX', 'CASH', 'CREDIT_CARD', 'DEBIT_CARD'] as PaymentMethod[]).map((method) => (
+                  <button
+                    key={method}
+                    type="button"
+                    onClick={() => setPaymentMethod(method)}
+                    className={`rounded-2xl py-3 text-sm font-semibold transition ${
+                      paymentMethod === method
+                        ? 'bg-sky-700 text-white'
+                        : 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                    }`}
+                  >
+                    {paymentMethodLabels[method]}
+                  </button>
+                ))}
+              </div>
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-3 text-sm text-slate-600">
+                Deixe o valor zerado para manter a comanda em aberto sem receber agora.
+              </div>
+            </div>
+          )}
+
+          {settlementType === 'FOLIO' && (
+            <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-sm font-medium text-slate-900">Vincular ao hóspede</div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Input
+                    value={roomSearch}
+                    onChange={(event) => {
+                      setRoomSearch(event.target.value);
+                      const room = event.target.value.trim().toLowerCase();
+                      const match = inHouseStays.find((stay) => stay.roomUnit?.code?.toLowerCase() === room);
+                      if (match) setSelectedStayId(match.id);
+                    }}
+                    placeholder="Número do quarto"
+                    className="h-12 rounded-2xl bg-white"
+                  />
+                  {roomSearch.trim() && !matchedStayByRoom && (
+                    <p className="text-xs text-red-500">Nenhum hóspede encontrado neste quarto.</p>
+                  )}
+                  {matchedStayByRoom && (
+                    <p className="text-xs text-emerald-600">
+                      {matchedStayByRoom.reservation.guestName} — Quarto {matchedStayByRoom.roomUnit?.code}
+                    </p>
+                  )}
+                </div>
+                <Select value={selectedStayId || 'none'} onValueChange={(value) => {
+                  setSelectedStayId(value === 'none' ? '' : value);
+                  const stay = inHouseStays.find((s) => s.id === value);
+                  if (stay?.roomUnit?.code) setRoomSearch(stay.roomUnit.code);
+                }}>
+                  <SelectTrigger className="h-12 rounded-2xl bg-white">
+                    <SelectValue placeholder="Ou selecione pelo nome" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Selecionar hospedagem</SelectItem>
+                    {inHouseStays.map((stay) => (
+                      <SelectItem key={stay.id} value={stay.id}>
+                        {stay.reservation.guestName} — Quarto {stay.roomUnit?.code ?? 'S/N'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {selectedStay && (
+                <div className="rounded-2xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
+                  O consumo da comanda será lançado na conta de <strong>{selectedStay.reservation.guestName}</strong> (Quarto {selectedStay.roomUnit?.code ?? 'S/N'}).
+                  Saída prevista em {new Date(selectedStay.reservation.checkOutDate).toLocaleDateString('pt-BR')}.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {salePreset === 'QUARTO' && settlementType === 'FOLIO' && (
+        <div className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-sm font-medium text-slate-900">Buscar por quarto</div>
+              <Input
+                value={roomSearch}
+                onChange={(event) => {
+                  setRoomSearch(event.target.value);
+                  const room = event.target.value.trim().toLowerCase();
+                  const match = inHouseStays.find((stay) => stay.roomUnit?.code?.toLowerCase() === room);
+                  if (match) setSelectedStayId(match.id);
+                }}
+                placeholder="Número do quarto"
+                className="h-12 rounded-2xl bg-white"
+              />
+              {roomSearch.trim() && !matchedStayByRoom && (
+                <p className="text-xs text-red-500">Nenhum hóspede encontrado neste quarto.</p>
+              )}
+              {matchedStayByRoom && (
+                <p className="text-xs text-emerald-600">
+                  {matchedStayByRoom.reservation.guestName} — Quarto {matchedStayByRoom.roomUnit?.code}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-sm font-medium text-slate-900">Ou selecione pelo nome</div>
+              <Select value={selectedStayId || 'none'} onValueChange={(value) => {
+                setSelectedStayId(value === 'none' ? '' : value);
+                const stay = inHouseStays.find((s) => s.id === value);
+                if (stay?.roomUnit?.code) setRoomSearch(stay.roomUnit.code);
+              }}>
+                <SelectTrigger className="h-12 rounded-2xl bg-white">
+                  <SelectValue placeholder="Selecionar hospedagem" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Selecionar hospedagem</SelectItem>
+                  {inHouseStays.map((stay) => (
+                    <SelectItem key={stay.id} value={stay.id}>
+                      {stay.reservation.guestName} — Quarto {stay.roomUnit?.code ?? 'S/N'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedStay && (
+                <div className="mt-2 space-y-1 text-sm text-slate-600">
+                  <div><strong className="text-slate-900">{selectedStay.reservation.guestName}</strong></div>
+                  <div>Quarto {selectedStay.roomUnit?.code ?? 'S/N'}</div>
+                  <div>Saída prevista em {new Date(selectedStay.reservation.checkOutDate).toLocaleDateString('pt-BR')}</div>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
-            O consumo será lançado diretamente na conta da hospedagem e poderá ser fechado no check-out.
+            O consumo será lançado diretamente na conta da hospedagem e poderá ser acertado no check-out.
           </div>
           <Button variant="outline" className="rounded-2xl" onClick={() => setActiveDialog('details')}>
             Ajustes e detalhes
@@ -1278,14 +1387,14 @@ export default function POS() {
   const renderReviewStep = () => (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">4. Revise e conclua</h2>
-        <p className="mt-1 text-sm text-slate-500">Confira os dados, itens e cobrança antes de finalizar.</p>
+        <h2 className="text-lg font-semibold text-slate-900">3. Revise e conclua</h2>
+        <p className="mt-1 text-sm text-slate-500">Confira os dados antes de finalizar a venda.</p>
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
         <DialogStat label="Cliente" value={resolvedCustomerName || 'Consumidor'} />
         <DialogStat
-          label="Tipo"
+          label="Pagamento"
           value={settlementType === 'FOLIO' ? 'Conta do hóspede' : salePresetLabels[salePreset]}
         />
         <DialogStat label="Itens" value={`${cartDetailedItems.length}`} />
@@ -1334,9 +1443,8 @@ export default function POS() {
   );
 
   const renderStepContent = () => {
-    if (currentStep === 'customer') return renderCustomerStep();
     if (currentStep === 'items') return renderItemsStep();
-    if (currentStep === 'settlement') return renderSettlementStep();
+    if (currentStep === 'payment') return renderPaymentStep();
     return renderReviewStep();
   };
 
@@ -1355,7 +1463,7 @@ export default function POS() {
               </div>
               <div className="inline-flex max-w-full items-center gap-2 overflow-hidden rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-600 xl:flex-none">
                 <Keyboard className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate whitespace-nowrap">Alt+1 pedidos • Alt+2 caixa • Alt+3 hospedagens • Alt+5 venda rápida • Alt+6 comanda • Alt+7 quarto • Ctrl+Enter finalizar</span>
+                <span className="truncate whitespace-nowrap">Alt+1 pedidos • Alt+2 caixa • Alt+3 hospedagens • Alt+9 pré-vendas • Alt+0 referências • Ctrl+Enter finalizar</span>
               </div>
             </div>
 
@@ -1435,9 +1543,9 @@ export default function POS() {
                 </div>
 
                 <div className="mt-4 space-y-3 text-sm">
-                  <SummaryRow label="Cliente" value={resolvedCustomerName || 'Aguardando identificação'} />
-                  <SummaryRow label="Origem" value={settlementType === 'FOLIO' ? 'Conta do hóspede' : salePresetLabels[salePreset]} />
-                  <SummaryRow label="Referência" value={settlementType === 'FOLIO' ? (selectedStay ? `Quarto ${selectedStay.roomUnit?.code ?? 'Sem quarto'}` : 'Sem hospedagem') : (tableNumber || 'Balcão')} />
+                  <SummaryRow label="Cliente" value={resolvedCustomerName || 'Consumidor'} />
+                  <SummaryRow label="Cobrança" value={settlementType === 'FOLIO' ? 'Conta do hóspede' : salePresetLabels[salePreset]} />
+                  <SummaryRow label="Referência" value={settlementType === 'FOLIO' ? (selectedStay ? `Quarto ${selectedStay.roomUnit?.code ?? 'S/N'}` : 'Aguardando') : (tableNumber || '—')} />
                   <SummaryRow label="Pagamento" value={settlementType === 'DIRECT' ? paymentMethodLabels[paymentMethod] : 'Conta do hóspede'} />
                 </div>
 
