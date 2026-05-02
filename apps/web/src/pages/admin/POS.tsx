@@ -1156,23 +1156,31 @@ export default function POS() {
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-2 xl:grid-cols-3">
-            {['7', '8', '9', 'clear', '4', '5', '6', 'back', '1', '2', '3', '.', '00', '0'].map((key) => (
+          <div className="grid grid-cols-3 gap-2">
+            {['7', '8', '9', '4', '5', '6', '1', '2', '3', '0', '00', '.'].map((key) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => applyKeypad(key)}
-                className={`rounded-2xl py-3 text-base font-semibold transition ${
-                  key === 'clear'
-                    ? 'bg-red-500 text-white'
-                    : key === 'back'
-                      ? 'bg-amber-400 text-slate-950'
-                      : 'bg-sky-700 text-white hover:bg-sky-600'
-                }`}
+                className="rounded-2xl py-3 text-base font-semibold bg-sky-700 text-white hover:bg-sky-600 transition"
               >
-                {key === 'clear' ? 'C' : key === 'back' ? '←' : key}
+                {key}
               </button>
             ))}
+            <button
+              type="button"
+              onClick={() => applyKeypad('clear')}
+              className="col-span-2 rounded-2xl py-3 text-base font-semibold bg-red-500 text-white transition"
+            >
+              C
+            </button>
+            <button
+              type="button"
+              onClick={() => applyKeypad('back')}
+              className="rounded-2xl py-3 text-base font-semibold bg-amber-400 text-slate-950 transition"
+            >
+              ←
+            </button>
           </div>
         </div>
       )}
@@ -1652,23 +1660,31 @@ export default function POS() {
               className="min-h-24"
             />
 
-            <div className="grid grid-cols-4 gap-2">
-              {['7', '8', '9', 'clear', '4', '5', '6', 'back', '1', '2', '3', '.', '00', '0'].map((key) => (
+            <div className="grid grid-cols-3 gap-2">
+              {['7', '8', '9', '4', '5', '6', '1', '2', '3', '0', '00', '.'].map((key) => (
                 <button
                   key={`details-${key}`}
                   type="button"
                   onClick={() => applyKeypad(key)}
-                  className={`rounded-2xl py-3 text-base font-semibold transition ${
-                    key === 'clear'
-                      ? 'bg-red-500 text-white'
-                      : key === 'back'
-                        ? 'bg-amber-400 text-slate-950'
-                        : 'bg-sky-700 text-white hover:bg-sky-600'
-                  }`}
+                  className="rounded-2xl py-3 text-base font-semibold bg-sky-700 text-white hover:bg-sky-600 transition"
                 >
-                  {key === 'clear' ? 'C' : key === 'back' ? '←' : key}
+                  {key}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => applyKeypad('clear')}
+                className="col-span-2 rounded-2xl py-3 text-base font-semibold bg-red-500 text-white transition"
+              >
+                C
+              </button>
+              <button
+                type="button"
+                onClick={() => applyKeypad('back')}
+                className="rounded-2xl py-3 text-base font-semibold bg-amber-400 text-slate-950 transition"
+              >
+                ←
+              </button>
             </div>
           </div>
         </DialogContent>
