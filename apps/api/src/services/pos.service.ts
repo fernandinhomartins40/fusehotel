@@ -24,7 +24,6 @@ import {
   UpdatePOSOrderStatusDto,
 } from '../types/pms';
 
-const prismaPms = prisma as any;
 
 const posOrderInclude = {
   stay: {
@@ -320,14 +319,14 @@ async function postOrderToFolio(tx: any, order: any) {
 
 export class POSService {
   static async listProducts() {
-    return prismaPms.posProduct.findMany({
+    return prisma.pOSProduct.findMany({
       include: { category: true },
       orderBy: [{ isActive: 'desc' }, { category: { order: 'asc' } }, { name: 'asc' }],
     });
   }
 
   static async createProduct(data: CreatePOSProductDto) {
-    return prismaPms.posProduct.create({
+    return prisma.pOSProduct.create({
       data: {
         name: data.name.trim(),
         sku: (data as any).sku?.trim(),
@@ -346,10 +345,10 @@ export class POSService {
   }
 
   static async updateProduct(id: string, data: CreatePOSProductDto) {
-    const product = await prismaPms.posProduct.findUnique({ where: { id } });
+    const product = await prisma.pOSProduct.findUnique({ where: { id } });
     if (!product) throw new NotFoundError('Produto não encontrado');
 
-    return prismaPms.posProduct.update({
+    return prisma.pOSProduct.update({
       where: { id },
       data: {
         name: data.name.trim(),
@@ -370,33 +369,33 @@ export class POSService {
   }
 
   static async deleteProduct(id: string) {
-    const product = await prismaPms.posProduct.findUnique({ where: { id } });
+    const product = await prisma.pOSProduct.findUnique({ where: { id } });
     if (!product) throw new NotFoundError('Produto não encontrado');
 
-    const orderItems = await prismaPms.posOrderItem.findFirst({ where: { productId: id } });
+    const orderItems = await prisma.pOSOrderItem.findFirst({ where: { productId: id } });
     if (orderItems) {
-      return prismaPms.posProduct.update({
+      return prisma.pOSProduct.update({
         where: { id },
         data: { isActive: false },
       });
     }
 
-    return prismaPms.posProduct.delete({ where: { id } });
+    return prisma.pOSProduct.delete({ where: { id } });
   }
 
   // --- Product Categories ---
 
   static async listCategories() {
-    return prismaPms.productCategory.findMany({
+    return prisma.productCategory.findMany({
       orderBy: [{ order: 'asc' }, { label: 'asc' }],
     });
   }
 
   static async createCategory(data: { slug: string; label: string; color?: string; order?: number }) {
-    const existing = await prismaPms.productCategory.findUnique({ where: { slug: data.slug } });
+    const existing = await prisma.productCategory.findUnique({ where: { slug: data.slug } });
     if (existing) throw new NotFoundError('Já existe uma categoria com este slug');
 
-    return prismaPms.productCategory.create({
+    return prisma.productCategory.create({
       data: {
         slug: data.slug.trim().toLowerCase(),
         label: data.label.trim(),
@@ -407,10 +406,10 @@ export class POSService {
   }
 
   static async updateCategory(id: string, data: { slug?: string; label?: string; color?: string; order?: number; isActive?: boolean }) {
-    const category = await prismaPms.productCategory.findUnique({ where: { id } });
+    const category = await prisma.productCategory.findUnique({ where: { id } });
     if (!category) throw new NotFoundError('Categoria não encontrada');
 
-    return prismaPms.productCategory.update({
+    return prisma.productCategory.update({
       where: { id },
       data: {
         slug: data.slug?.trim().toLowerCase() ?? category.slug,
@@ -423,29 +422,29 @@ export class POSService {
   }
 
   static async deleteCategory(id: string) {
-    const category = await prismaPms.productCategory.findUnique({ where: { id } });
+    const category = await prisma.productCategory.findUnique({ where: { id } });
     if (!category) throw new NotFoundError('Categoria não encontrada');
 
-    const productsCount = await prismaPms.posProduct.count({ where: { categoryId: id } });
+    const productsCount = await prisma.pOSProduct.count({ where: { categoryId: id } });
     if (productsCount > 0) {
-      return prismaPms.productCategory.update({
+      return prisma.productCategory.update({
         where: { id },
         data: { isActive: false },
       });
     }
 
-    return prismaPms.productCategory.delete({ where: { id } });
+    return prisma.productCategory.delete({ where: { id } });
   }
 
   static async listOrders() {
-    return prismaPms.posOrder.findMany({
+    return prisma.pOSOrder.findMany({
       include: posOrderInclude,
       orderBy: { createdAt: 'desc' },
     });
   }
 
   static async getActiveCashSession() {
-    return prismaPms.cashSession.findFirst({
+    return prisma.cashSession.findFirst({
       where: {
         status: CashSessionStatus.OPEN,
       },
@@ -464,7 +463,7 @@ export class POSService {
   }
 
   static async listCashSessions() {
-    return prismaPms.cashSession.findMany({
+    return prisma.cashSession.findMany({
       include: {
         movements: {
           orderBy: { createdAt: 'desc' },
@@ -479,7 +478,7 @@ export class POSService {
   }
 
   static async openCashSession(data: OpenCashSessionDto, user?: { id?: string; email?: string }) {
-    const existing = await prismaPms.cashSession.findFirst({
+    const existing = await prisma.cashSession.findFirst({
       where: { status: CashSessionStatus.OPEN },
     });
 
@@ -578,7 +577,7 @@ export class POSService {
   }
 
   static async createCashMovement(data: CreateCashMovementDto, user?: { id?: string; email?: string }) {
-    const session = await prismaPms.cashSession.findFirst({
+    const session = await prisma.cashSession.findFirst({
       where: { status: CashSessionStatus.OPEN },
     });
 
@@ -591,7 +590,7 @@ export class POSService {
         ? -Math.abs(Number(data.amount))
         : Number(data.amount);
 
-    return prismaPms.cashMovement.create({
+    return prisma.cashMovement.create({
       data: {
         cashSessionId: session.id,
         type: data.type,

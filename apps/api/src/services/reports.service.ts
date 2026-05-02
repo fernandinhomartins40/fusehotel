@@ -2,7 +2,6 @@ import { HousekeepingTaskStatus, ReservationStatus, StayStatus } from '@prisma/c
 import { startOfMonth } from 'date-fns';
 import { prisma } from '../config/database';
 
-const prismaPms = prisma as any;
 
 export class ReportsService {
   static async getOperationsSummary(referenceDate?: string) {
@@ -65,7 +64,7 @@ export class ReportsService {
           },
         },
       }),
-      prismaPms.maintenanceOrder.count({
+      prisma.maintenanceOrder.count({
         where: {
           status: {
             in: ['OPEN', 'IN_PROGRESS'],
@@ -103,7 +102,7 @@ export class ReportsService {
           balance: true,
         },
       }),
-      prismaPms.posOrder.aggregate({
+      prisma.pOSOrder.aggregate({
         where: {
           createdAt: {
             gte: monthStart,
@@ -119,7 +118,7 @@ export class ReportsService {
           id: true,
         },
       }),
-      prismaPms.reservationQuote.aggregate({
+      prisma.reservationQuote.aggregate({
         where: {
           createdAt: {
             gte: monthStart,
@@ -129,7 +128,7 @@ export class ReportsService {
           id: true,
         },
       }),
-      prismaPms.reservationQuote.count({
+      prisma.reservationQuote.count({
         where: {
           createdAt: {
             gte: monthStart,
@@ -137,7 +136,7 @@ export class ReportsService {
           status: 'CONVERTED',
         },
       }),
-      prismaPms.businessAccount.count({
+      prisma.businessAccount.count({
         where: {
           isActive: true,
         },
@@ -164,7 +163,7 @@ export class ReportsService {
           totalAmount: true,
         },
       }),
-      prismaPms.financialEntry.findMany({
+      prisma.financialEntry.findMany({
         where: {
           status: {
             in: ['OPEN', 'PARTIALLY_PAID', 'PAID'],

@@ -1,11 +1,10 @@
 import { prisma } from '../config/database';
 import { BadRequestError, NotFoundError } from '../utils/errors';
 
-const prismaPms = prisma as any;
 
 export class InventoryService {
   static async listProducts() {
-    const products = await prismaPms.posProduct.findMany({
+    const products = await prisma.pOSProduct.findMany({
       include: {
         inventoryMovements: {
           orderBy: { createdAt: 'desc' },
@@ -24,7 +23,7 @@ export class InventoryService {
   }
 
   static async createMovement(data: any, user?: { id?: string; email?: string }) {
-    const product = await prismaPms.posProduct.findUnique({
+    const product = await prisma.pOSProduct.findUnique({
       where: { id: data.productId },
     });
 
