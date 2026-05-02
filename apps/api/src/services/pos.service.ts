@@ -321,7 +321,8 @@ async function postOrderToFolio(tx: any, order: any) {
 export class POSService {
   static async listProducts() {
     return prismaPms.posProduct.findMany({
-      orderBy: [{ isActive: 'desc' }, { category: 'asc' }, { name: 'asc' }],
+      include: { category: true },
+      orderBy: [{ isActive: 'desc' }, { category: { order: 'asc' } }, { name: 'asc' }],
     });
   }
 
@@ -330,7 +331,8 @@ export class POSService {
       data: {
         name: data.name.trim(),
         sku: (data as any).sku?.trim(),
-        category: data.category ?? 'OTHER',
+        categoryId: data.categoryId,
+        image: data.image?.trim() || null,
         price: data.price,
         costPrice: (data as any).costPrice ?? 0,
         stockQuantity: (data as any).stockQuantity ?? 0,
@@ -339,6 +341,7 @@ export class POSService {
         trackStock: (data as any).trackStock ?? false,
         description: data.description?.trim(),
       },
+      include: { category: true },
     });
   }
 
@@ -351,7 +354,8 @@ export class POSService {
       data: {
         name: data.name.trim(),
         sku: (data as any).sku?.trim() ?? product.sku,
-        category: data.category ?? product.category,
+        categoryId: data.categoryId ?? product.categoryId,
+        image: data.image !== undefined ? (data.image?.trim() || null) : product.image,
         price: data.price ?? product.price,
         costPrice: (data as any).costPrice ?? product.costPrice,
         stockQuantity: (data as any).stockQuantity ?? product.stockQuantity,
@@ -361,6 +365,7 @@ export class POSService {
         isActive: (data as any).isActive ?? product.isActive,
         description: data.description?.trim() ?? product.description,
       },
+      include: { category: true },
     });
   }
 
@@ -377,6 +382,59 @@ export class POSService {
     }
 
     return prismaPms.posProduct.delete({ where: { id } });
+  }
+
+  // --- Product Categories ---
+
+  static async listCategories() {
+    return prismaPms.productCategory.findMany({
+      orderBy: [{ order: 'asc' }, { label: 'asc' }],
+    });
+  }
+
+  static async createCategory(data: { slug: string; label: string; color?: string; order?: number }) {
+    const existing = await prismaPms.productCategory.findUnique({ where: { slug: data.slug } });
+    if (existing) throw new NotFoundError('Já existe uma categoria com este slug');
+
+    return prismaPms.productCategory.create({
+      data: {
+        slug: data.slug.trim().toLowerCase(),
+        label: data.label.trim(),
+        color: data.color?.trim() || null,
+        order: data.order ?? 0,
+      },
+    });
+  }
+
+  static async updateCategory(id: string, data: { slug?: string; label?: string; color?: string; order?: number; isActive?: boolean }) {
+    const category = await prismaPms.productCategory.findUnique({ where: { id } });
+    if (!category) throw new NotFoundError('Categoria não encontrada');
+
+    return prismaPms.productCategory.update({
+      where: { id },
+      data: {
+        slug: data.slug?.trim().toLowerCase() ?? category.slug,
+        label: data.label?.trim() ?? category.label,
+        color: data.color !== undefined ? (data.color?.trim() || null) : category.color,
+        order: data.order ?? category.order,
+        isActive: data.isActive ?? category.isActive,
+      },
+    });
+  }
+
+  static async deleteCategory(id: string) {
+    const category = await prismaPms.productCategory.findUnique({ where: { id } });
+    if (!category) throw new NotFoundError('Categoria não encontrada');
+
+    const productsCount = await prismaPms.posProduct.count({ where: { categoryId: id } });
+    if (productsCount > 0) {
+      return prismaPms.productCategory.update({
+        where: { id },
+        data: { isActive: false },
+      });
+    }
+
+    return prismaPms.productCategory.delete({ where: { id } });
   }
 
   static async listOrders() {

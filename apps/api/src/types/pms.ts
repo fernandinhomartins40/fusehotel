@@ -8,7 +8,6 @@ import {
 
 export type MaintenanceOrderStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 export type MaintenanceOrderPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-export type POSProductCategory = 'FOOD' | 'BEVERAGE' | 'SERVICE' | 'CONVENIENCE' | 'OTHER';
 export type POSOrderOrigin = 'ROOM_SERVICE' | 'FRONTDESK' | 'RESTAURANT' | 'BAR';
 export type POSOrderStatus = 'OPEN' | 'PREPARING' | 'DELIVERED' | 'CLOSED' | 'CANCELLED';
 export type POSSettlementType = 'DIRECT' | 'FOLIO';
@@ -134,9 +133,10 @@ export interface UpdateMaintenanceOrderDto {
 
 export interface CreatePOSProductDto {
   name: string;
-  category: POSProductCategory;
+  categoryId: string;
   price: number;
   sku?: string;
+  image?: string;
   costPrice?: number;
   stockQuantity?: number;
   minStockQuantity?: number;

@@ -9,8 +9,8 @@ import type {
   POSOrderOrigin,
   POSOrderStatus,
   POSProduct,
-  POSProductCategory,
   POSSettlementType,
+  ProductCategory,
 } from '@/types/pms';
 
 function invalidatePOSQueries(queryClient: ReturnType<typeof useQueryClient>) {
@@ -41,7 +41,8 @@ export function useCreatePOSProduct() {
     mutationFn: async (payload: {
       name: string;
       sku?: string;
-      category: POSProductCategory;
+      categoryId: string;
+      image?: string;
       price: number;
       costPrice?: number;
       stockQuantity?: number;
@@ -72,7 +73,8 @@ export function useUpdatePOSProduct() {
       payload: {
         name: string;
         sku?: string;
-        category: POSProductCategory;
+        categoryId: string;
+        image?: string;
         price: number;
         costPrice?: number;
         stockQuantity?: number;
@@ -110,6 +112,72 @@ export function useDeletePOSProduct() {
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Erro ao remover produto');
+    },
+  });
+}
+
+export function useProductCategories() {
+  return useQuery<ProductCategory[]>({
+    queryKey: ['product-categories'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/pos/categories');
+      return data.data;
+    },
+  });
+}
+
+export function useCreateProductCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { slug: string; label: string; color?: string; order?: number }) => {
+      const { data } = await apiClient.post('/pos/categories', payload);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['product-categories'] });
+      toast.success('Categoria criada com sucesso');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao criar categoria');
+    },
+  });
+}
+
+export function useUpdateProductCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, payload }: { id: string; payload: { slug?: string; label?: string; color?: string; order?: number; isActive?: boolean } }) => {
+      const { data } = await apiClient.put(`/pos/categories/${id}`, payload);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['product-categories'] });
+      invalidatePOSQueries(queryClient);
+      toast.success('Categoria atualizada com sucesso');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao atualizar categoria');
+    },
+  });
+}
+
+export function useDeleteProductCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await apiClient.delete(`/pos/categories/${id}`);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['product-categories'] });
+      invalidatePOSQueries(queryClient);
+      toast.success('Categoria removida com sucesso');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao remover categoria');
     },
   });
 }

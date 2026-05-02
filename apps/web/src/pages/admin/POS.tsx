@@ -41,6 +41,7 @@ import {
   useRefundPOSPayment,
   useUpdatePOSOrder,
   useUpdatePOSOrderStatus,
+  useProductCategories,
 } from '@/hooks/usePOS';
 import { useOperationsReport } from '@/hooks/useReports';
 import type {
@@ -49,7 +50,6 @@ import type {
   POSOrderOrigin,
   POSOrderStatus,
   POSProduct,
-  POSProductCategory,
   POSSettlementType,
 } from '@/types/pms';
 
@@ -57,15 +57,6 @@ const currency = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
   currency: 'BRL',
 });
-
-const categoryLabels: Record<POSProductCategory | 'ALL', string> = {
-  ALL: 'Todos',
-  FOOD: 'Alimentos',
-  BEVERAGE: 'Bebidas',
-  SERVICE: 'Serviços',
-  CONVENIENCE: 'Conveniência',
-  OTHER: 'Outros',
-};
 
 const originLabels: Record<POSOrderOrigin, string> = {
   FRONTDESK: 'Balcão',
@@ -143,6 +134,7 @@ export default function POS() {
   const { data: products = [] } = usePOSProducts();
   const { data: orders = [] } = usePOSOrders();
   const { data: activeCashSession } = useActiveCashSession();
+  const { data: productCategories = [] } = useProductCategories();
 
   const createOrder = useCreatePOSOrder();
   const updateOrder = useUpdatePOSOrder();
@@ -155,7 +147,7 @@ export default function POS() {
   const createCashMovement = useCreateCashMovement();
 
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState<POSProductCategory | 'ALL'>('ALL');
+  const [category, setCategory] = useState<string>('ALL');
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [editingOrderId, setEditingOrderId] = useState('');
   const [activeDialog, setActiveDialog] = useState<DialogKey>(null);
@@ -205,7 +197,7 @@ export default function POS() {
 
   const filteredProducts = useMemo(() => {
     return activeProducts.filter((product) => {
-      const matchesCategory = category === 'ALL' || product.category === category;
+      const matchesCategory = category === 'ALL' || product.categoryId === category;
       const matchesSearch =
         !search ||
         product.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -1040,18 +1032,29 @@ export default function POS() {
       </div>
 
       <div className="flex gap-3 overflow-x-auto pb-1">
-        {Object.entries(categoryLabels).map(([value, label]) => (
+        <button
+          type="button"
+          onClick={() => setCategory('ALL')}
+          className={`min-w-[140px] rounded-2xl border px-4 py-4 text-left transition ${
+            category === 'ALL'
+              ? 'border-sky-700 bg-sky-700 text-white shadow-sm'
+              : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
+          }`}
+        >
+          <div className="font-semibold">Todos</div>
+        </button>
+        {productCategories.filter((c) => c.isActive).map((cat) => (
           <button
-            key={value}
+            key={cat.id}
             type="button"
-            onClick={() => setCategory(value as POSProductCategory | 'ALL')}
+            onClick={() => setCategory(cat.id)}
             className={`min-w-[140px] rounded-2xl border px-4 py-4 text-left transition ${
-              category === value
+              category === cat.id
                 ? 'border-sky-700 bg-sky-700 text-white shadow-sm'
                 : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
             }`}
           >
-            <div className="font-semibold">{label}</div>
+            <div className="font-semibold">{cat.label}</div>
           </button>
         ))}
       </div>
@@ -1073,7 +1076,7 @@ export default function POS() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="line-clamp-2 font-medium text-slate-900">{product.name}</div>
-                    <div className="mt-1 text-xs text-slate-500">{categoryLabels[product.category]}</div>
+                    <div className="mt-1 text-xs text-slate-500">{product.category?.label ?? '—'}</div>
                   </div>
                   <Grid2x2 className="h-4 w-4 shrink-0 text-slate-400" />
                 </div>

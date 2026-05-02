@@ -6,9 +6,8 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useConsumeProduct, useConsumeService } from '@/hooks/useFolios';
-import { usePOSProducts } from '@/hooks/usePOS';
+import { usePOSProducts, useProductCategories } from '@/hooks/usePOS';
 import { useServiceItemsAdmin } from '@/hooks/useLanding';
-import type { POSProductCategory } from '@/types/pms';
 
 interface ConsumeTabProps {
   folioId: string;
@@ -19,23 +18,14 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', {
   currency: 'BRL',
 });
 
-const categoryLabels: Record<POSProductCategory, string> = {
-  FOOD: 'Alimentos',
-  BEVERAGE: 'Bebidas',
-  SERVICE: 'Serviços',
-  CONVENIENCE: 'Conveniência',
-  OTHER: 'Outros',
-};
-
-type CategoryFilter = 'ALL' | POSProductCategory;
-
 export function ConsumeTab({ folioId }: ConsumeTabProps) {
   const { data: products, isLoading: loadingProducts } = usePOSProducts();
   const { data: serviceItems, isLoading: loadingServices } = useServiceItemsAdmin();
+  const { data: productCategories } = useProductCategories();
   const consumeProduct = useConsumeProduct();
   const consumeService = useConsumeService();
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('ALL');
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [mainTab, setMainTab] = useState<'products' | 'services'>('products');
 
   const filteredProducts = useMemo(() => {
@@ -44,7 +34,7 @@ export function ConsumeTab({ folioId }: ConsumeTabProps) {
 
     return products
       .filter((p) => p.isActive)
-      .filter((p) => categoryFilter === 'ALL' || p.category === categoryFilter)
+      .filter((p) => categoryFilter === 'ALL' || p.categoryId === categoryFilter)
       .filter((p) => {
         if (!query) return true;
         return (
@@ -72,11 +62,11 @@ export function ConsumeTab({ folioId }: ConsumeTabProps) {
   }, [serviceItems, search]);
 
   const categoryCounts = useMemo(() => {
-    if (!products) return {};
+    if (!products) return {} as Record<string, number>;
     const active = products.filter((p) => p.isActive);
-    const counts: Partial<Record<POSProductCategory, number>> = {};
+    const counts: Record<string, number> = {};
     for (const p of active) {
-      counts[p.category] = (counts[p.category] ?? 0) + 1;
+      counts[p.categoryId] = (counts[p.categoryId] ?? 0) + 1;
     }
     return counts;
   }, [products]);
@@ -132,11 +122,11 @@ export function ConsumeTab({ folioId }: ConsumeTabProps) {
               <TabsTrigger value="ALL" className="rounded-xl px-3 py-1.5 text-xs">
                 Todos
               </TabsTrigger>
-              {(Object.keys(categoryLabels) as POSProductCategory[])
-                .filter((cat) => categoryCounts[cat])
+              {(productCategories ?? [])
+                .filter((cat) => categoryCounts[cat.id])
                 .map((cat) => (
-                  <TabsTrigger key={cat} value={cat} className="rounded-xl px-3 py-1.5 text-xs">
-                    {categoryLabels[cat]}
+                  <TabsTrigger key={cat.id} value={cat.id} className="rounded-xl px-3 py-1.5 text-xs">
+                    {cat.label}
                   </TabsTrigger>
                 ))}
             </TabsList>
@@ -162,7 +152,7 @@ export function ConsumeTab({ folioId }: ConsumeTabProps) {
                           {currencyFormatter.format(product.price)}
                         </span>
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                          {categoryLabels[product.category]}
+                          {product.category?.label ?? '—'}
                         </Badge>
                         {product.trackStock && product.stockQuantity <= product.minStockQuantity && (
                           <Badge variant="destructive" className="text-[10px] px-1.5 py-0">

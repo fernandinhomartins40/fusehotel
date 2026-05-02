@@ -20,6 +20,11 @@ const router = Router();
 
 router.use(authenticate, requireRole(['ADMIN', 'MANAGER']));
 
+router.get('/categories', POSController.listCategories);
+router.post('/categories', POSController.createCategory);
+router.put('/categories/:id', POSController.updateCategory);
+router.delete('/categories/:id', POSController.deleteCategory);
+
 router.get('/products', POSController.listProducts);
 router.post('/products', validateBody(createPOSProductSchema), POSController.createProduct);
 router.put('/products/:id', validateBody(createPOSProductSchema), POSController.updateProduct);

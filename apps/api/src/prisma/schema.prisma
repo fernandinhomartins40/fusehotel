@@ -288,12 +288,20 @@ enum MaintenanceOrderPriority {
   URGENT
 }
 
-enum POSProductCategory {
-  FOOD
-  BEVERAGE
-  SERVICE
-  CONVENIENCE
-  OTHER
+model ProductCategory {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  label     String
+  color     String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products  POSProduct[]
+
+  @@index([order])
+  @@index([isActive])
 }
 
 enum POSOrderOrigin {
@@ -629,7 +637,9 @@ model POSProduct {
   id          String             @id @default(uuid())
   name        String
   sku         String?            @unique
-  category    POSProductCategory
+  categoryId  String
+  category    ProductCategory    @relation(fields: [categoryId], references: [id])
+  image       String?
   price       Decimal            @db.Decimal(10, 2)
   costPrice   Decimal            @default(0) @db.Decimal(10, 2)
   stockQuantity Decimal          @default(0) @db.Decimal(10, 2)
@@ -644,7 +654,7 @@ model POSProduct {
   items       POSOrderItem[]
   inventoryMovements InventoryMovement[]
 
-  @@index([category])
+  @@index([categoryId])
   @@index([isActive])
 }
 

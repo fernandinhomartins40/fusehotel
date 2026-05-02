@@ -39,7 +39,14 @@ export type MaintenanceOrderStatus = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CAN
 
 export type MaintenanceOrderPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
-export type POSProductCategory = 'FOOD' | 'BEVERAGE' | 'SERVICE' | 'CONVENIENCE' | 'OTHER';
+export interface ProductCategory {
+  id: string;
+  slug: string;
+  label: string;
+  color: string | null;
+  order: number;
+  isActive: boolean;
+}
 
 export type POSOrderOrigin = 'ROOM_SERVICE' | 'FRONTDESK' | 'RESTAURANT' | 'BAR';
 
@@ -298,7 +305,9 @@ export interface POSProduct {
   id: string;
   name: string;
   sku: string | null;
-  category: POSProductCategory;
+  categoryId: string;
+  category: ProductCategory;
+  image: string | null;
   price: number;
   costPrice: number;
   stockQuantity: number;

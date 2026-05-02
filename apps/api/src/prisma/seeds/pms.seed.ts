@@ -20,7 +20,6 @@ import {
   PaymentStatus,
   POSOrderOrigin,
   POSOrderStatus,
-  POSProductCategory,
   POSSettlementType,
   PreCheckInStatus,
   QuoteStatus,
@@ -237,28 +236,42 @@ export async function seedPmsData() {
     await prisma.inventoryBlock.create({ data: { accommodationId: accommodation.id, roomUnitId: block.roomCode ? roomUnitByCode.get(block.roomCode)?.id : null, title: block.title, reason: block.reason, startsAt: block.startsAt, endsAt: block.endsAt, stopSell: block.stopSell, allotment: block.allotment, salesChannel: block.salesChannel } });
   }
 
-  const posProductsPayload: Array<[string, string, POSProductCategory, number, number, number, number, string, boolean, string]> = [
-    ['Água sem gás 500ml', 'BEB-001', POSProductCategory.BEVERAGE, 5.5, 1.8, 120, 24, 'UN', true, 'Água mineral sem gás.'],
-    ['Água com gás 500ml', 'BEB-002', POSProductCategory.BEVERAGE, 6, 2.1, 90, 24, 'UN', true, 'Água mineral com gás.'],
-    ['Refrigerante lata 350ml', 'BEB-003', POSProductCategory.BEVERAGE, 8, 3.2, 80, 18, 'UN', true, 'Sabores variados.'],
-    ['Suco integral 300ml', 'BEB-004', POSProductCategory.BEVERAGE, 12, 4.5, 50, 12, 'UN', true, 'Suco natural gelado.'],
-    ['Cerveja long neck', 'BEB-005', POSProductCategory.BEVERAGE, 16, 6.8, 64, 18, 'UN', true, 'Cerveja premium long neck.'],
-    ['Espumante 187ml', 'BEB-006', POSProductCategory.BEVERAGE, 39, 18, 20, 6, 'UN', true, 'Mini espumante para celebrações.'],
-    ['Café expresso', 'ALM-001', POSProductCategory.FOOD, 7, 1.5, 999, 0, 'UN', false, 'Café expresso do bar.'],
-    ['Sanduíche natural', 'ALM-002', POSProductCategory.FOOD, 24, 9.8, 25, 8, 'UN', true, 'Sanduíche leve para lanche rápido.'],
-    ['Hambúrguer artesanal', 'ALM-003', POSProductCategory.FOOD, 39, 15.2, 18, 6, 'UN', true, 'Hambúrguer com fritas.'],
-    ['Pizza individual marguerita', 'ALM-004', POSProductCategory.FOOD, 42, 17.5, 15, 4, 'UN', true, 'Pizza individual assada no forno.'],
-    ['Tábua de frios', 'ALM-005', POSProductCategory.FOOD, 58, 24, 12, 4, 'UN', true, 'Porção para duas pessoas.'],
-    ['Sobremesa do dia', 'ALM-006', POSProductCategory.FOOD, 18, 6.5, 20, 5, 'UN', true, 'Sobremesa fresca do restaurante.'],
-    ['Lavanderia - camiseta', 'SER-001', POSProductCategory.SERVICE, 12, 0, 999, 0, 'UN', false, 'Lavagem e passagem de camiseta.'],
-    ['Lavanderia - calça', 'SER-002', POSProductCategory.SERVICE, 18, 0, 999, 0, 'UN', false, 'Lavagem e passagem de calça.'],
-    ['Transfer aeroporto', 'SER-003', POSProductCategory.SERVICE, 160, 0, 999, 0, 'UN', false, 'Transfer compartilhado aeroporto/hotel.'],
-    ['Kit amenidades premium', 'CON-001', POSProductCategory.CONVENIENCE, 34, 12, 14, 4, 'UN', true, 'Kit com chinelo, hidratante e itens premium.'],
-    ['Protetor solar 200ml', 'CON-002', POSProductCategory.CONVENIENCE, 45, 18, 10, 3, 'UN', true, 'Protetor solar para venda avulsa.'],
-    ['Balde de gelo', 'OUT-001', POSProductCategory.OTHER, 15, 2, 999, 0, 'UN', false, 'Serviço de entrega de gelo no quarto.'],
+  const productCategoriesPayload = [
+    { slug: 'FOOD', label: 'Alimentos', color: '#f97316', order: 0 },
+    { slug: 'BEVERAGE', label: 'Bebidas', color: '#3b82f6', order: 1 },
+    { slug: 'SERVICE', label: 'Serviços', color: '#8b5cf6', order: 2 },
+    { slug: 'CONVENIENCE', label: 'Conveniência', color: '#10b981', order: 3 },
+    { slug: 'OTHER', label: 'Outros', color: '#6b7280', order: 4 },
   ];
-  for (const [name, sku, category, price, costPrice, stockQuantity, minStockQuantity, saleUnit, trackStock, description] of posProductsPayload) {
-    await prisma.pOSProduct.create({ data: { name, sku, category, price, costPrice, stockQuantity, minStockQuantity, saleUnit, trackStock, description } });
+  for (const cat of productCategoriesPayload) {
+    await prisma.productCategory.create({ data: cat });
+  }
+  const allCategories = await prisma.productCategory.findMany();
+  const categoryBySlug = new Map(allCategories.map((c) => [c.slug, c]));
+
+  const posProductsPayload: Array<[string, string, string, number, number, number, number, string, boolean, string]> = [
+    ['Água sem gás 500ml', 'BEB-001', 'BEVERAGE', 5.5, 1.8, 120, 24, 'UN', true, 'Água mineral sem gás.'],
+    ['Água com gás 500ml', 'BEB-002', 'BEVERAGE', 6, 2.1, 90, 24, 'UN', true, 'Água mineral com gás.'],
+    ['Refrigerante lata 350ml', 'BEB-003', 'BEVERAGE', 8, 3.2, 80, 18, 'UN', true, 'Sabores variados.'],
+    ['Suco integral 300ml', 'BEB-004', 'BEVERAGE', 12, 4.5, 50, 12, 'UN', true, 'Suco natural gelado.'],
+    ['Cerveja long neck', 'BEB-005', 'BEVERAGE', 16, 6.8, 64, 18, 'UN', true, 'Cerveja premium long neck.'],
+    ['Espumante 187ml', 'BEB-006', 'BEVERAGE', 39, 18, 20, 6, 'UN', true, 'Mini espumante para celebrações.'],
+    ['Café expresso', 'ALM-001', 'FOOD', 7, 1.5, 999, 0, 'UN', false, 'Café expresso do bar.'],
+    ['Sanduíche natural', 'ALM-002', 'FOOD', 24, 9.8, 25, 8, 'UN', true, 'Sanduíche leve para lanche rápido.'],
+    ['Hambúrguer artesanal', 'ALM-003', 'FOOD', 39, 15.2, 18, 6, 'UN', true, 'Hambúrguer com fritas.'],
+    ['Pizza individual marguerita', 'ALM-004', 'FOOD', 42, 17.5, 15, 4, 'UN', true, 'Pizza individual assada no forno.'],
+    ['Tábua de frios', 'ALM-005', 'FOOD', 58, 24, 12, 4, 'UN', true, 'Porção para duas pessoas.'],
+    ['Sobremesa do dia', 'ALM-006', 'FOOD', 18, 6.5, 20, 5, 'UN', true, 'Sobremesa fresca do restaurante.'],
+    ['Lavanderia - camiseta', 'SER-001', 'SERVICE', 12, 0, 999, 0, 'UN', false, 'Lavagem e passagem de camiseta.'],
+    ['Lavanderia - calça', 'SER-002', 'SERVICE', 18, 0, 999, 0, 'UN', false, 'Lavagem e passagem de calça.'],
+    ['Transfer aeroporto', 'SER-003', 'SERVICE', 160, 0, 999, 0, 'UN', false, 'Transfer compartilhado aeroporto/hotel.'],
+    ['Kit amenidades premium', 'CON-001', 'CONVENIENCE', 34, 12, 14, 4, 'UN', true, 'Kit com chinelo, hidratante e itens premium.'],
+    ['Protetor solar 200ml', 'CON-002', 'CONVENIENCE', 45, 18, 10, 3, 'UN', true, 'Protetor solar para venda avulsa.'],
+    ['Balde de gelo', 'OUT-001', 'OTHER', 15, 2, 999, 0, 'UN', false, 'Serviço de entrega de gelo no quarto.'],
+  ];
+  for (const [name, sku, categorySlug, price, costPrice, stockQuantity, minStockQuantity, saleUnit, trackStock, description] of posProductsPayload) {
+    const categoryId = categoryBySlug.get(categorySlug)!.id;
+    await prisma.pOSProduct.create({ data: { name, sku, categoryId, price, costPrice, stockQuantity, minStockQuantity, saleUnit, trackStock, description } });
   }
   const posProducts = await prisma.pOSProduct.findMany();
   const productBySku = new Map(posProducts.map((item) => [item.sku || item.name, item]));

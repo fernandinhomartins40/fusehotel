@@ -39,6 +39,42 @@ export class POSController {
     }
   }
 
+  static async listCategories(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const categories = await POSService.listCategories();
+      return sendSuccess(res, categories);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async createCategory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const category = await POSService.createCategory(req.body);
+      return sendSuccess(res, category, 'Categoria criada com sucesso', 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updateCategory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const category = await POSService.updateCategory(req.params.id, req.body);
+      return sendSuccess(res, category, 'Categoria atualizada com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deleteCategory(req: Request, res: Response, next: NextFunction) {
+    try {
+      await POSService.deleteCategory(req.params.id);
+      return sendSuccess(res, null, 'Categoria removida com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async listOrders(_req: Request, res: Response, next: NextFunction) {
     try {
       const orders = await POSService.listOrders();

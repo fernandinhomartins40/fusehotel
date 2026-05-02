@@ -10,7 +10,6 @@ import {
 const uuidSchema = z.string().uuid('Identificador invalido');
 const maintenancePrioritySchema = z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']);
 const maintenanceStatusSchema = z.enum(['OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']);
-const posProductCategorySchema = z.enum(['FOOD', 'BEVERAGE', 'SERVICE', 'CONVENIENCE', 'OTHER']);
 const posOrderOriginSchema = z.enum(['ROOM_SERVICE', 'FRONTDESK', 'RESTAURANT', 'BAR']);
 const posOrderStatusSchema = z.enum(['OPEN', 'PREPARING', 'DELIVERED', 'CLOSED', 'CANCELLED']);
 const posSettlementTypeSchema = z.enum(['DIRECT', 'FOLIO']);
@@ -147,7 +146,8 @@ export const updateMaintenanceOrderSchema = z.object({
 export const createPOSProductSchema = z.object({
   name: z.string().min(2).max(120),
   sku: z.string().max(50).optional(),
-  category: posProductCategorySchema,
+  categoryId: uuidSchema,
+  image: z.string().max(500).optional(),
   price: z.number().positive(),
   costPrice: z.number().nonnegative().optional(),
   stockQuantity: z.number().nonnegative().optional(),
