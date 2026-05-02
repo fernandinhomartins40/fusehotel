@@ -63,6 +63,57 @@ export function useCreatePOSProduct() {
   });
 }
 
+export function useUpdatePOSProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, payload }: {
+      id: string;
+      payload: {
+        name: string;
+        sku?: string;
+        category: POSProductCategory;
+        price: number;
+        costPrice?: number;
+        stockQuantity?: number;
+        minStockQuantity?: number;
+        saleUnit?: string;
+        trackStock?: boolean;
+        isActive?: boolean;
+        description?: string;
+      };
+    }) => {
+      const { data } = await apiClient.put(`/pos/products/${id}`, payload);
+      return data.data;
+    },
+    onSuccess: () => {
+      invalidatePOSQueries(queryClient);
+      toast.success('Produto atualizado com sucesso');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao atualizar produto');
+    },
+  });
+}
+
+export function useDeletePOSProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await apiClient.delete(`/pos/products/${id}`);
+      return data.data;
+    },
+    onSuccess: () => {
+      invalidatePOSQueries(queryClient);
+      toast.success('Produto removido com sucesso');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao remover produto');
+    },
+  });
+}
+
 export function usePOSOrders() {
   return useQuery<POSOrder[]>({
     queryKey: ['pos-orders'],

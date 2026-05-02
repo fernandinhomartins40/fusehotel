@@ -45,6 +45,37 @@ export function useConsumeProduct() {
   });
 }
 
+export function useConsumeService() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      folioId,
+      serviceItemId,
+      quantity,
+    }: {
+      folioId: string;
+      serviceItemId: string;
+      quantity?: number;
+    }) => {
+      const { data } = await apiClient.post(`/folios/${folioId}/consume-service`, {
+        serviceItemId,
+        quantity: quantity ?? 1,
+      });
+      return data.data;
+    },
+    onSuccess: (folio) => {
+      queryClient.invalidateQueries({ queryKey: ['stays'] });
+      queryClient.invalidateQueries({ queryKey: ['frontdesk-dashboard'] });
+      queryClient.setQueryData(['folio', folio.stayId], folio);
+      toast.success('Servico registrado com sucesso');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao registrar servico');
+    },
+  });
+}
+
 export function useAddFolioEntry() {
   const queryClient = useQueryClient();
 

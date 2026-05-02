@@ -29,4 +29,13 @@ export class FoliosController {
       next(error);
     }
   }
+
+  static async consumeService(req: Request, res: Response, next: NextFunction) {
+    try {
+      const folio = await FoliosService.consumeService(req.params.folioId, req.body);
+      return sendSuccess(res, folio, 'Servico registrado com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
 }

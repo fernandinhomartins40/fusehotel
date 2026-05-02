@@ -1,7 +1,7 @@
 import { FolioEntryType, Prisma } from '@prisma/client';
 import { prisma } from '../config/database';
 import { BadRequestError, NotFoundError } from '../utils/errors';
-import { ConsumeProductDto, CreateFolioEntryDto } from '../types/pms';
+import { ConsumeProductDto, ConsumeServiceDto, CreateFolioEntryDto } from '../types/pms';
 
 const CREDIT_ENTRY_TYPES = new Set<FolioEntryType>([
   FolioEntryType.DISCOUNT,
@@ -147,6 +147,48 @@ export class FoliosService {
       });
 
       // Recalculate balance
+      const aggregate = await tx.folioEntry.aggregate({
+        where: { folioId },
+        _sum: { amount: true },
+      });
+      const balance = Number(aggregate._sum.amount ?? 0);
+
+      await tx.folio.update({
+        where: { id: folioId },
+        data: { balance },
+      });
+
+      return this.getByIdWithRelations(folioId, tx);
+    });
+  }
+
+  static async consumeService(folioId: string, data: ConsumeServiceDto) {
+    return prisma.$transaction(async (tx) => {
+      const folio = await tx.folio.findUnique({ where: { id: folioId } });
+      if (!folio) throw new NotFoundError('Folio nao encontrado');
+      if (folio.isClosed) throw new BadRequestError('Nao e possivel lancar em um folio fechado');
+
+      const service = await tx.serviceItem.findUnique({ where: { id: data.serviceItemId } });
+      if (!service) throw new NotFoundError('Servico nao encontrado');
+      if (!service.isActive) throw new BadRequestError('Servico inativo');
+      if (!service.isChargeable || !service.price) throw new BadRequestError('Este servico nao possui preco configurado');
+
+      const quantity = data.quantity ?? 1;
+      const unitPrice = Number(service.price);
+      const totalAmount = unitPrice * quantity;
+
+      await tx.folioEntry.create({
+        data: {
+          folioId,
+          type: FolioEntryType.ROOM_SERVICE,
+          source: 'MANUAL',
+          description: quantity > 1 ? `${service.title} x${quantity}` : service.title,
+          amount: totalAmount,
+          quantity,
+          referenceId: service.id,
+        },
+      });
+
       const aggregate = await tx.folioEntry.aggregate({
         where: { folioId },
         _sum: { amount: true },

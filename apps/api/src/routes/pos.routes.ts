@@ -22,6 +22,8 @@ router.use(authenticate, requireRole(['ADMIN', 'MANAGER']));
 
 router.get('/products', POSController.listProducts);
 router.post('/products', validateBody(createPOSProductSchema), POSController.createProduct);
+router.put('/products/:id', validateBody(createPOSProductSchema), POSController.updateProduct);
+router.delete('/products/:id', POSController.deleteProduct);
 router.get('/orders', POSController.listOrders);
 router.post('/orders', validateBody(createPOSOrderSchema), POSController.createOrder);
 router.patch('/orders/:id', validateBody(updatePOSOrderSchema), POSController.updateOrder);

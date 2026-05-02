@@ -342,6 +342,43 @@ export class POSService {
     });
   }
 
+  static async updateProduct(id: string, data: CreatePOSProductDto) {
+    const product = await prismaPms.posProduct.findUnique({ where: { id } });
+    if (!product) throw new NotFoundError('Produto não encontrado');
+
+    return prismaPms.posProduct.update({
+      where: { id },
+      data: {
+        name: data.name.trim(),
+        sku: (data as any).sku?.trim() ?? product.sku,
+        category: data.category ?? product.category,
+        price: data.price ?? product.price,
+        costPrice: (data as any).costPrice ?? product.costPrice,
+        stockQuantity: (data as any).stockQuantity ?? product.stockQuantity,
+        minStockQuantity: (data as any).minStockQuantity ?? product.minStockQuantity,
+        saleUnit: (data as any).saleUnit?.trim() || product.saleUnit,
+        trackStock: (data as any).trackStock ?? product.trackStock,
+        isActive: (data as any).isActive ?? product.isActive,
+        description: data.description?.trim() ?? product.description,
+      },
+    });
+  }
+
+  static async deleteProduct(id: string) {
+    const product = await prismaPms.posProduct.findUnique({ where: { id } });
+    if (!product) throw new NotFoundError('Produto não encontrado');
+
+    const orderItems = await prismaPms.posOrderItem.findFirst({ where: { productId: id } });
+    if (orderItems) {
+      return prismaPms.posProduct.update({
+        where: { id },
+        data: { isActive: false },
+      });
+    }
+
+    return prismaPms.posProduct.delete({ where: { id } });
+  }
+
   static async listOrders() {
     return prismaPms.posOrder.findMany({
       include: posOrderInclude,

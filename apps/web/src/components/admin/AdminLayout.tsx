@@ -113,6 +113,13 @@ const catalogItems: MenuItem[] = [
       'data-[active=true]:bg-sky-50 data-[active=true]:text-sky-700 data-[active=true]:border-r-2 data-[active=true]:border-sky-600',
   },
   {
+    path: '/admin/products',
+    label: 'Produtos',
+    icon: ShoppingCart,
+    activeClassName:
+      'data-[active=true]:bg-amber-50 data-[active=true]:text-amber-700 data-[active=true]:border-r-2 data-[active=true]:border-amber-600',
+  },
+  {
     path: '/admin/packages-promotions',
     label: 'Promoções',
     icon: Tag,

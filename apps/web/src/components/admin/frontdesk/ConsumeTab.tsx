@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Package, Plus, Search } from 'lucide-react';
+import { Briefcase, Package, Plus, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useConsumeProduct } from '@/hooks/useFolios';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useConsumeProduct, useConsumeService } from '@/hooks/useFolios';
 import { usePOSProducts } from '@/hooks/usePOS';
+import { useServiceItemsAdmin } from '@/hooks/useLanding';
 import type { POSProductCategory } from '@/types/pms';
 
 interface ConsumeTabProps {
@@ -21,18 +22,21 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', {
 const categoryLabels: Record<POSProductCategory, string> = {
   FOOD: 'Alimentos',
   BEVERAGE: 'Bebidas',
-  SERVICE: 'Servicos',
-  CONVENIENCE: 'Conveniencia',
+  SERVICE: 'Serviços',
+  CONVENIENCE: 'Conveniência',
   OTHER: 'Outros',
 };
 
 type CategoryFilter = 'ALL' | POSProductCategory;
 
 export function ConsumeTab({ folioId }: ConsumeTabProps) {
-  const { data: products, isLoading } = usePOSProducts();
+  const { data: products, isLoading: loadingProducts } = usePOSProducts();
+  const { data: serviceItems, isLoading: loadingServices } = useServiceItemsAdmin();
   const consumeProduct = useConsumeProduct();
+  const consumeService = useConsumeService();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('ALL');
+  const [mainTab, setMainTab] = useState<'products' | 'services'>('products');
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
@@ -51,6 +55,22 @@ export function ConsumeTab({ folioId }: ConsumeTabProps) {
       });
   }, [products, search, categoryFilter]);
 
+  const chargeableServices = useMemo(() => {
+    if (!serviceItems) return [];
+    const query = search.trim().toLowerCase();
+
+    return (serviceItems as any[])
+      .filter((s) => s.isActive && s.isChargeable && s.price)
+      .filter((s) => {
+        if (!query) return true;
+        return (
+          s.title.toLowerCase().includes(query) ||
+          s.subtitle?.toLowerCase().includes(query) ||
+          s.description?.toLowerCase().includes(query)
+        );
+      });
+  }, [serviceItems, search]);
+
   const categoryCounts = useMemo(() => {
     if (!products) return {};
     const active = products.filter((p) => p.isActive);
@@ -61,14 +81,20 @@ export function ConsumeTab({ folioId }: ConsumeTabProps) {
     return counts;
   }, [products]);
 
-  const handleConsume = (productId: string) => {
+  const handleConsumeProduct = (productId: string) => {
     consumeProduct.mutate({ folioId, productId, quantity: 1 });
   };
+
+  const handleConsumeService = (serviceItemId: string) => {
+    consumeService.mutate({ folioId, serviceItemId, quantity: 1 });
+  };
+
+  const isLoading = loadingProducts || loadingServices;
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12 text-gray-500">
-        Carregando produtos...
+        Carregando...
       </div>
     );
   }
@@ -80,69 +106,129 @@ export function ConsumeTab({ folioId }: ConsumeTabProps) {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar produto..."
+          placeholder="Buscar produto ou serviço..."
           className="pl-9"
         />
       </div>
 
-      <Tabs value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}>
-        <TabsList className="h-auto flex-wrap rounded-2xl bg-slate-100 p-1 w-full">
-          <TabsTrigger value="ALL" className="rounded-xl px-3 py-1.5 text-xs">
-            Todos
+      <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as 'products' | 'services')}>
+        <TabsList className="w-full">
+          <TabsTrigger value="products" className="flex-1 gap-1.5">
+            <Package className="h-3.5 w-3.5" />
+            Produtos
           </TabsTrigger>
-          {(Object.keys(categoryLabels) as POSProductCategory[])
-            .filter((cat) => categoryCounts[cat])
-            .map((cat) => (
-              <TabsTrigger key={cat} value={cat} className="rounded-xl px-3 py-1.5 text-xs">
-                {categoryLabels[cat]}
-              </TabsTrigger>
-            ))}
+          <TabsTrigger value="services" className="flex-1 gap-1.5">
+            <Briefcase className="h-3.5 w-3.5" />
+            Serviços
+            {chargeableServices.length > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">{chargeableServices.length}</Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
-      </Tabs>
 
-      <ScrollArea className="flex-1">
-        {!filteredProducts.length ? (
-          <div className="rounded-xl border border-dashed p-6 text-center text-sm text-slate-500">
-            <Package className="mx-auto h-8 w-8 mb-2 text-slate-300" />
-            Nenhum produto encontrado.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {filteredProducts.map((product) => (
-              <div
-                key={product.id}
-                className="rounded-xl border p-3 flex items-center justify-between gap-3"
-              >
-                <div className="min-w-0">
-                  <div className="font-medium text-sm text-slate-900">{product.name}</div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-sm font-semibold text-slate-700">
-                      {currencyFormatter.format(product.price)}
-                    </span>
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                      {categoryLabels[product.category]}
-                    </Badge>
-                    {product.trackStock && product.stockQuantity <= product.minStockQuantity && (
-                      <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                        Estoque baixo
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="shrink-0 h-8 w-8 p-0"
-                  onClick={() => handleConsume(product.id)}
-                  disabled={consumeProduct.isPending}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+        <TabsContent value="products" className="mt-3 space-y-3">
+          <Tabs value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}>
+            <TabsList className="h-auto flex-wrap rounded-2xl bg-slate-100 p-1 w-full">
+              <TabsTrigger value="ALL" className="rounded-xl px-3 py-1.5 text-xs">
+                Todos
+              </TabsTrigger>
+              {(Object.keys(categoryLabels) as POSProductCategory[])
+                .filter((cat) => categoryCounts[cat])
+                .map((cat) => (
+                  <TabsTrigger key={cat} value={cat} className="rounded-xl px-3 py-1.5 text-xs">
+                    {categoryLabels[cat]}
+                  </TabsTrigger>
+                ))}
+            </TabsList>
+          </Tabs>
+
+          <ScrollArea className="flex-1">
+            {!filteredProducts.length ? (
+              <div className="rounded-xl border border-dashed p-6 text-center text-sm text-slate-500">
+                <Package className="mx-auto h-8 w-8 mb-2 text-slate-300" />
+                Nenhum produto encontrado.
               </div>
-            ))}
-          </div>
-        )}
-      </ScrollArea>
+            ) : (
+              <div className="space-y-2">
+                {filteredProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="rounded-xl border p-3 flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm text-slate-900">{product.name}</div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-sm font-semibold text-slate-700">
+                          {currencyFormatter.format(product.price)}
+                        </span>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                          {categoryLabels[product.category]}
+                        </Badge>
+                        {product.trackStock && product.stockQuantity <= product.minStockQuantity && (
+                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                            Estoque baixo
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="shrink-0 h-8 w-8 p-0"
+                      onClick={() => handleConsumeProduct(product.id)}
+                      disabled={consumeProduct.isPending}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </TabsContent>
+
+        <TabsContent value="services" className="mt-3">
+          <ScrollArea className="flex-1">
+            {!chargeableServices.length ? (
+              <div className="rounded-xl border border-dashed p-6 text-center text-sm text-slate-500">
+                <Briefcase className="mx-auto h-8 w-8 mb-2 text-slate-300" />
+                <div>Nenhum serviço disponível para lançamento.</div>
+                <div className="mt-1 text-xs">Configure serviços com preço em Site &gt; Serviços.</div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {chargeableServices.map((service: any) => (
+                  <div
+                    key={service.id}
+                    className="rounded-xl border p-3 flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm text-slate-900">{service.title}</div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-sm font-semibold text-slate-700">
+                          {currencyFormatter.format(Number(service.price))}
+                        </span>
+                        {service.subtitle && (
+                          <span className="text-xs text-slate-500">{service.subtitle}</span>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="shrink-0 h-8 w-8 p-0"
+                      onClick={() => handleConsumeService(service.id)}
+                      disabled={consumeService.isPending}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

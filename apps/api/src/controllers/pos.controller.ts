@@ -21,6 +21,24 @@ export class POSController {
     }
   }
 
+  static async updateProduct(req: Request, res: Response, next: NextFunction) {
+    try {
+      const product = await POSService.updateProduct(req.params.id, req.body);
+      return sendSuccess(res, product, 'Produto atualizado com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deleteProduct(req: Request, res: Response, next: NextFunction) {
+    try {
+      await POSService.deleteProduct(req.params.id);
+      return sendSuccess(res, null, 'Produto removido com sucesso');
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async listOrders(_req: Request, res: Response, next: NextFunction) {
     try {
       const orders = await POSService.listOrders();

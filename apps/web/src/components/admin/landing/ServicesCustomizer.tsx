@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Pencil, Trash2, Edit2, Save, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Edit2, Save, X, DollarSign } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import {
   useLandingSettings,
   useUpdateLandingSettings,
@@ -219,8 +220,8 @@ const AccommodationSectionEditor = () => {
   const deleteItem = useDeleteServiceItem();
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ title: '', subtitle: '', description: '', image: '', features: [] as string[] });
-  const [newItem, setNewItem] = useState({ title: '', subtitle: '', description: '', image: '', features: [] as string[] });
+  const [editForm, setEditForm] = useState({ title: '', subtitle: '', description: '', image: '', features: [] as string[], price: '', isChargeable: false });
+  const [newItem, setNewItem] = useState({ title: '', subtitle: '', description: '', image: '', features: [] as string[], price: '', isChargeable: false });
   const [showNewForm, setShowNewForm] = useState(false);
 
   const config = (settingsData?.config as AccommodationSectionConfig) || defaultAccommodationSectionConfig;
@@ -255,11 +256,13 @@ const AccommodationSectionEditor = () => {
         description: newItem.description,
         image: newItem.image,
         features: newItem.features.filter(f => f.trim() !== ''),
-        isActive: true
+        isActive: true,
+        price: newItem.price ? parseFloat(newItem.price) : null,
+        isChargeable: newItem.isChargeable,
       },
       {
         onSuccess: () => {
-          setNewItem({ title: '', subtitle: '', description: '', image: '', features: [] });
+          setNewItem({ title: '', subtitle: '', description: '', image: '', features: [], price: '', isChargeable: false });
           setShowNewForm(false);
         }
       }
@@ -273,7 +276,9 @@ const AccommodationSectionEditor = () => {
       subtitle: item.subtitle || '',
       description: item.description,
       image: item.image,
-      features: item.features
+      features: item.features,
+      price: item.price != null ? String(item.price) : '',
+      isChargeable: item.isChargeable ?? false,
     });
   };
 
@@ -286,7 +291,9 @@ const AccommodationSectionEditor = () => {
           subtitle: editForm.subtitle,
           description: editForm.description,
           image: editForm.image,
-          features: editForm.features.filter(f => f.trim() !== '')
+          features: editForm.features.filter(f => f.trim() !== ''),
+          price: editForm.price ? parseFloat(editForm.price) : null,
+          isChargeable: editForm.isChargeable,
         }
       },
       {
@@ -418,6 +425,27 @@ const AccommodationSectionEditor = () => {
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Preço (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={newItem.price}
+                    onChange={(e) => setNewItem(prev => ({ ...prev, price: e.target.value }))}
+                    placeholder="0,00"
+                  />
+                </div>
+                <div className="flex items-center gap-2 pt-6">
+                  <Switch
+                    checked={newItem.isChargeable}
+                    onCheckedChange={(checked) => setNewItem(prev => ({ ...prev, isChargeable: checked }))}
+                  />
+                  <Label>Lançável na conta</Label>
+                </div>
+              </div>
+
               <div className="flex gap-2">
                 <Button onClick={handleCreateItem} disabled={createItem.isPending}>
                   <Save className="h-4 w-4 mr-2" />
@@ -462,6 +490,27 @@ const AccommodationSectionEditor = () => {
                       />
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Preço (R$)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={editForm.price}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, price: e.target.value }))}
+                          placeholder="0,00"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 pt-6">
+                        <Switch
+                          checked={editForm.isChargeable}
+                          onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, isChargeable: checked }))}
+                        />
+                        <Label>Lançável na conta</Label>
+                      </div>
+                    </div>
+
                     <div className="flex gap-2">
                       <Button
                         size="sm"
@@ -488,6 +537,16 @@ const AccommodationSectionEditor = () => {
                       <h4 className="font-semibold">{item.title}</h4>
                       {item.subtitle && <p className="text-sm text-muted-foreground">{item.subtitle}</p>}
                       <p className="text-sm mt-2 line-clamp-2">{item.description}</p>
+                      {(item.price != null || item.isChargeable) && (
+                        <div className="flex items-center gap-2 mt-2">
+                          {item.price != null && <span className="text-sm font-semibold text-green-700">R$ {Number(item.price).toFixed(2)}</span>}
+                          {item.isChargeable && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                              <DollarSign className="h-3 w-3" /> Lançável
+                            </span>
+                          )}
+                        </div>
+                      )}
                       <div className="flex gap-2 mt-4">
                         <Button
                           size="sm"
@@ -542,8 +601,8 @@ const GastronomySectionEditor = () => {
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ title: '', subtitle: '', description: '', image: '', features: [] as string[] });
-  const [newItem, setNewItem] = useState({ title: '', subtitle: '', description: '', image: '', features: [] as string[] });
+  const [editForm, setEditForm] = useState({ title: '', subtitle: '', description: '', image: '', features: [] as string[], price: '', isChargeable: false });
+  const [newItem, setNewItem] = useState({ title: '', subtitle: '', description: '', image: '', features: [] as string[], price: '', isChargeable: false });
   const [showNewForm, setShowNewForm] = useState(false);
 
   const onSubmit = (data: GastronomySectionConfig) => {
@@ -564,9 +623,11 @@ const GastronomySectionEditor = () => {
       image: newItem.image,
       features: newItem.features.filter(f => f.trim()),
       isActive: true,
+      price: newItem.price ? parseFloat(newItem.price) : null,
+      isChargeable: newItem.isChargeable,
     }, {
       onSuccess: () => {
-        setNewItem({ title: '', subtitle: '', description: '', image: '', features: [] });
+        setNewItem({ title: '', subtitle: '', description: '', image: '', features: [], price: '', isChargeable: false });
         setShowNewForm(false);
       }
     });
@@ -586,6 +647,8 @@ const GastronomySectionEditor = () => {
         description: editForm.description,
         image: editForm.image,
         features: editForm.features.filter(f => f.trim()),
+        price: editForm.price ? parseFloat(editForm.price) : null,
+        isChargeable: editForm.isChargeable,
       }
     }, {
       onSuccess: () => setEditingId(null)
@@ -700,6 +763,27 @@ const GastronomySectionEditor = () => {
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Preço (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={newItem.price}
+                    onChange={(e) => setNewItem(prev => ({ ...prev, price: e.target.value }))}
+                    placeholder="0,00"
+                  />
+                </div>
+                <div className="flex items-center gap-2 pt-6">
+                  <Switch
+                    checked={newItem.isChargeable}
+                    onCheckedChange={(checked) => setNewItem(prev => ({ ...prev, isChargeable: checked }))}
+                  />
+                  <Label>Lançável na conta</Label>
+                </div>
+              </div>
+
               <div className="flex gap-2">
                 <Button onClick={handleCreateItem} disabled={createItem.isPending}>
                   {createItem.isPending ? 'Criando...' : 'Criar Item'}
@@ -750,6 +834,27 @@ const GastronomySectionEditor = () => {
                       />
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Preço (R$)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={editForm.price}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, price: e.target.value }))}
+                          placeholder="0,00"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 pt-6">
+                        <Switch
+                          checked={editForm.isChargeable}
+                          onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, isChargeable: checked }))}
+                        />
+                        <Label>Lançável na conta</Label>
+                      </div>
+                    </div>
+
                     <div className="flex gap-2">
                       <Button onClick={() => handleUpdateItem(item.id)} disabled={updateItem.isPending}>
                         {updateItem.isPending ? 'Salvando...' : 'Salvar'}
@@ -768,6 +873,16 @@ const GastronomySectionEditor = () => {
                       <h3 className="font-medium">{item.title}</h3>
                       {item.subtitle && <p className="text-sm text-gray-500">{item.subtitle}</p>}
                       <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                      {(item.price != null || item.isChargeable) && (
+                        <div className="flex items-center gap-2 mt-1">
+                          {item.price != null && <span className="text-sm font-semibold text-green-700">R$ {Number(item.price).toFixed(2)}</span>}
+                          {item.isChargeable && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                              <DollarSign className="h-3 w-3" /> Lançável
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -781,6 +896,8 @@ const GastronomySectionEditor = () => {
                             description: item.description,
                             image: item.image,
                             features: item.features || [],
+                            price: item.price != null ? String(item.price) : '',
+                            isChargeable: item.isChargeable ?? false,
                           });
                         }}
                       >
@@ -830,8 +947,8 @@ const RecreationSectionEditor = () => {
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ title: '', description: '', image: '' });
-  const [newItem, setNewItem] = useState({ title: '', description: '', image: '' });
+  const [editForm, setEditForm] = useState({ title: '', description: '', image: '', price: '', isChargeable: false });
+  const [newItem, setNewItem] = useState({ title: '', description: '', image: '', price: '', isChargeable: false });
   const [showNewForm, setShowNewForm] = useState(false);
 
   const onSubmit = (data: RecreationSectionConfig) => {
@@ -851,9 +968,11 @@ const RecreationSectionEditor = () => {
       image: newItem.image,
       features: [],
       isActive: true,
+      price: newItem.price ? parseFloat(newItem.price) : null,
+      isChargeable: newItem.isChargeable,
     }, {
       onSuccess: () => {
-        setNewItem({ title: '', description: '', image: '' });
+        setNewItem({ title: '', description: '', image: '', price: '', isChargeable: false });
         setShowNewForm(false);
       }
     });
@@ -871,6 +990,8 @@ const RecreationSectionEditor = () => {
         title: editForm.title,
         description: editForm.description,
         image: editForm.image,
+        price: editForm.price ? parseFloat(editForm.price) : null,
+        isChargeable: editForm.isChargeable,
       }
     }, {
       onSuccess: () => setEditingId(null)
@@ -976,6 +1097,27 @@ const RecreationSectionEditor = () => {
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Preço (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={newItem.price}
+                    onChange={(e) => setNewItem(prev => ({ ...prev, price: e.target.value }))}
+                    placeholder="0,00"
+                  />
+                </div>
+                <div className="flex items-center gap-2 pt-6">
+                  <Switch
+                    checked={newItem.isChargeable}
+                    onCheckedChange={(checked) => setNewItem(prev => ({ ...prev, isChargeable: checked }))}
+                  />
+                  <Label>Lançável na conta</Label>
+                </div>
+              </div>
+
               <div className="flex gap-2">
                 <Button onClick={handleCreateItem} disabled={createItem.isPending}>
                   {createItem.isPending ? 'Criando...' : 'Criar Item'}
@@ -1018,6 +1160,27 @@ const RecreationSectionEditor = () => {
                       />
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Preço (R$)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={editForm.price}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, price: e.target.value }))}
+                          placeholder="0,00"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 pt-6">
+                        <Switch
+                          checked={editForm.isChargeable}
+                          onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, isChargeable: checked }))}
+                        />
+                        <Label>Lançável na conta</Label>
+                      </div>
+                    </div>
+
                     <div className="flex gap-2">
                       <Button onClick={() => handleUpdateItem(item.id)} disabled={updateItem.isPending}>
                         {updateItem.isPending ? 'Salvando...' : 'Salvar'}
@@ -1035,6 +1198,16 @@ const RecreationSectionEditor = () => {
                     <div className="flex-1">
                       <h3 className="font-medium">{item.title}</h3>
                       <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                      {(item.price != null || item.isChargeable) && (
+                        <div className="flex items-center gap-2 mt-1">
+                          {item.price != null && <span className="text-sm font-semibold text-green-700">R$ {Number(item.price).toFixed(2)}</span>}
+                          {item.isChargeable && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                              <DollarSign className="h-3 w-3" /> Lançável
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -1046,6 +1219,8 @@ const RecreationSectionEditor = () => {
                             title: item.title,
                             description: item.description,
                             image: item.image,
+                            price: item.price != null ? String(item.price) : '',
+                            isChargeable: item.isChargeable ?? false,
                           });
                         }}
                       >
@@ -1095,8 +1270,8 @@ const BusinessSectionEditor = () => {
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ title: '', description: '', image: '' });
-  const [newItem, setNewItem] = useState({ title: '', description: '', image: '' });
+  const [editForm, setEditForm] = useState({ title: '', description: '', image: '', price: '', isChargeable: false });
+  const [newItem, setNewItem] = useState({ title: '', description: '', image: '', price: '', isChargeable: false });
   const [showNewForm, setShowNewForm] = useState(false);
 
   const onSubmit = (data: BusinessSectionConfig) => {
@@ -1116,9 +1291,11 @@ const BusinessSectionEditor = () => {
       image: newItem.image,
       features: [],
       isActive: true,
+      price: newItem.price ? parseFloat(newItem.price) : null,
+      isChargeable: newItem.isChargeable,
     }, {
       onSuccess: () => {
-        setNewItem({ title: '', description: '', image: '' });
+        setNewItem({ title: '', description: '', image: '', price: '', isChargeable: false });
         setShowNewForm(false);
       }
     });
@@ -1136,6 +1313,8 @@ const BusinessSectionEditor = () => {
         title: editForm.title,
         description: editForm.description,
         image: editForm.image,
+        price: editForm.price ? parseFloat(editForm.price) : null,
+        isChargeable: editForm.isChargeable,
       }
     }, {
       onSuccess: () => setEditingId(null)
@@ -1252,6 +1431,27 @@ const BusinessSectionEditor = () => {
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Preço (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={newItem.price}
+                    onChange={(e) => setNewItem(prev => ({ ...prev, price: e.target.value }))}
+                    placeholder="0,00"
+                  />
+                </div>
+                <div className="flex items-center gap-2 pt-6">
+                  <Switch
+                    checked={newItem.isChargeable}
+                    onCheckedChange={(checked) => setNewItem(prev => ({ ...prev, isChargeable: checked }))}
+                  />
+                  <Label>Lançável na conta</Label>
+                </div>
+              </div>
+
               <div className="flex gap-2">
                 <Button onClick={handleCreateItem} disabled={createItem.isPending}>
                   {createItem.isPending ? 'Criando...' : 'Criar Item'}
@@ -1294,6 +1494,27 @@ const BusinessSectionEditor = () => {
                       />
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Preço (R$)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={editForm.price}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, price: e.target.value }))}
+                          placeholder="0,00"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 pt-6">
+                        <Switch
+                          checked={editForm.isChargeable}
+                          onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, isChargeable: checked }))}
+                        />
+                        <Label>Lançável na conta</Label>
+                      </div>
+                    </div>
+
                     <div className="flex gap-2">
                       <Button onClick={() => handleUpdateItem(item.id)} disabled={updateItem.isPending}>
                         {updateItem.isPending ? 'Salvando...' : 'Salvar'}
@@ -1311,6 +1532,16 @@ const BusinessSectionEditor = () => {
                     <div className="flex-1">
                       <h3 className="font-medium">{item.title}</h3>
                       <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                      {(item.price != null || item.isChargeable) && (
+                        <div className="flex items-center gap-2 mt-1">
+                          {item.price != null && <span className="text-sm font-semibold text-green-700">R$ {Number(item.price).toFixed(2)}</span>}
+                          {item.isChargeable && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                              <DollarSign className="h-3 w-3" /> Lançável
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -1322,6 +1553,8 @@ const BusinessSectionEditor = () => {
                             title: item.title,
                             description: item.description,
                             image: item.image,
+                            price: item.price != null ? String(item.price) : '',
+                            isChargeable: item.isChargeable ?? false,
                           });
                         }}
                       >
@@ -1370,8 +1603,8 @@ const SpecialSectionEditor = () => {
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ title: '', description: '', image: '' });
-  const [newItem, setNewItem] = useState({ title: '', description: '', image: '' });
+  const [editForm, setEditForm] = useState({ title: '', description: '', image: '', price: '', isChargeable: false });
+  const [newItem, setNewItem] = useState({ title: '', description: '', image: '', price: '', isChargeable: false });
   const [showNewForm, setShowNewForm] = useState(false);
 
   const onSubmit = (data: SpecialSectionConfig) => {
@@ -1391,9 +1624,11 @@ const SpecialSectionEditor = () => {
       image: newItem.image,
       features: [],
       isActive: true,
+      price: newItem.price ? parseFloat(newItem.price) : null,
+      isChargeable: newItem.isChargeable,
     }, {
       onSuccess: () => {
-        setNewItem({ title: '', description: '', image: '' });
+        setNewItem({ title: '', description: '', image: '', price: '', isChargeable: false });
         setShowNewForm(false);
       }
     });
@@ -1411,6 +1646,8 @@ const SpecialSectionEditor = () => {
         title: editForm.title,
         description: editForm.description,
         image: editForm.image,
+        price: editForm.price ? parseFloat(editForm.price) : null,
+        isChargeable: editForm.isChargeable,
       }
     }, {
       onSuccess: () => setEditingId(null)
@@ -1516,6 +1753,27 @@ const SpecialSectionEditor = () => {
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Preço (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={newItem.price}
+                    onChange={(e) => setNewItem(prev => ({ ...prev, price: e.target.value }))}
+                    placeholder="0,00"
+                  />
+                </div>
+                <div className="flex items-center gap-2 pt-6">
+                  <Switch
+                    checked={newItem.isChargeable}
+                    onCheckedChange={(checked) => setNewItem(prev => ({ ...prev, isChargeable: checked }))}
+                  />
+                  <Label>Lançável na conta</Label>
+                </div>
+              </div>
+
               <div className="flex gap-2">
                 <Button onClick={handleCreateItem} disabled={createItem.isPending}>
                   {createItem.isPending ? 'Criando...' : 'Criar Item'}
@@ -1558,6 +1816,27 @@ const SpecialSectionEditor = () => {
                       />
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Preço (R$)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={editForm.price}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, price: e.target.value }))}
+                          placeholder="0,00"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 pt-6">
+                        <Switch
+                          checked={editForm.isChargeable}
+                          onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, isChargeable: checked }))}
+                        />
+                        <Label>Lançável na conta</Label>
+                      </div>
+                    </div>
+
                     <div className="flex gap-2">
                       <Button onClick={() => handleUpdateItem(item.id)} disabled={updateItem.isPending}>
                         {updateItem.isPending ? 'Salvando...' : 'Salvar'}
@@ -1575,6 +1854,16 @@ const SpecialSectionEditor = () => {
                     <div className="flex-1">
                       <h3 className="font-medium">{item.title}</h3>
                       <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                      {(item.price != null || item.isChargeable) && (
+                        <div className="flex items-center gap-2 mt-1">
+                          {item.price != null && <span className="text-sm font-semibold text-green-700">R$ {Number(item.price).toFixed(2)}</span>}
+                          {item.isChargeable && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                              <DollarSign className="h-3 w-3" /> Lançável
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -1586,6 +1875,8 @@ const SpecialSectionEditor = () => {
                             title: item.title,
                             description: item.description,
                             image: item.image,
+                            price: item.price != null ? String(item.price) : '',
+                            isChargeable: item.isChargeable ?? false,
                           });
                         }}
                       >

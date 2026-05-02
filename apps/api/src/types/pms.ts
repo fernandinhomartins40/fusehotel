@@ -106,6 +106,11 @@ export interface ConsumeProductDto {
   quantity?: number;
 }
 
+export interface ConsumeServiceDto {
+  serviceItemId: string;
+  quantity?: number;
+}
+
 export interface UpdateHousekeepingTaskStatusDto {
   status: HousekeepingTaskStatus;
 }

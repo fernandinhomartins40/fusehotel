@@ -107,13 +107,13 @@ type SalePreset = 'BALCAO' | 'COMANDA' | 'QUARTO';
 type POSStep = 'customer' | 'items' | 'settlement' | 'review';
 
 const salePresetLabels: Record<SalePreset, string> = {
-  BALCAO: 'Balcão',
+  BALCAO: 'Venda rápida',
   COMANDA: 'Mesa / Comanda',
   QUARTO: 'Conta do hóspede',
 };
 
 const posStepLabels: Record<POSStep, string> = {
-  customer: 'Cliente',
+  customer: 'Tipo',
   items: 'Itens',
   settlement: 'Cobrança',
   review: 'Revisão',
@@ -283,8 +283,8 @@ export default function POS() {
     if (settlementType === 'FOLIO') {
       return selectedStay?.reservation.guestName ?? '';
     }
-    return customerName.trim();
-  }, [customerName, selectedStay, settlementType]);
+    return customerName.trim() || (salePreset === 'COMANDA' ? `Mesa ${tableNumber}` : 'Consumidor');
+  }, [customerName, salePreset, selectedStay, settlementType, tableNumber]);
 
   const stepSequence: POSStep[] = ['customer', 'items', 'settlement', 'review'];
   const stepIndex = stepSequence.indexOf(currentStep);
@@ -294,14 +294,12 @@ export default function POS() {
       return Boolean(selectedStayId);
     }
 
-    if (customerName.trim().length < 2) return false;
-
     if (salePreset === 'COMANDA' && tableNumber.trim().length < 1) {
       return false;
     }
 
     return true;
-  }, [customerName, salePreset, selectedStayId, settlementType, tableNumber]);
+  }, [salePreset, selectedStayId, settlementType, tableNumber]);
 
   const setNumericValue = (field: NumericField, value: string) => {
     if (field === 'serviceFee') setServiceFeeAmount(value);
@@ -755,7 +753,7 @@ export default function POS() {
   const goToNextStep = () => {
     if (!canAdvanceCurrentStep()) {
       if (currentStep === 'customer') {
-        toast.error('Preencha o cliente ou a hospedagem antes de continuar');
+        toast.error(settlementType === 'FOLIO' ? 'Selecione uma hospedagem antes de continuar' : 'Preencha a mesa ou comanda antes de continuar');
         return;
       }
 
@@ -787,11 +785,6 @@ export default function POS() {
 
     if (settlementType === 'FOLIO' && !selectedStayId) {
       toast.error('Selecione uma hospedagem para lançar na conta');
-      return;
-    }
-
-    if (settlementType === 'DIRECT' && customerName.trim().length < 2) {
-      toast.error('Informe o cliente da venda antes de finalizar');
       return;
     }
 
@@ -981,73 +974,69 @@ export default function POS() {
   const renderCustomerStep = () => (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">1. Identifique o cliente</h2>
-        <p className="mt-1 text-sm text-slate-500">Defina primeiro para quem será o lançamento e como a venda será vinculada.</p>
+        <h2 className="text-lg font-semibold text-slate-900">1. Tipo de venda</h2>
+        <p className="mt-1 text-sm text-slate-500">Selecione como esta venda será realizada.</p>
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
         <ModeCard
-          title="Balcão"
-          description="Venda direta com recebimento no caixa."
+          title="Venda rápida"
+          description="Pagamento direto no caixa, sem vínculo prévio."
           active={settlementType === 'DIRECT' && salePreset === 'BALCAO'}
           onClick={() => applySalePreset('BALCAO')}
         />
         <ModeCard
           title="Mesa / comanda"
-          description="Venda direta com referência de atendimento."
+          description="Consumo vinculado a uma mesa ou comanda."
           active={settlementType === 'DIRECT' && salePreset === 'COMANDA'}
           onClick={() => applySalePreset('COMANDA')}
         />
         <ModeCard
           title="Conta do hóspede"
-          description="Lançamento direto na conta da hospedagem."
+          description="Debitar diretamente na conta do quarto."
           active={settlementType === 'FOLIO'}
           onClick={() => applySalePreset('QUARTO')}
         />
       </div>
 
-      {settlementType === 'DIRECT' ? (
+      {salePreset === 'BALCAO' && settlementType === 'DIRECT' && (
+        <div className="rounded-3xl border border-sky-200 bg-sky-50 p-4">
+          <div className="text-sm font-medium text-sky-900">Pronto para adicionar itens</div>
+          <div className="mt-1 text-sm text-sky-700">Venda rápida no balcão. Avance para selecionar os produtos.</div>
+        </div>
+      )}
+
+      {salePreset === 'COMANDA' && settlementType === 'DIRECT' && (
         <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
           <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            <div className="text-sm font-medium text-slate-900">Cliente obrigatório</div>
+            <div className="text-sm font-medium text-slate-900">Mesa ou comanda</div>
             <Input
-              value={customerName}
-              onChange={(event) => setCustomerName(event.target.value)}
-              placeholder="Nome do cliente"
+              value={tableNumber}
+              onChange={(event) => {
+                setTableNumber(event.target.value);
+                setDraftReference(event.target.value);
+              }}
+              placeholder="Número da mesa ou comanda"
               className="h-12 rounded-2xl bg-white"
             />
-            <p className="text-xs text-slate-500">Toda venda direta precisa ficar vinculada a um cliente.</p>
+            <p className="text-xs text-slate-500">Referência para acompanhar o consumo desta venda.</p>
           </div>
 
-          {salePreset === 'COMANDA' ? (
-            <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-sm font-medium text-slate-900">Mesa ou comanda</div>
-              <Input
-                value={tableNumber}
-                onChange={(event) => {
-                  setTableNumber(event.target.value);
-                  setDraftReference(event.target.value);
-                }}
-                placeholder="Número ou referência"
-                className="h-12 rounded-2xl bg-white"
-              />
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={() => setActiveDialog('references')}>
-                  Buscar referência
-                </Button>
-                <Button variant="outline" onClick={() => setActiveDialog('drafts')}>
-                  Vendas salvas
-                </Button>
-              </div>
+          <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div className="text-sm font-medium text-slate-900">Atalhos</div>
+            <div className="flex flex-col gap-2">
+              <Button variant="outline" onClick={() => setActiveDialog('references')}>
+                Buscar referência
+              </Button>
+              <Button variant="outline" onClick={() => setActiveDialog('drafts')}>
+                Vendas salvas
+              </Button>
             </div>
-          ) : (
-            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-sm font-medium text-slate-900">Origem da venda</div>
-              <div className="mt-2 text-sm text-slate-600">Balcão é o modo padrão para venda direta e não exige outro contexto.</div>
-            </div>
-          )}
+          </div>
         </div>
-      ) : (
+      )}
+
+      {settlementType === 'FOLIO' && (
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
           <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
             <div className="text-sm font-medium text-slate-900">Hospedagem vinculada</div>
@@ -1064,7 +1053,7 @@ export default function POS() {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-slate-500">O cliente passa a ser o hóspede da hospedagem selecionada.</p>
+            <p className="text-xs text-slate-500">O consumo será lançado na conta desta hospedagem.</p>
           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
@@ -1290,17 +1279,38 @@ export default function POS() {
     <div className="space-y-4">
       <div>
         <h2 className="text-lg font-semibold text-slate-900">4. Revise e conclua</h2>
-        <p className="mt-1 text-sm text-slate-500">Confira cliente, itens e cobrança antes de finalizar.</p>
+        <p className="mt-1 text-sm text-slate-500">Confira os dados, itens e cobrança antes de finalizar.</p>
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
-        <DialogStat label="Cliente" value={resolvedCustomerName || 'Não definido'} />
+        <DialogStat label="Cliente" value={resolvedCustomerName || 'Consumidor'} />
         <DialogStat
           label="Tipo"
           value={settlementType === 'FOLIO' ? 'Conta do hóspede' : salePresetLabels[salePreset]}
         />
         <DialogStat label="Itens" value={`${cartDetailedItems.length}`} />
       </div>
+
+      {settlementType === 'DIRECT' && (
+        <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+          <div className="text-sm font-medium text-slate-900 mb-3">Identificação do cliente (opcional)</div>
+          <p className="text-xs text-slate-500 mb-3">Preencha apenas se o cliente solicitar CPF na nota ou quiser se identificar.</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input
+              value={customerName}
+              onChange={(event) => setCustomerName(event.target.value)}
+              placeholder="Nome do cliente"
+              className="h-11 rounded-2xl bg-white"
+            />
+            <Input
+              value={orderNotes}
+              onChange={(event) => setOrderNotes(event.target.value)}
+              placeholder="CPF para nota fiscal"
+              className="h-11 rounded-2xl bg-white"
+            />
+          </div>
+        </div>
+      )}
 
       <div className="rounded-3xl border border-slate-200">
         <div className="border-b border-slate-200 px-4 py-3 text-sm font-medium text-slate-900">Itens da venda</div>
@@ -1345,7 +1355,7 @@ export default function POS() {
               </div>
               <div className="inline-flex max-w-full items-center gap-2 overflow-hidden rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-600 xl:flex-none">
                 <Keyboard className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate whitespace-nowrap">Alt+1 pedidos • Alt+2 caixa • Alt+3 hospedagens • Alt+5 balcão • Alt+6 comanda • Alt+7 quarto • Ctrl+Enter finalizar</span>
+                <span className="truncate whitespace-nowrap">Alt+1 pedidos • Alt+2 caixa • Alt+3 hospedagens • Alt+5 venda rápida • Alt+6 comanda • Alt+7 quarto • Ctrl+Enter finalizar</span>
               </div>
             </div>
 

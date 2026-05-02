@@ -1321,18 +1321,20 @@ enum ServiceCategory {
 }
 
 model ServiceItem {
-  id          String          @id @default(uuid())
-  category    ServiceCategory
-  title       String
-  subtitle    String?
-  description String          @db.Text
-  image       String
-  icon        String?
-  features    String[]
-  order       Int
-  isActive    Boolean         @default(true)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id            String          @id @default(uuid())
+  category      ServiceCategory
+  title         String
+  subtitle      String?
+  description   String          @db.Text
+  image         String
+  icon          String?
+  features      String[]
+  order         Int
+  price         Decimal?        @db.Decimal(10, 2)
+  isChargeable  Boolean         @default(false)
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   @@index([category])
   @@index([order])

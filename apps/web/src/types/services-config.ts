@@ -14,6 +14,8 @@ export interface ServiceItem {
   icon?: string;
   features: string[];
   order: number;
+  price?: number | null;
+  isChargeable: boolean;
   isActive: boolean;
 }
 
