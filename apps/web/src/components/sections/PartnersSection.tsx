@@ -17,7 +17,6 @@ export const PartnersSection: React.FC = () => {
 
   const config = settingsData?.config || defaultPartnersConfig;
 
-  // Se não houver parceiros, não renderizar a seção
   if (!partners || partners.length === 0) {
     return null;
   }
@@ -31,9 +30,9 @@ export const PartnersSection: React.FC = () => {
     >
       <div className="page-container">
         {config.title && (
-          <div className="text-center mb-12">
+          <div className="text-center mb-10">
             <h2
-              className="text-lg uppercase tracking-[2px] font-normal"
+              className="text-sm md:text-base uppercase tracking-[3px] font-medium"
               style={{ color: config.titleColor || '#FFFFFF' }}
             >
               {config.title}
@@ -48,7 +47,7 @@ export const PartnersSection: React.FC = () => {
                   href={partner.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="transition-opacity hover:opacity-80"
+                  className="transition-all duration-300 hover:opacity-80 hover:scale-105"
                 >
                   <img
                     src={partner.logo}

@@ -27,26 +27,24 @@ export const PromotionsSection = () => {
 
   const featuredPromotions = promotions || [];
 
-  // If loading, show loader
   if (isLoading) {
     return (
       <section className="page-section" style={{ backgroundColor: config.backgroundColor || '#F9F9F9' }}>
         <div className="page-container">
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-3 text-lg">Carregando promoções...</span>
+            <span className="ml-3 text-lg text-muted-foreground">Carregando promoções...</span>
           </div>
         </div>
       </section>
     );
   }
 
-  // If error, show error message
   if (error) {
     return (
       <section className="page-section" style={{ backgroundColor: config.backgroundColor || '#F9F9F9' }}>
         <div className="page-container">
-          <div className="text-center py-12">
+          <div className="text-center py-16">
             <p className="text-red-600 text-lg">
               Erro ao carregar promoções. Por favor, tente novamente mais tarde.
             </p>
@@ -56,7 +54,6 @@ export const PromotionsSection = () => {
     );
   }
 
-  // If there are no featured promotions, don't render the section
   if (featuredPromotions.length === 0) {
     return null;
   }
@@ -64,25 +61,24 @@ export const PromotionsSection = () => {
   return (
     <section className="page-section" style={{ backgroundColor: config.backgroundColor || '#F9F9F9' }}>
       <div className="page-container">
-        <div className="text-center mb-12">
+        <div className="text-center mb-14">
           {config.title && (
-            <h2 className="text-3xl font-bold mb-2" style={{ color: config.titleColor || '#000000' }}>
+            <h2 className="text-3xl md:text-4xl font-bold mb-3" style={{ color: config.titleColor || '#000000' }}>
               {config.title}
             </h2>
           )}
           {config.description && (
-            <p className="max-w-2xl mx-auto mb-6" style={{ color: config.titleColor || '#000000' }}>
+            <p className="max-w-2xl mx-auto mb-6 text-muted-foreground" style={{ color: config.titleColor || '#000000' }}>
               {config.description}
             </p>
           )}
-          <Button variant="outline" asChild>
+          <Button variant="outline" className="rounded-full transition-all duration-300 hover:shadow-sm" asChild>
             <Link to="/promocoes">Ver todas as promoções</Link>
           </Button>
         </div>
 
         {featuredPromotions.length <= 2 ? (
-          // Show grid for 1-2 promotions with improved responsiveness
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto stagger-children">
             {featuredPromotions.map((promotion) => (
               <div key={promotion.id} className="h-full">
                 <PromotionCard promotion={promotion} config={config} />
@@ -90,7 +86,6 @@ export const PromotionsSection = () => {
             ))}
           </div>
         ) : (
-          // Show carousel for 3+ promotions with improved responsiveness
           <div className="max-w-5xl mx-auto">
             <Carousel className="w-full" opts={{ align: "start" }}>
               <CarouselContent className="-ml-4">

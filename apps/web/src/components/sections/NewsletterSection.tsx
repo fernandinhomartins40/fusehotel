@@ -34,10 +34,10 @@ export const NewsletterSection: React.FC = () => {
         backgroundColor: config.backgroundColor,
       }}
     >
-      <div className="page-container flex flex-col md:flex-row justify-between items-center">
-        <div className="mb-6 md:mb-0">
+      <div className="page-container flex flex-col md:flex-row justify-between items-center gap-8">
+        <div className="mb-4 md:mb-0 shrink-0">
           <h3
-            className="text-[56px] font-extrabold tracking-tight leading-none uppercase"
+            className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight leading-none"
             style={{
               color: config.titleColor,
             }}
@@ -54,13 +54,13 @@ export const NewsletterSection: React.FC = () => {
                 placeholder="E-mail"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white text-gray-800 h-12 px-4"
+                className="w-full bg-white text-gray-800 h-12 px-4 rounded-lg border-gray-200 focus:ring-2 focus:ring-offset-0"
                 required
               />
             </div>
             <Button
               type="submit"
-              className="h-12 px-6"
+              className="h-12 px-6 rounded-lg transition-all duration-300 hover:shadow-md"
               disabled={isSubmitting}
               style={{
                 backgroundColor: config.buttonColor,
@@ -72,7 +72,7 @@ export const NewsletterSection: React.FC = () => {
           </form>
 
           <div
-            className="flex items-center gap-2 text-sm mt-3"
+            className="flex items-center gap-2 text-sm mt-3 opacity-75"
             style={{
               color: config.titleColor,
             }}

@@ -41,7 +41,6 @@ export const GallerySection = () => {
     api?.scrollTo(index);
   };
 
-  // Se não houver imagens, não renderizar a seção
   if (!galleryImages || galleryImages.length === 0) {
     return null;
   }
@@ -49,32 +48,32 @@ export const GallerySection = () => {
   return (
     <section
       id="gallery"
-      className="page-section text-center"
+      className="page-section"
       style={{
         backgroundColor: config.backgroundColor || '#FFFFFF'
       }}
     >
       <div className="page-container">
-        <div className="text-left mb-10">
+        <div className="mb-12">
           {config.subtitle && (
-            <h2
-              className="text-[13px] uppercase tracking-[2px] mb-2 font-normal"
+            <span
+              className="page-kicker"
               style={{
                 color: config.subtitleColor || '#676C76'
               }}
             >
               {config.subtitle}
-            </h2>
+            </span>
           )}
           {config.title && (
-            <h3
-              className="text-[56px] font-bold mb-4 tracking-tight leading-none uppercase"
+            <h2
+              className="text-3xl md:text-4xl lg:text-5xl font-bold mb-5 tracking-tight leading-none"
               style={{
                 color: config.titleColor || '#1D1D1F'
               }}
             >
               {config.title}
-            </h3>
+            </h2>
           )}
           {config.description && (
             <p
@@ -88,7 +87,7 @@ export const GallerySection = () => {
           )}
         </div>
 
-        <div className="mt-10">
+        <div className="mt-8">
           <Carousel
             className="w-full"
             setApi={setApi}
@@ -98,22 +97,22 @@ export const GallerySection = () => {
             }}
           >
             <CarouselContent>
-              {galleryImages.map((image: GalleryImage, index: number) => (
+              {galleryImages.map((image: GalleryImage) => (
                 <CarouselItem key={image.id} className="basis-full">
                   <div className="p-1">
-                    <div className="overflow-hidden rounded-[20px] shadow-xl">
+                    <div className="overflow-hidden rounded-2xl shadow-lg">
                       <img
                         src={image.url}
                         alt={image.alt}
-                        className="w-full h-[500px] object-cover transition-transform duration-500 hover:scale-105"
+                        className="w-full h-[500px] object-cover transition-transform duration-700 ease-out hover:scale-[1.03]"
                       />
                     </div>
                   </div>
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious className="left-4 bg-black/40 hover:bg-black/60 text-white border-none transition-all duration-300 hover:scale-110" />
-            <CarouselNext className="right-4 bg-black/40 hover:bg-black/60 text-white border-none transition-all duration-300 hover:scale-110" />
+            <CarouselPrevious className="left-4 bg-white/15 hover:bg-white/25 text-white border-none glass transition-all duration-300 hover:scale-110" />
+            <CarouselNext className="right-4 bg-white/15 hover:bg-white/25 text-white border-none glass transition-all duration-300 hover:scale-110" />
           </Carousel>
 
           {/* Dots Indicator */}
@@ -123,10 +122,10 @@ export const GallerySection = () => {
                 key={index}
                 onClick={() => scrollToSlide(index)}
                 className={cn(
-                  "w-3 h-3 rounded-full transition-all duration-300",
+                  "rounded-full transition-all duration-300",
                   current === index
-                    ? "bg-[#1D1D1F] scale-125"
-                    : "bg-[#676C76]/30 hover:bg-[#676C76]/50"
+                    ? "w-8 h-2.5 bg-[#1D1D1F]"
+                    : "w-2.5 h-2.5 bg-[#676C76]/25 hover:bg-[#676C76]/40"
                 )}
                 aria-label={`Go to slide ${index + 1}`}
               />
@@ -134,23 +133,23 @@ export const GallerySection = () => {
           </div>
 
           {/* Functional Thumbnails */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mt-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mt-8">
             {galleryImages.map((image: GalleryImage, index: number) => (
               <button
                 key={`thumb-${image.id}`}
                 onClick={() => scrollToSlide(index)}
                 className={cn(
-                  "overflow-hidden rounded-lg cursor-pointer shadow-md hover:shadow-lg transition-all duration-300 border-2",
+                  "overflow-hidden rounded-lg cursor-pointer transition-all duration-300 border-2",
                   current === index
-                    ? "border-[#1D1D1F] scale-105"
-                    : "border-transparent hover:border-[#676C76]/50"
+                    ? "border-[#1D1D1F] shadow-md scale-[1.02]"
+                    : "border-transparent opacity-70 hover:opacity-100 hover:border-[#676C76]/30"
                 )}
                 aria-label={`View image ${index + 1}`}
               >
                 <img
                   src={image.url}
                   alt={image.alt}
-                  className="w-full h-24 object-cover transition-transform duration-300 hover:scale-105"
+                  className="w-full h-20 object-cover"
                 />
               </button>
             ))}
@@ -159,12 +158,12 @@ export const GallerySection = () => {
           {/* Image Counter */}
           <div className="text-center mt-4">
             <span
-              className="text-sm"
+              className="text-sm font-medium tabular-nums"
               style={{
                 color: config.subtitleColor || '#676C76'
               }}
             >
-              {current + 1} de {galleryImages.length}
+              {current + 1} / {galleryImages.length}
             </span>
           </div>
         </div>

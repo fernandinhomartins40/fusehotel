@@ -17,58 +17,58 @@ export const Footer: React.FC = () => {
       style={{ backgroundColor: config.backgroundColor || '#000000' }}
     >
       {/* Main Footer Content */}
-      <div className="page-container py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="page-container py-14 md:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
 
           {/* Column 1: About */}
           <div className="flex flex-col">
-            <div className="mb-4">
-              <Link to="/">
+            <div className="mb-5">
+              <Link to="/" className="inline-block transition-opacity hover:opacity-80">
                 <img
                   src={config.logo || '/lovable-uploads/91e13e81-bbd9-4aab-b810-d81bb336ecb8.png'}
                   alt="Logo"
-                  className="h-12"
+                  className="h-10"
                 />
               </Link>
             </div>
-            <p className="mb-4" style={{ color: config.textColor || '#9CA3AF' }}>
+            <p className="mb-5 text-sm leading-relaxed" style={{ color: config.textColor || '#9CA3AF' }}>
               {config.aboutText || 'Bem-vindo ao nosso hotel, onde conforto e natureza se encontram para proporcionar uma experiência única de hospedagem.'}
             </p>
-            <div className="flex space-x-4 mt-2">
+            <div className="flex space-x-4">
               {config.facebookUrl && (
                 <a
                   href={config.facebookUrl}
                   aria-label="Facebook"
-                  className="transition-colors"
+                  className="transition-all duration-300 hover:scale-110"
                   style={{ color: config.textColor || '#FFFFFF' }}
                   onMouseEnter={(e) => e.currentTarget.style.color = '#3B82F6'}
                   onMouseLeave={(e) => e.currentTarget.style.color = config.textColor || '#FFFFFF'}
                 >
-                  <Facebook size={20} />
+                  <Facebook size={18} />
                 </a>
               )}
               {config.instagramUrl && (
                 <a
                   href={config.instagramUrl}
                   aria-label="Instagram"
-                  className="transition-colors"
+                  className="transition-all duration-300 hover:scale-110"
                   style={{ color: config.textColor || '#FFFFFF' }}
                   onMouseEnter={(e) => e.currentTarget.style.color = '#EC4899'}
                   onMouseLeave={(e) => e.currentTarget.style.color = config.textColor || '#FFFFFF'}
                 >
-                  <Instagram size={20} />
+                  <Instagram size={18} />
                 </a>
               )}
               {config.linkedinUrl && (
                 <a
                   href={config.linkedinUrl}
                   aria-label="LinkedIn"
-                  className="transition-colors"
+                  className="transition-all duration-300 hover:scale-110"
                   style={{ color: config.textColor || '#FFFFFF' }}
                   onMouseEnter={(e) => e.currentTarget.style.color = '#3B82F6'}
                   onMouseLeave={(e) => e.currentTarget.style.color = config.textColor || '#FFFFFF'}
                 >
-                  <Linkedin size={20} />
+                  <Linkedin size={18} />
                 </a>
               )}
             </div>
@@ -76,98 +76,52 @@ export const Footer: React.FC = () => {
 
           {/* Column 2: Links Rápidos */}
           <div className="flex flex-col">
-            <h3 className="font-semibold text-xl mb-4" style={{ color: config.headingColor || '#FFFFFF' }}>
+            <h3 className="font-semibold text-base mb-5 uppercase tracking-wider" style={{ color: config.headingColor || '#FFFFFF' }}>
               Links Rápidos
             </h3>
-            <ul className="space-y-2">
-              <li>
-                <Link
-                  to="/"
-                  className="transition-colors"
-                  style={{ color: config.textColor || '#9CA3AF' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = config.headingColor || '#FFFFFF'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = config.textColor || '#9CA3AF'}
-                >
-                  Início
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/acomodacoes"
-                  className="transition-colors"
-                  style={{ color: config.textColor || '#9CA3AF' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = config.headingColor || '#FFFFFF'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = config.textColor || '#9CA3AF'}
-                >
-                  Acomodações
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/servicos"
-                  className="transition-colors"
-                  style={{ color: config.textColor || '#9CA3AF' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = config.headingColor || '#FFFFFF'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = config.textColor || '#9CA3AF'}
-                >
-                  Serviços
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/sobre-nos"
-                  className="transition-colors"
-                  style={{ color: config.textColor || '#9CA3AF' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = config.headingColor || '#FFFFFF'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = config.textColor || '#9CA3AF'}
-                >
-                  Sobre Nós
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/faq"
-                  className="transition-colors"
-                  style={{ color: config.textColor || '#9CA3AF' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = config.headingColor || '#FFFFFF'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = config.textColor || '#9CA3AF'}
-                >
-                  Perguntas Frequentes
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/contato"
-                  className="transition-colors"
-                  style={{ color: config.textColor || '#9CA3AF' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = config.headingColor || '#FFFFFF'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = config.textColor || '#9CA3AF'}
-                >
-                  Contato
-                </Link>
-              </li>
+            <ul className="space-y-2.5">
+              {[
+                { to: '/', label: 'Início' },
+                { to: '/acomodacoes', label: 'Acomodações' },
+                { to: '/servicos', label: 'Serviços' },
+                { to: '/sobre-nos', label: 'Sobre Nós' },
+                { to: '/faq', label: 'Perguntas Frequentes' },
+                { to: '/contato', label: 'Contato' },
+              ].map((link) => (
+                <li key={link.to}>
+                  <Link
+                    to={link.to}
+                    className="text-sm transition-colors duration-200"
+                    style={{ color: config.textColor || '#9CA3AF' }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = config.headingColor || '#FFFFFF'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = config.textColor || '#9CA3AF'}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           {/* Column 3: Contato */}
           <div className="flex flex-col">
-            <h3 className="font-semibold text-xl mb-4" style={{ color: config.headingColor || '#FFFFFF' }}>
+            <h3 className="font-semibold text-base mb-5 uppercase tracking-wider" style={{ color: config.headingColor || '#FFFFFF' }}>
               Contato
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               {config.address && (
-                <div className="flex items-start gap-2">
-                  <MapPin size={18} className="mt-1 flex-shrink-0" style={{ color: config.textColor || '#9CA3AF' }} />
-                  <span style={{ color: config.textColor || '#9CA3AF' }}>{config.address}</span>
+                <div className="flex items-start gap-2.5">
+                  <MapPin size={16} className="mt-0.5 flex-shrink-0 opacity-60" style={{ color: config.textColor || '#9CA3AF' }} />
+                  <span className="text-sm" style={{ color: config.textColor || '#9CA3AF' }}>{config.address}</span>
                 </div>
               )}
 
               {config.phone && (
-                <div className="flex items-center gap-2">
-                  <Phone size={18} style={{ color: config.textColor || '#9CA3AF' }} />
+                <div className="flex items-center gap-2.5">
+                  <Phone size={16} className="opacity-60" style={{ color: config.textColor || '#9CA3AF' }} />
                   <a
                     href={`tel:${config.phone.replace(/\D/g, '')}`}
-                    className="transition-colors"
+                    className="text-sm transition-colors duration-200"
                     style={{ color: config.textColor || '#9CA3AF' }}
                     onMouseEnter={(e) => e.currentTarget.style.color = config.headingColor || '#FFFFFF'}
                     onMouseLeave={(e) => e.currentTarget.style.color = config.textColor || '#9CA3AF'}
@@ -178,11 +132,11 @@ export const Footer: React.FC = () => {
               )}
 
               {config.whatsapp && (
-                <div className="flex items-center gap-2">
-                  <MessageSquare size={18} style={{ color: config.textColor || '#9CA3AF' }} />
+                <div className="flex items-center gap-2.5">
+                  <MessageSquare size={16} className="opacity-60" style={{ color: config.textColor || '#9CA3AF' }} />
                   <a
                     href={`https://wa.me/${config.whatsapp.replace(/\D/g, '')}`}
-                    className="transition-colors"
+                    className="text-sm transition-colors duration-200"
                     style={{ color: config.textColor || '#9CA3AF' }}
                     onMouseEnter={(e) => e.currentTarget.style.color = config.headingColor || '#FFFFFF'}
                     onMouseLeave={(e) => e.currentTarget.style.color = config.textColor || '#9CA3AF'}
@@ -193,11 +147,11 @@ export const Footer: React.FC = () => {
               )}
 
               {config.email && (
-                <div className="flex items-center gap-2">
-                  <Mail size={18} style={{ color: config.textColor || '#9CA3AF' }} />
+                <div className="flex items-center gap-2.5">
+                  <Mail size={16} className="opacity-60" style={{ color: config.textColor || '#9CA3AF' }} />
                   <a
                     href={`mailto:${config.email}`}
-                    className="transition-colors"
+                    className="text-sm transition-colors duration-200"
                     style={{ color: config.textColor || '#9CA3AF' }}
                     onMouseEnter={(e) => e.currentTarget.style.color = config.headingColor || '#FFFFFF'}
                     onMouseLeave={(e) => e.currentTarget.style.color = config.textColor || '#9CA3AF'}
@@ -208,9 +162,9 @@ export const Footer: React.FC = () => {
               )}
 
               {config.businessHours && (
-                <div className="flex items-start gap-2">
-                  <Clock size={18} className="mt-1 flex-shrink-0" style={{ color: config.textColor || '#9CA3AF' }} />
-                  <div style={{ color: config.textColor || '#9CA3AF' }} dangerouslySetInnerHTML={{ __html: config.businessHours.replace(/\n/g, '<br>') }} />
+                <div className="flex items-start gap-2.5">
+                  <Clock size={16} className="mt-0.5 flex-shrink-0 opacity-60" style={{ color: config.textColor || '#9CA3AF' }} />
+                  <div className="text-sm" style={{ color: config.textColor || '#9CA3AF' }} dangerouslySetInnerHTML={{ __html: config.businessHours.replace(/\n/g, '<br>') }} />
                 </div>
               )}
             </div>
@@ -218,18 +172,26 @@ export const Footer: React.FC = () => {
 
           {/* Column 4: Mapa */}
           <div className="flex flex-col">
-            <h3 className="font-semibold text-xl mb-4" style={{ color: config.headingColor || '#FFFFFF' }}>
+            <h3 className="font-semibold text-base mb-5 uppercase tracking-wider" style={{ color: config.headingColor || '#FFFFFF' }}>
               Localização
             </h3>
-            <MapEmbed
-              address={config.address || ''}
-              height="192px"
-            />
+            <div className="rounded-xl overflow-hidden">
+              <MapEmbed
+                address={config.address || ''}
+                height="180px"
+              />
+            </div>
             {/* Admin Access Button */}
             <div className="mt-4">
-              <Button variant="outline" size="sm" className="bg-transparent border-white hover:bg-white hover:text-black" style={{ color: config.headingColor || '#FFFFFF' }} asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-transparent border-white/20 hover:bg-white hover:text-black text-sm transition-all duration-300 rounded-lg"
+                style={{ color: config.headingColor || '#FFFFFF' }}
+                asChild
+              >
                 <Link to="/admin/login">
-                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  <LayoutDashboard className="mr-2 h-3.5 w-3.5" />
                   Acesso Hoteleiro
                 </Link>
               </Button>
@@ -239,49 +201,31 @@ export const Footer: React.FC = () => {
       </div>
 
       {/* Copyright Bar */}
-      <div className="border-t" style={{ borderColor: config.borderColor || '#1F2937' }}>
-        <div className="page-container py-6">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm" style={{ color: config.copyrightColor || '#6B7280' }}>
+      <div className="border-t" style={{ borderColor: config.borderColor || 'rgba(255,255,255,0.08)' }}>
+        <div className="page-container py-5">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-3">
+            <p className="text-xs" style={{ color: config.copyrightColor || '#6B7280' }}>
               {config.copyright || `© ${new Date().getFullYear()} - TODOS OS DIREITOS RESERVADOS`}
             </p>
-            <div className="mt-4 md:mt-0">
-              <ul className="flex space-x-4 text-sm" style={{ color: config.copyrightColor || '#6B7280' }}>
-                <li>
+            <ul className="flex space-x-5 text-xs" style={{ color: config.copyrightColor || '#6B7280' }}>
+              {[
+                { to: '/politicas-de-privacidade', label: 'Privacidade' },
+                { to: '/termos-de-uso', label: 'Termos de Uso' },
+                { to: '/politicas-de-privacidade', label: 'Cookies' },
+              ].map((link) => (
+                <li key={link.label}>
                   <Link
-                    to="/politicas-de-privacidade"
-                    className="transition-colors"
+                    to={link.to}
+                    className="transition-colors duration-200"
                     style={{ color: config.copyrightColor || '#6B7280' }}
                     onMouseEnter={(e) => e.currentTarget.style.color = config.headingColor || '#FFFFFF'}
                     onMouseLeave={(e) => e.currentTarget.style.color = config.copyrightColor || '#6B7280'}
                   >
-                    Política de Privacidade
+                    {link.label}
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    to="/termos-de-uso"
-                    className="transition-colors"
-                    style={{ color: config.copyrightColor || '#6B7280' }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = config.headingColor || '#FFFFFF'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = config.copyrightColor || '#6B7280'}
-                  >
-                    Termos de Uso
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/politicas-de-privacidade"
-                    className="transition-colors"
-                    style={{ color: config.copyrightColor || '#6B7280' }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = config.headingColor || '#FFFFFF'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = config.copyrightColor || '#6B7280'}
-                  >
-                    Cookies
-                  </Link>
-                </li>
-              </ul>
-            </div>
+              ))}
+            </ul>
           </div>
         </div>
       </div>

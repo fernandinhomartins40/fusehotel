@@ -17,7 +17,6 @@ export const HighlightsSection: React.FC = () => {
 
   const config = settingsData?.config || defaultHighlightsConfig;
 
-  // Se não houver highlights, não renderizar a seção
   if (!highlights || highlights.length === 0) {
     return null;
   }
@@ -29,26 +28,26 @@ export const HighlightsSection: React.FC = () => {
       style={{ backgroundColor: config.backgroundColor || '#FFFFFF' }}
     >
       <div className="page-container">
-        <div className="text-left">
+        <div className="mb-12">
           {config.subtitle && (
-            <h2
-              className="text-[13px] uppercase tracking-[2px] mb-2 font-normal"
+            <span
+              className="page-kicker"
               style={{ color: config.subtitleColor || '#676C76' }}
             >
               {config.subtitle}
-            </h2>
+            </span>
           )}
           {config.title && (
-            <h3
-              className="text-[56px] font-bold mb-4 tracking-tight leading-none uppercase"
+            <h2
+              className="text-3xl md:text-4xl lg:text-5xl font-bold mb-5 tracking-tight leading-none"
               style={{ color: config.titleColor || '#1D1D1F' }}
             >
               {config.title}
-            </h3>
+            </h2>
           )}
           {config.description && (
             <p
-              className="text-base leading-relaxed mb-10 max-w-2xl"
+              className="text-base leading-relaxed max-w-2xl"
               style={{ color: config.subtitleColor || '#676C76' }}
             >
               {config.description}
@@ -56,28 +55,28 @@ export const HighlightsSection: React.FC = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 stagger-children">
           {highlights.map((highlight: Highlight) => (
-            <div key={highlight.id} className="relative overflow-hidden rounded-[5px]">
+            <div key={highlight.id} className="relative overflow-hidden rounded-xl group cursor-pointer">
               <img
                 src={highlight.image}
                 alt={highlight.title}
-                className="w-full h-[333px] object-cover"
+                className="w-full h-[333px] object-cover transition-transform duration-700 ease-out group-hover:scale-105"
               />
               <div
-                className="absolute inset-0 flex flex-col justify-end p-6 text-left"
+                className="absolute inset-0 flex flex-col justify-end p-7 text-left transition-all duration-300"
                 style={{
-                  background: config.overlayGradient || 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)'
+                  background: config.overlayGradient || 'linear-gradient(to top, rgba(0,0,0,0.65), rgba(0,0,0,0.1) 50%, transparent)'
                 }}
               >
                 <h4
-                  className="text-4xl font-bold mb-1"
+                  className="text-3xl md:text-4xl font-bold mb-1 transition-transform duration-300 group-hover:translate-y-[-4px]"
                   style={{ color: config.cardTitleColor || '#FFFFFF' }}
                 >
                   {highlight.title}
                 </h4>
                 <p
-                  className="text-lg"
+                  className="text-base opacity-90"
                   style={{ color: config.cardSubtitleColor || '#FFFFFF' }}
                 >
                   {highlight.subtitle}

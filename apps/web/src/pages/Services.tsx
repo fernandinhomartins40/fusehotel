@@ -26,7 +26,6 @@ import {
 } from '@/types/services-config';
 
 const Services: React.FC = () => {
-  // Fetch all section configs
   const { data: heroData } = useLandingSettings('services-hero');
   const { data: accommodationData } = useLandingSettings('services-accommodation');
   const { data: gastronomyData } = useLandingSettings('services-gastronomy');
@@ -35,14 +34,12 @@ const Services: React.FC = () => {
   const { data: specialData } = useLandingSettings('services-special');
   const { data: ctaData } = useLandingSettings('services-cta');
 
-  // Fetch service items by category
   const { data: accommodationItems = [] } = useServiceItemsByCategory('ACCOMMODATION');
   const { data: gastronomyItems = [] } = useServiceItemsByCategory('GASTRONOMY');
   const { data: recreationItems = [] } = useServiceItemsByCategory('RECREATION');
   const { data: businessItems = [] } = useServiceItemsByCategory('BUSINESS');
   const { data: specialItems = [] } = useServiceItemsByCategory('SPECIAL');
 
-  // Apply configs with defaults
   const heroConfig = hydrateBrandColors((heroData?.config as ServicesHeroConfig) || defaultServicesHeroConfig);
   const accommodationConfig = hydrateBrandColors((accommodationData?.config as AccommodationSectionConfig) || defaultAccommodationSectionConfig);
   const gastronomyConfig = hydrateBrandColors((gastronomyData?.config as GastronomySectionConfig) || defaultGastronomySectionConfig);
@@ -58,7 +55,7 @@ const Services: React.FC = () => {
       <main className="flex-1">
         {/* Hero Section */}
         <div
-          className="text-white page-section-hero"
+          className="text-white page-section-hero relative overflow-hidden"
           style={{
             backgroundColor: resolveHeroColor(heroConfig.backgroundColor),
             height: heroConfig.height,
@@ -66,16 +63,20 @@ const Services: React.FC = () => {
             alignItems: 'center',
           }}
         >
-          <div className="page-container text-center">
+          <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/30" />
+          <div className="page-container text-center relative">
+            <span className="page-kicker opacity-80" style={{ color: heroConfig.subtitleColor }}>
+              O que oferecemos
+            </span>
             <h1
-              className="page-title mb-6"
+              className="page-title mb-5"
               style={{ color: heroConfig.titleColor }}
             >
               {heroConfig.title}
             </h1>
             {heroConfig.subtitle && (
               <p
-                className="page-lead max-w-3xl mx-auto"
+                className="text-base md:text-lg leading-relaxed max-w-3xl mx-auto opacity-90"
                 style={{ color: heroConfig.subtitleColor }}
               >
                 {heroConfig.subtitle}
@@ -90,45 +91,48 @@ const Services: React.FC = () => {
           style={{ backgroundColor: accommodationConfig.backgroundColor }}
         >
           <div className="page-container">
-            <div className="text-center mb-16">
+            <div className="text-center mb-14">
               <h2
-                className="text-3xl font-bold mb-4"
+                className="text-2xl md:text-3xl font-bold mb-4"
                 style={{ color: accommodationConfig.titleColor }}
               >
                 {accommodationConfig.title}
               </h2>
               {accommodationConfig.subtitle && (
-                <p className="text-lg font-medium mb-2" style={{ color: accommodationConfig.subtitleColor }}>
+                <p className="text-base font-medium mb-2" style={{ color: accommodationConfig.subtitleColor }}>
                   {accommodationConfig.subtitle}
                 </p>
               )}
               {accommodationConfig.description && (
-                <p className="text-gray-700 max-w-3xl mx-auto">
+                <p className="text-muted-foreground max-w-3xl mx-auto leading-relaxed">
                   {accommodationConfig.description}
                 </p>
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-7 stagger-children">
               {accommodationItems.map((item: any) => (
-                <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="h-64 overflow-hidden">
+                <Card key={item.id} className="overflow-hidden card-hover border-0 shadow-sm">
+                  <div className="h-56 img-zoom">
                     <img
                       src={item.image}
                       alt={item.title}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover"
                     />
                   </div>
-                  <CardContent className="p-8">
-                    <h3 className="text-xl font-bold mb-2">{item.title}</h3>
+                  <CardContent className="p-7">
+                    <h3 className="text-lg font-bold mb-2">{item.title}</h3>
                     {item.subtitle && (
-                      <p className="text-sm text-gray-500 mb-2">{item.subtitle}</p>
+                      <p className="text-sm text-muted-foreground mb-2">{item.subtitle}</p>
                     )}
-                    <p className="text-gray-700 mb-6">{item.description}</p>
+                    <p className="text-gray-600 text-sm leading-relaxed mb-5">{item.description}</p>
                     {item.features && item.features.length > 0 && (
-                      <ul className="text-gray-700 mb-6 space-y-2">
+                      <ul className="text-gray-600 text-sm space-y-1.5">
                         {item.features.map((feature: string, idx: number) => (
-                          <li key={idx}>• {feature}</li>
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary/40 flex-shrink-0" />
+                            {feature}
+                          </li>
                         ))}
                       </ul>
                     )}
@@ -140,7 +144,7 @@ const Services: React.FC = () => {
             {accommodationConfig.showButton && accommodationConfig.buttonText && (
               <div className="mt-12 text-center">
                 <Button
-                  className="rounded-full px-8 py-3"
+                  className="rounded-full px-8 py-3 transition-all duration-300 hover:shadow-md"
                   style={{
                     backgroundColor: accommodationConfig.buttonColor,
                     color: '#FFFFFF',
@@ -162,29 +166,29 @@ const Services: React.FC = () => {
           <div className="page-container">
             <div className="text-center mb-12">
               <h2
-                className="text-3xl font-bold mb-4"
+                className="text-2xl md:text-3xl font-bold mb-4"
                 style={{ color: gastronomyConfig.titleColor }}
               >
                 {gastronomyConfig.title}
               </h2>
               {gastronomyConfig.subtitle && (
-                <p className="text-lg font-medium mb-2" style={{ color: gastronomyConfig.subtitleColor }}>
+                <p className="text-base font-medium mb-2" style={{ color: gastronomyConfig.subtitleColor }}>
                   {gastronomyConfig.subtitle}
                 </p>
               )}
               {gastronomyConfig.description && (
-                <p className="text-gray-700 max-w-3xl mx-auto">
+                <p className="text-muted-foreground max-w-3xl mx-auto leading-relaxed">
                   {gastronomyConfig.description}
                 </p>
               )}
             </div>
 
-            <div className="space-y-8">
+            <div className="space-y-5">
               {gastronomyItems.map((item: any) => (
-                <div key={item.id} className="bg-white rounded-lg p-6 shadow-sm">
+                <div key={item.id} className="bg-white rounded-xl p-6 shadow-sm card-hover">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {item.image && (
-                      <div className="md:col-span-1">
+                      <div className="md:col-span-1 img-zoom rounded-lg">
                         <img
                           src={item.image}
                           alt={item.title}
@@ -192,12 +196,12 @@ const Services: React.FC = () => {
                         />
                       </div>
                     )}
-                    <div className={item.image ? "md:col-span-2" : "md:col-span-3"}>
-                      <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
+                    <div className={item.image ? "md:col-span-2 flex flex-col justify-center" : "md:col-span-3"}>
+                      <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
                       {item.subtitle && (
-                        <p className="text-sm text-gray-500 mb-2">{item.subtitle}</p>
+                        <p className="text-sm text-muted-foreground mb-2">{item.subtitle}</p>
                       )}
-                      <p className="text-gray-700">{item.description}</p>
+                      <p className="text-gray-600 text-sm leading-relaxed">{item.description}</p>
                     </div>
                   </div>
                 </div>
@@ -212,29 +216,29 @@ const Services: React.FC = () => {
           style={{ backgroundColor: recreationConfig.backgroundColor }}
         >
           <div className="page-container">
-            <div className="text-center mb-16">
+            <div className="text-center mb-14">
               <h2
-                className="text-3xl font-bold mb-4"
+                className="text-2xl md:text-3xl font-bold mb-4"
                 style={{ color: recreationConfig.titleColor }}
               >
                 {recreationConfig.title}
               </h2>
               {recreationConfig.subtitle && (
-                <p className="text-lg font-medium mb-2" style={{ color: recreationConfig.subtitleColor }}>
+                <p className="text-base font-medium mb-2" style={{ color: recreationConfig.subtitleColor }}>
                   {recreationConfig.subtitle}
                 </p>
               )}
               {recreationConfig.description && (
-                <p className="text-gray-700 max-w-3xl mx-auto">
+                <p className="text-muted-foreground max-w-3xl mx-auto leading-relaxed">
                   {recreationConfig.description}
                 </p>
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7 stagger-children">
               {recreationItems.map((item: any) => (
-                <Card key={item.id} className="hover:shadow-lg transition-shadow">
-                  <div className="h-48 overflow-hidden">
+                <Card key={item.id} className="card-hover border-0 shadow-sm overflow-hidden">
+                  <div className="h-48 img-zoom">
                     <img
                       src={item.image}
                       alt={item.title}
@@ -242,8 +246,8 @@ const Services: React.FC = () => {
                     />
                   </div>
                   <CardContent className="p-6">
-                    <h3 className="text-xl font-bold mb-2">{item.title}</h3>
-                    <p className="text-gray-700">{item.description}</p>
+                    <h3 className="text-lg font-bold mb-2">{item.title}</h3>
+                    <p className="text-gray-600 text-sm leading-relaxed">{item.description}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -259,33 +263,35 @@ const Services: React.FC = () => {
           <div className="page-container">
             <div className="text-center mb-12">
               <h2
-                className="text-3xl font-bold mb-4"
+                className="text-2xl md:text-3xl font-bold mb-4"
                 style={{ color: businessConfig.titleColor }}
               >
                 {businessConfig.title}
               </h2>
               {businessConfig.subtitle && (
-                <p className="text-lg font-medium mb-2" style={{ color: businessConfig.subtitleColor }}>
+                <p className="text-base font-medium mb-2" style={{ color: businessConfig.subtitleColor }}>
                   {businessConfig.subtitle}
                 </p>
               )}
               {businessConfig.description && (
-                <p className="text-gray-700 max-w-3xl mx-auto mb-8">
+                <p className="text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
                   {businessConfig.description}
                 </p>
               )}
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4">
               {businessItems.map((item: any) => (
-                <div key={item.id} className="bg-white rounded-lg p-6 shadow-sm">
+                <div key={item.id} className="bg-white rounded-xl p-6 shadow-sm card-hover">
                   <div className="flex items-start gap-4">
-                    <svg className="h-6 w-6 flex-shrink-0 mt-1" style={{ color: businessConfig.titleColor }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
+                    <div className="flex-shrink-0 mt-0.5 h-8 w-8 rounded-full bg-primary/8 flex items-center justify-center">
+                      <svg className="h-4 w-4" style={{ color: businessConfig.titleColor }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
-                      <p className="text-gray-700">{item.description}</p>
+                      <h3 className="text-base font-semibold mb-1">{item.title}</h3>
+                      <p className="text-gray-600 text-sm leading-relaxed">{item.description}</p>
                     </div>
                   </div>
                 </div>
@@ -293,9 +299,9 @@ const Services: React.FC = () => {
             </div>
 
             {businessConfig.buttonText && (
-              <div className="mt-8 text-center">
+              <div className="mt-10 text-center">
                 <Button
-                  className="rounded-full"
+                  className="rounded-full transition-all duration-300 hover:shadow-md"
                   style={{
                     backgroundColor: businessConfig.buttonColor,
                     color: '#FFFFFF',
@@ -315,44 +321,46 @@ const Services: React.FC = () => {
           style={{ backgroundColor: specialConfig.backgroundColor }}
         >
           <div className="page-container">
-            <div className="text-center mb-16">
+            <div className="text-center mb-14">
               <h2
-                className="text-3xl font-bold mb-4"
+                className="text-2xl md:text-3xl font-bold mb-4"
                 style={{ color: specialConfig.titleColor }}
               >
                 {specialConfig.title}
               </h2>
               {specialConfig.subtitle && (
-                <p className="text-lg font-medium mb-2" style={{ color: specialConfig.subtitleColor }}>
+                <p className="text-base font-medium mb-2" style={{ color: specialConfig.subtitleColor }}>
                   {specialConfig.subtitle}
                 </p>
               )}
               {specialConfig.description && (
-                <p className="text-gray-700 max-w-3xl mx-auto">
+                <p className="text-muted-foreground max-w-3xl mx-auto leading-relaxed">
                   {specialConfig.description}
                 </p>
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 stagger-children">
               {specialItems.map((item: any) => (
-                <div key={item.id} className="text-center">
+                <div key={item.id} className="text-center group">
                   <div
-                    className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+                    className="w-18 h-18 rounded-2xl flex items-center justify-center mx-auto mb-5 transition-transform duration-300 group-hover:scale-105"
                     style={{
                       backgroundColor: specialConfig.iconBackgroundColor || '#EFF6FF',
+                      width: '72px',
+                      height: '72px',
                     }}
                   >
                     {item.image && (
                       <img
                         src={item.image}
                         alt={item.title}
-                        className="w-10 h-10 object-contain"
+                        className="w-9 h-9 object-contain"
                       />
                     )}
                   </div>
-                  <h3 className="text-xl font-bold mb-3">{item.title}</h3>
-                  <p className="text-gray-700">{item.description}</p>
+                  <h3 className="text-base font-bold mb-2">{item.title}</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">{item.description}</p>
                 </div>
               ))}
             </div>
@@ -366,14 +374,14 @@ const Services: React.FC = () => {
         >
           <div className="page-container text-center">
             <h2
-              className="text-3xl font-bold mb-4"
+              className="text-2xl md:text-3xl font-bold mb-4"
               style={{ color: ctaConfig.titleColor }}
             >
               {ctaConfig.title}
             </h2>
             {ctaConfig.description && (
               <p
-                className="text-xl mb-8 max-w-3xl mx-auto"
+                className="text-lg mb-8 max-w-3xl mx-auto leading-relaxed"
                 style={{ color: ctaConfig.subtitleColor }}
               >
                 {ctaConfig.description}
@@ -382,7 +390,7 @@ const Services: React.FC = () => {
             <div className="flex flex-wrap justify-center gap-4">
               {ctaConfig.primaryButtonText && (
                 <Button
-                  className="rounded-full px-8 py-3 text-lg"
+                  className="rounded-full px-8 py-3 text-base transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
                   style={{
                     backgroundColor: ctaConfig.primaryButtonColor,
                     color: ctaConfig.backgroundColor,
@@ -396,7 +404,7 @@ const Services: React.FC = () => {
               {ctaConfig.secondaryButtonText && (
                 <Button
                   variant="outline"
-                  className="rounded-full px-8 py-3 text-lg"
+                  className="rounded-full px-8 py-3 text-base transition-all duration-300"
                   style={{
                     borderColor: ctaConfig.secondaryButtonColor,
                     color: ctaConfig.secondaryButtonColor,

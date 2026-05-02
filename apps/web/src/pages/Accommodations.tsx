@@ -23,9 +23,11 @@ const Accommodations = () => {
       <Header />
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="bg-secondary text-secondary-foreground page-section-hero">
-          <div className="page-container text-center">
-            <h1 className="page-title mb-6 uppercase">
+        <section className="bg-secondary text-secondary-foreground page-section-hero relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-secondary/50" />
+          <div className="page-container text-center relative">
+            <span className="page-kicker text-muted-foreground">Conheça nossos quartos</span>
+            <h1 className="page-title mb-5">
               Acomodações
             </h1>
             <p className="page-lead mx-auto max-w-2xl">
@@ -39,18 +41,18 @@ const Accommodations = () => {
         <section className="page-section bg-[#f9f9f9]">
           <div className="page-container">
             {isLoading ? (
-              <div className="flex items-center justify-center py-12">
+              <div className="flex items-center justify-center py-16">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="ml-3 text-lg">Carregando acomodações...</span>
+                <span className="ml-3 text-lg text-muted-foreground">Carregando acomodações...</span>
               </div>
             ) : error ? (
-              <div className="text-center py-12">
+              <div className="text-center py-16">
                 <p className="text-red-600 text-lg">
                   Erro ao carregar acomodações. Por favor, tente novamente mais tarde.
                 </p>
               </div>
             ) : accommodations && accommodations.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7 stagger-children">
                 {accommodations.map((accommodation) => (
                   <RoomCard
                     key={accommodation.id}
@@ -69,8 +71,8 @@ const Accommodations = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <p className="text-gray-600 text-lg">
+              <div className="text-center py-16">
+                <p className="text-gray-500 text-lg">
                   Nenhuma acomodação disponível no momento.
                 </p>
               </div>

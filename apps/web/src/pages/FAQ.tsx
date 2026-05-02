@@ -34,13 +34,17 @@ const FAQ: React.FC = () => {
       <main className="flex-1">
         {/* Hero Section */}
         <div
-          className="text-white page-section-hero"
+          className="text-white page-section-hero relative overflow-hidden"
           style={{
             backgroundColor: resolveHeroColor(heroConfig.backgroundColor),
             height: heroConfig.height || 'auto',
           }}
         >
-          <div className="page-container text-center">
+          <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/30" />
+          <div className="page-container text-center relative">
+            <span className="page-kicker opacity-80" style={{ color: heroConfig.subtitleColor || '#FFFFFF' }}>
+              Tire suas dúvidas
+            </span>
             <h1
               className="text-3xl md:text-4xl font-bold mb-4"
               style={{ color: heroConfig.titleColor || '#FFFFFF' }}
@@ -48,7 +52,7 @@ const FAQ: React.FC = () => {
               {heroConfig.title || 'Perguntas Frequentes'}
             </h1>
             <p
-              className="text-xl max-w-2xl mx-auto"
+              className="text-base md:text-lg max-w-2xl mx-auto opacity-90 leading-relaxed"
               style={{ color: heroConfig.subtitleColor || '#FFFFFF' }}
             >
               {heroConfig.description || 'Encontre respostas para as dúvidas mais comuns sobre hospedagem, serviços e políticas do Hotel Águas Claras.'}
@@ -61,31 +65,30 @@ const FAQ: React.FC = () => {
           className="page-container page-section"
           style={{ backgroundColor: contentConfig.backgroundColor || '#FFFFFF' }}
         >
-          <div className="max-w-4xl mx-auto">
-            {/* FAQ Categories and Questions */}
-            <div className="space-y-12">
+          <div className="max-w-3xl mx-auto">
+            <div className="space-y-10">
               {categories.map((category: FAQCategory, index: number) => {
                 const categoryItems = category.items || [];
                 return categoryItems.length > 0 ? (
-                  <div key={category.id} className="border-b border-gray-200 pb-8 last:border-b-0">
+                  <div key={category.id} className="border-b border-gray-100 pb-8 last:border-b-0">
                     <h2
-                      className="text-2xl font-bold mb-6"
+                      className="text-xl font-bold mb-5"
                       style={{ color: contentConfig.categoryTitleColor || 'hsl(var(--primary))' }}
                     >
                       {category.name}
                     </h2>
 
-                    <Accordion type="single" collapsible className="w-full">
+                    <Accordion type="single" collapsible className="w-full space-y-1">
                       {categoryItems.map((item: any, qIndex: number) => (
-                        <AccordionItem key={item.id} value={`item-${index}-${qIndex}`}>
+                        <AccordionItem key={item.id} value={`item-${index}-${qIndex}`} className="border-b-0">
                           <AccordionTrigger
-                            className="text-left"
+                            className="text-left py-3.5 hover:no-underline"
                             style={{ color: contentConfig.questionColor || '#000000' }}
                           >
                             {item.question}
                           </AccordionTrigger>
                           <AccordionContent>
-                            <p style={{ color: contentConfig.answerColor || '#374151' }}>
+                            <p className="leading-relaxed pb-2" style={{ color: contentConfig.answerColor || '#374151' }}>
                               {item.answer}
                             </p>
                           </AccordionContent>
@@ -99,17 +102,17 @@ const FAQ: React.FC = () => {
 
             {/* Contact Section */}
             <div
-              className="mt-16 p-8 rounded-lg border border-gray-200"
+              className="mt-14 p-8 rounded-xl border border-gray-100"
               style={{ backgroundColor: contactConfig.backgroundColor || '#F9FAFB' }}
             >
               <h2
-                className="text-2xl font-bold mb-4 text-center"
+                className="text-xl font-bold mb-3 text-center"
                 style={{ color: contactConfig.titleColor || '#000000' }}
               >
                 {contactConfig.title || 'Ainda tem dúvidas?'}
               </h2>
               <p
-                className="text-center mb-6"
+                className="text-center mb-6 text-muted-foreground"
                 style={{ color: contactConfig.subtitleColor || '#374151' }}
               >
                 {contactConfig.description || 'Se não encontrou a resposta que procura, entre em contato conosco diretamente.'}
@@ -117,7 +120,7 @@ const FAQ: React.FC = () => {
               <div className="flex justify-center">
                 <a
                   href={contactConfig.buttonUrl || '/contato'}
-                  className="px-8 py-3 font-medium rounded-full transition-colors"
+                  className="px-8 py-3 font-medium rounded-full transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
                   style={{
                     backgroundColor: contactConfig.buttonColor || 'hsl(var(--primary))',
                     color: contactConfig.buttonTextColor || '#FFFFFF',

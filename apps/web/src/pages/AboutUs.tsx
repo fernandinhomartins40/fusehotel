@@ -37,7 +37,7 @@ const AboutUs: React.FC = () => {
       <main className="flex-1">
         {/* Hero Section */}
         <div
-          className="text-white page-section-hero"
+          className="text-white page-section-hero relative overflow-hidden"
           style={{
             backgroundColor: resolveHeroColor(heroConfig.backgroundColor),
             height: heroConfig.height || '400px',
@@ -45,7 +45,11 @@ const AboutUs: React.FC = () => {
             alignItems: 'center',
           }}
         >
-          <div className="page-container text-center">
+          <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/30" />
+          <div className="page-container text-center relative">
+            <span className="page-kicker opacity-80" style={{ color: heroConfig.subtitleColor || '#FFFFFF' }}>
+              Nossa história
+            </span>
             <h1
               className="page-title mb-4"
               style={{ color: heroConfig.titleColor || '#FFFFFF' }}
@@ -53,7 +57,7 @@ const AboutUs: React.FC = () => {
               {heroConfig.title || 'Sobre Nós'}
             </h1>
             <p
-              className="page-lead mx-auto max-w-3xl"
+              className="text-base md:text-lg leading-relaxed mx-auto max-w-3xl opacity-90"
               style={{ color: heroConfig.subtitleColor || '#FFFFFF' }}
             >
               {heroConfig.description || 'Descrição'}
@@ -69,37 +73,33 @@ const AboutUs: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>
               <h2
-                className="text-3xl font-bold mb-6"
+                className="text-2xl md:text-3xl font-bold mb-6"
                 style={{ color: historyConfig.titleColor || 'hsl(var(--primary))' }}
               >
                 {historyConfig.title || 'Nossa História'}
               </h2>
-              <p
-                className="mb-4"
-                style={{ color: historyConfig.subtitleColor || '#666666' }}
-              >
-                {historyConfig.paragraph1}
-              </p>
-              <p
-                className="mb-4"
-                style={{ color: historyConfig.subtitleColor || '#666666' }}
-              >
-                {historyConfig.paragraph2}
-              </p>
-              <p style={{ color: historyConfig.subtitleColor || '#666666' }}>
-                {historyConfig.paragraph3}
-              </p>
+              <div className="space-y-4">
+                <p className="leading-relaxed" style={{ color: historyConfig.subtitleColor || '#666666' }}>
+                  {historyConfig.paragraph1}
+                </p>
+                <p className="leading-relaxed" style={{ color: historyConfig.subtitleColor || '#666666' }}>
+                  {historyConfig.paragraph2}
+                </p>
+                <p className="leading-relaxed" style={{ color: historyConfig.subtitleColor || '#666666' }}>
+                  {historyConfig.paragraph3}
+                </p>
+              </div>
             </div>
-            <div className="rounded-lg overflow-hidden shadow-lg h-96">
+            <div className="rounded-xl overflow-hidden shadow-lg h-96 img-zoom">
               <img
-                src={historyConfig.image || 'https://images.unsplash.com/photo-1472396961693-142e6e269027'} 
-                alt="Vista do Hotel Águas Claras" 
+                src={historyConfig.image || 'https://images.unsplash.com/photo-1472396961693-142e6e269027'}
+                alt="Vista do Hotel"
                 className="w-full h-full object-cover"
               />
             </div>
           </div>
         </section>
-        
+
         {/* Mission and Values */}
         <section
           className="page-section"
@@ -107,42 +107,45 @@ const AboutUs: React.FC = () => {
         >
           <div className="page-container">
             <h2
-              className="text-3xl font-bold mb-12 text-center"
+              className="text-2xl md:text-3xl font-bold mb-12 text-center"
               style={{ color: mvvConfig.titleColor || 'hsl(var(--primary))' }}
             >
               {mvvConfig.title || 'Missão, Visão e Valores'}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="bg-white p-8 rounded-lg shadow-md">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-7 stagger-children">
+              <div className="bg-white p-8 rounded-xl shadow-sm card-hover">
                 <h3
-                  className="text-xl font-bold mb-4"
+                  className="text-lg font-bold mb-4"
                   style={{ color: mvvConfig.subtitleColor || 'hsl(var(--primary))' }}
                 >
                   {mvvConfig.missionTitle || 'Missão'}
                 </h3>
-                <p className="text-gray-700">{mvvConfig.missionText}</p>
+                <p className="text-gray-600 leading-relaxed">{mvvConfig.missionText}</p>
               </div>
 
-              <div className="bg-white p-8 rounded-lg shadow-md">
+              <div className="bg-white p-8 rounded-xl shadow-sm card-hover">
                 <h3
-                  className="text-xl font-bold mb-4"
+                  className="text-lg font-bold mb-4"
                   style={{ color: mvvConfig.subtitleColor || 'hsl(var(--primary))' }}
                 >
                   {mvvConfig.visionTitle || 'Visão'}
                 </h3>
-                <p className="text-gray-700">{mvvConfig.visionText}</p>
+                <p className="text-gray-600 leading-relaxed">{mvvConfig.visionText}</p>
               </div>
 
-              <div className="bg-white p-8 rounded-lg shadow-md">
+              <div className="bg-white p-8 rounded-xl shadow-sm card-hover">
                 <h3
-                  className="text-xl font-bold mb-4"
+                  className="text-lg font-bold mb-4"
                   style={{ color: mvvConfig.subtitleColor || 'hsl(var(--primary))' }}
                 >
                   {mvvConfig.valuesTitle || 'Valores'}
                 </h3>
-                <ul className="text-gray-700 list-disc pl-5 space-y-2">
+                <ul className="text-gray-600 space-y-2">
                   {(mvvConfig.valuesItems || []).map((value, index) => (
-                    <li key={index}>{value}</li>
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="mt-1.5 h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: mvvConfig.subtitleColor || 'hsl(var(--primary))' }} />
+                      {value}
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -156,31 +159,31 @@ const AboutUs: React.FC = () => {
           style={{ backgroundColor: teamConfig.backgroundColor || '#FFFFFF' }}
         >
           <h2
-            className="text-3xl font-bold mb-12 text-center"
+            className="text-2xl md:text-3xl font-bold mb-12 text-center"
             style={{ color: teamConfig.titleColor || 'hsl(var(--primary))' }}
           >
             {teamConfig.title || 'Nossa Equipe'}
           </h2>
           <div
-            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${teamConfig.gridColumns || 3} gap-8`}
+            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${teamConfig.gridColumns || 3} gap-8 stagger-children`}
           >
             {teamMembers.map((member: TeamMember) => (
-              <div key={member.id} className="flex flex-col items-center">
-                <div className="w-48 h-48 rounded-full overflow-hidden mb-6">
+              <div key={member.id} className="flex flex-col items-center group">
+                <div className="w-44 h-44 rounded-full overflow-hidden mb-5 shadow-sm transition-shadow duration-300 group-hover:shadow-md">
                   <img
                     src={member.image}
                     alt={member.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
-                <h3 className="text-xl font-bold mb-1">{member.name}</h3>
+                <h3 className="text-lg font-bold mb-1">{member.name}</h3>
                 <p
-                  className="mb-3"
+                  className="text-sm mb-3"
                   style={{ color: teamConfig.subtitleColor || 'hsl(var(--primary))' }}
                 >
                   {member.role}
                 </p>
-                <p className="text-gray-700 text-center max-w-xs">
+                <p className="text-gray-600 text-center text-sm max-w-xs leading-relaxed">
                   {member.description}
                 </p>
               </div>
@@ -195,38 +198,38 @@ const AboutUs: React.FC = () => {
         >
           <div className="page-container">
             <h2
-              className="text-3xl font-bold mb-12 text-center"
+              className="text-2xl md:text-3xl font-bold mb-12 text-center"
               style={{ color: awardsConfig.titleColor || 'hsl(var(--primary))' }}
             >
               {awardsConfig.title || 'Reconhecimentos e Prêmios'}
             </h2>
             <div
-              className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${awardsConfig.gridColumns || 4} gap-6`}
+              className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${awardsConfig.gridColumns || 4} gap-6 stagger-children`}
             >
               {awards.map((award: Award) => (
                 <div
                   key={award.id}
-                  className="bg-white p-6 rounded-lg shadow-md flex flex-col items-center text-center"
+                  className="bg-white p-6 rounded-xl shadow-sm flex flex-col items-center text-center card-hover"
                 >
                   <div
-                    className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+                    className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/8"
                     style={{ color: awardsConfig.titleColor || 'hsl(var(--primary))' }}
                   >
                     <AwardIcon
                       value={award.icon}
-                      className="h-8 w-8"
-                      fallbackClassName="text-4xl leading-none"
+                      className="h-7 w-7"
+                      fallbackClassName="text-3xl leading-none"
                     />
                   </div>
-                  <h3 className="text-lg font-bold mb-2">{award.title}</h3>
-                  <p className="text-gray-700">{award.description}</p>
+                  <h3 className="text-base font-bold mb-2">{award.title}</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">{award.description}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
       </main>
-      
+
       <Footer />
     </div>
   );

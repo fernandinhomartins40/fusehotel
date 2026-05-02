@@ -94,13 +94,17 @@ const Contact: React.FC = () => {
 
       <main className="flex-1">
         <div
-          className="page-section-hero text-white"
+          className="page-section-hero text-white relative overflow-hidden"
           style={{
             backgroundColor: resolveHeroColor(heroConfig.backgroundColor),
             height: heroConfig.height || 'auto',
           }}
         >
-          <div className="page-container text-center">
+          <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/30" />
+          <div className="page-container text-center relative">
+            <span className="page-kicker opacity-80" style={{ color: heroConfig.subtitleColor || '#FFFFFF' }}>
+              Fale conosco
+            </span>
             <h1
               className="mb-4 text-3xl font-bold md:text-4xl"
               style={{ color: heroConfig.titleColor || '#FFFFFF' }}
@@ -108,7 +112,7 @@ const Contact: React.FC = () => {
               {heroConfig.title || 'Entre em Contato'}
             </h1>
             <p
-              className="mx-auto max-w-3xl text-xl"
+              className="mx-auto max-w-3xl text-base md:text-lg opacity-90 leading-relaxed"
               style={{ color: heroConfig.subtitleColor || '#FFFFFF' }}
             >
               {heroConfig.description ||
@@ -122,29 +126,29 @@ const Contact: React.FC = () => {
           style={{ backgroundColor: cardsConfig.backgroundColor || '#F9FAFB' }}
         >
           <div className="page-container">
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-              <Card className="border-none shadow-md transition-shadow hover:shadow-lg">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3 stagger-children">
+              <Card className="border-0 shadow-sm card-hover">
                 <CardContent className="flex flex-col items-center p-8 text-center">
                   <div
-                    className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
+                    className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl"
                     style={{
-                      backgroundColor: colorWithAlpha(cardsConfig.cardIconColor, 0.12),
+                      backgroundColor: colorWithAlpha(cardsConfig.cardIconColor, 0.1),
                     }}
                   >
                     <Phone
-                      className="h-8 w-8"
+                      className="h-6 w-6"
                       style={{ color: cardsConfig.cardIconColor || 'hsl(var(--primary))' }}
                     />
                   </div>
-                  <h3 className="mb-2 text-xl font-bold">
+                  <h3 className="mb-2 text-lg font-bold">
                     {cardsConfig.phoneTitle || 'Telefone'}
                   </h3>
-                  <p className="mb-4 text-gray-600">
+                  <p className="mb-3 text-sm text-muted-foreground">
                     {cardsConfig.phoneDescription}
                   </p>
                   <a
                     href={`tel:+55${cardsConfig.phoneNumber?.replace(/\D/g, '')}`}
-                    className="font-medium hover:underline"
+                    className="font-medium text-sm hover:underline"
                     style={{ color: cardsConfig.cardLinkColor || 'hsl(var(--primary))' }}
                   >
                     {cardsConfig.phoneNumber || '(11) 5555-5555'}
@@ -152,28 +156,28 @@ const Contact: React.FC = () => {
                 </CardContent>
               </Card>
 
-              <Card className="border-none shadow-md transition-shadow hover:shadow-lg">
+              <Card className="border-0 shadow-sm card-hover">
                 <CardContent className="flex flex-col items-center p-8 text-center">
                   <div
-                    className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
+                    className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl"
                     style={{
-                      backgroundColor: colorWithAlpha(cardsConfig.cardIconColor, 0.12),
+                      backgroundColor: colorWithAlpha(cardsConfig.cardIconColor, 0.1),
                     }}
                   >
                     <MessageSquare
-                      className="h-8 w-8"
+                      className="h-6 w-6"
                       style={{ color: cardsConfig.cardIconColor || 'hsl(var(--primary))' }}
                     />
                   </div>
-                  <h3 className="mb-2 text-xl font-bold">
+                  <h3 className="mb-2 text-lg font-bold">
                     {cardsConfig.whatsappTitle || 'WhatsApp'}
                   </h3>
-                  <p className="mb-4 text-gray-600">
+                  <p className="mb-3 text-sm text-muted-foreground">
                     {cardsConfig.whatsappDescription}
                   </p>
                   <a
                     href={`https://wa.me/55${cardsConfig.whatsappNumber?.replace(/\D/g, '')}`}
-                    className="font-medium hover:underline"
+                    className="font-medium text-sm hover:underline"
                     style={{ color: cardsConfig.cardLinkColor || 'hsl(var(--primary))' }}
                   >
                     {cardsConfig.whatsappNumber || '(11) 99999-9999'}
@@ -181,28 +185,28 @@ const Contact: React.FC = () => {
                 </CardContent>
               </Card>
 
-              <Card className="border-none shadow-md transition-shadow hover:shadow-lg">
+              <Card className="border-0 shadow-sm card-hover">
                 <CardContent className="flex flex-col items-center p-8 text-center">
                   <div
-                    className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
+                    className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl"
                     style={{
-                      backgroundColor: colorWithAlpha(cardsConfig.cardIconColor, 0.12),
+                      backgroundColor: colorWithAlpha(cardsConfig.cardIconColor, 0.1),
                     }}
                   >
                     <Mail
-                      className="h-8 w-8"
+                      className="h-6 w-6"
                       style={{ color: cardsConfig.cardIconColor || 'hsl(var(--primary))' }}
                     />
                   </div>
-                  <h3 className="mb-2 text-xl font-bold">
+                  <h3 className="mb-2 text-lg font-bold">
                     {cardsConfig.emailTitle || 'E-mail'}
                   </h3>
-                  <p className="mb-4 text-gray-600">
+                  <p className="mb-3 text-sm text-muted-foreground">
                     {cardsConfig.emailDescription}
                   </p>
                   <a
                     href={`mailto:${cardsConfig.emailAddress}`}
-                    className="font-medium hover:underline"
+                    className="font-medium text-sm hover:underline"
                     style={{ color: cardsConfig.cardLinkColor || 'hsl(var(--primary))' }}
                   >
                     {cardsConfig.emailAddress || 'contato@hotel.com'}
@@ -221,19 +225,19 @@ const Contact: React.FC = () => {
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
               <div>
                 <h2
-                  className="mb-6 text-3xl font-bold"
+                  className="mb-5 text-2xl md:text-3xl font-bold"
                   style={{ color: formConfig.titleColor || 'hsl(var(--primary))' }}
                 >
                   {formConfig.formTitle || 'Envie uma Mensagem'}
                 </h2>
-                <p className="mb-8 text-gray-700">
+                <p className="mb-8 text-muted-foreground leading-relaxed">
                   {formConfig.formDescription ||
                     'Preencha o formulario abaixo com suas informacoes e entraremos em contato o mais breve possivel.'}
                 </p>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                    <div className="space-y-2">
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <div className="space-y-1.5">
                       <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                         Nome*
                       </label>
@@ -244,10 +248,11 @@ const Contact: React.FC = () => {
                         required
                         value={form.name}
                         onChange={handleChange}
+                        className="rounded-lg"
                       />
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                         E-mail*
                       </label>
@@ -258,11 +263,12 @@ const Contact: React.FC = () => {
                         required
                         value={form.email}
                         onChange={handleChange}
+                        className="rounded-lg"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
                       Telefone
                     </label>
@@ -272,10 +278,11 @@ const Contact: React.FC = () => {
                       placeholder="(00) 00000-0000"
                       value={form.phone}
                       onChange={handleChange}
+                      className="rounded-lg"
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <label htmlFor="subject" className="block text-sm font-medium text-gray-700">
                       Assunto*
                     </label>
@@ -286,19 +293,20 @@ const Contact: React.FC = () => {
                       required
                       value={form.subject}
                       onChange={handleChange}
+                      className="rounded-lg"
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <label htmlFor="message" className="block text-sm font-medium text-gray-700">
                       Mensagem*
                     </label>
                     <Textarea
                       id="message"
                       placeholder="Escreva sua mensagem aqui..."
-                      rows={6}
+                      rows={5}
                       required
-                      className="resize-none"
+                      className="resize-none rounded-lg"
                       value={form.message}
                       onChange={handleChange}
                     />
@@ -310,7 +318,7 @@ const Contact: React.FC = () => {
                       checked={acceptedPolicy}
                       onCheckedChange={(checked) => setAcceptedPolicy(checked === true)}
                     />
-                    <label htmlFor="terms" className="text-sm text-gray-600">
+                    <label htmlFor="terms" className="text-sm text-muted-foreground">
                       Concordo com a{' '}
                       <a
                         href="/politicas-de-privacidade"
@@ -323,7 +331,7 @@ const Contact: React.FC = () => {
 
                   <Button
                     type="submit"
-                    className="w-full rounded-full py-3"
+                    className="w-full rounded-full py-3 transition-all duration-300 hover:shadow-md"
                     disabled={isSubmitting}
                     style={{
                       backgroundColor: formConfig.buttonColor || 'hsl(var(--primary))',
@@ -337,56 +345,56 @@ const Contact: React.FC = () => {
                 </form>
               </div>
 
-              <div className="space-y-8">
+              <div className="space-y-7">
                 <div>
                   <h2
-                    className="mb-6 text-3xl font-bold"
+                    className="mb-5 text-2xl md:text-3xl font-bold"
                     style={{ color: formConfig.titleColor || 'hsl(var(--primary))' }}
                   >
                     {formConfig.mapTitle || 'Nossa Localizacao'}
                   </h2>
-                  <p className="mb-6 text-gray-700">
+                  <p className="mb-6 text-muted-foreground leading-relaxed">
                     {formConfig.mapDescription ||
                       'Visite-nos e conheca pessoalmente toda a estrutura do hotel.'}
                   </p>
 
-                  <div className="h-[400px] overflow-hidden rounded-lg">
+                  <div className="h-[380px] overflow-hidden rounded-xl">
                     <MapEmbed
                       address={`${formConfig.addressLine1}, ${formConfig.addressLine2}`}
-                      height="400px"
+                      height="380px"
                     />
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-gray-100 bg-gray-50 p-6">
-                  <h3 className="mb-4 text-xl font-bold">Informacoes de Contato</h3>
+                <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-6">
+                  <h3 className="mb-4 text-lg font-bold">Informacoes de Contato</h3>
 
                   <div className="space-y-4">
                     <div className="flex items-start">
                       <MapPin
-                        className="mr-3 mt-0.5 h-6 w-6"
+                        className="mr-3 mt-0.5 h-5 w-5"
                         style={{ color: formConfig.titleColor || 'hsl(var(--primary))' }}
                       />
                       <div>
-                        <p className="font-medium">
+                        <p className="font-medium text-sm">
                           {formConfig.addressLabel || 'Endereco:'}
                         </p>
-                        <p className="text-gray-600">{formConfig.addressLine1}</p>
-                        <p className="text-gray-600">{formConfig.addressLine2}</p>
+                        <p className="text-muted-foreground text-sm">{formConfig.addressLine1}</p>
+                        <p className="text-muted-foreground text-sm">{formConfig.addressLine2}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center">
                       <Clock
-                        className="mr-3 h-6 w-6"
+                        className="mr-3 h-5 w-5"
                         style={{ color: formConfig.titleColor || 'hsl(var(--primary))' }}
                       />
                       <div>
-                        <p className="font-medium">
+                        <p className="font-medium text-sm">
                           {formConfig.hoursLabel || 'Horario de Funcionamento:'}
                         </p>
-                        <p className="text-gray-600">{formConfig.hoursLine1}</p>
-                        <p className="text-gray-600">{formConfig.hoursLine2}</p>
+                        <p className="text-muted-foreground text-sm">{formConfig.hoursLine1}</p>
+                        <p className="text-muted-foreground text-sm">{formConfig.hoursLine2}</p>
                       </div>
                     </div>
                   </div>
@@ -402,20 +410,20 @@ const Contact: React.FC = () => {
         >
           <div className="page-container text-center">
             <h2
-              className="mb-4 text-3xl font-bold"
+              className="mb-3 text-2xl md:text-3xl font-bold"
               style={{ color: faqCtaConfig.titleColor || '#000000' }}
             >
               {faqCtaConfig.title || 'Perguntas Frequentes'}
             </h2>
             <p
-              className="mx-auto mb-8 max-w-3xl"
+              className="mx-auto mb-8 max-w-3xl text-muted-foreground leading-relaxed"
               style={{ color: faqCtaConfig.subtitleColor || '#374151' }}
             >
               {faqCtaConfig.description ||
                 'Encontre respostas para as perguntas mais comuns sobre nossa hospedagem e servicos.'}
             </p>
             <Button
-              className="rounded-full px-8 py-3"
+              className="rounded-full px-8 py-3 transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
               style={{
                 backgroundColor: faqCtaConfig.buttonColor || 'hsl(var(--primary))',
                 color: faqCtaConfig.buttonTextColor || '#FFFFFF',
