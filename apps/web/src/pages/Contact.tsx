@@ -4,7 +4,6 @@ import { Footer } from '@/components/layout/Footer';
 import { Header } from '@/components/layout/Header';
 import { MapEmbed } from '@/components/ui/MapEmbed';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -94,25 +93,29 @@ const Contact: React.FC = () => {
 
       <main className="flex-1">
         <div
-          className="page-section-hero text-white relative overflow-hidden"
+          className="text-white relative overflow-hidden"
           style={{
             backgroundColor: resolveHeroColor(heroConfig.backgroundColor),
             height: heroConfig.height || 'auto',
+            minHeight: '350px',
+            display: 'flex',
+            alignItems: 'center',
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/30" />
-          <div className="page-container text-center relative">
-            <span className="page-kicker opacity-80" style={{ color: heroConfig.subtitleColor || '#FFFFFF' }}>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/50" />
+          <div className="page-container text-center relative py-20 md:py-28">
+            <div className="line-accent mx-auto mb-6" />
+            <span className="page-kicker opacity-70" style={{ color: heroConfig.subtitleColor || '#FFFFFF' }}>
               Fale conosco
             </span>
             <h1
-              className="mb-4 text-3xl font-bold md:text-4xl"
+              className="section-title mb-4"
               style={{ color: heroConfig.titleColor || '#FFFFFF' }}
             >
               {heroConfig.title || 'Entre em Contato'}
             </h1>
             <p
-              className="mx-auto max-w-3xl text-base md:text-lg opacity-90 leading-relaxed"
+              className="mx-auto max-w-3xl text-base md:text-lg opacity-80 leading-relaxed"
               style={{ color: heroConfig.subtitleColor || '#FFFFFF' }}
             >
               {heroConfig.description ||
@@ -122,97 +125,91 @@ const Contact: React.FC = () => {
         </div>
 
         <section
-          className="page-section-tight"
-          style={{ backgroundColor: cardsConfig.backgroundColor || '#F9FAFB' }}
+          className="py-12 md:py-16"
+          style={{ backgroundColor: cardsConfig.backgroundColor || '#F5F5F0' }}
         >
           <div className="page-container">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3 stagger-children">
-              <Card className="border-0 shadow-sm card-hover">
-                <CardContent className="flex flex-col items-center p-8 text-center">
-                  <div
-                    className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl"
-                    style={{
-                      backgroundColor: colorWithAlpha(cardsConfig.cardIconColor, 0.1),
-                    }}
-                  >
-                    <Phone
-                      className="h-6 w-6"
-                      style={{ color: cardsConfig.cardIconColor || 'hsl(var(--primary))' }}
-                    />
-                  </div>
-                  <h3 className="mb-2 text-lg font-bold">
-                    {cardsConfig.phoneTitle || 'Telefone'}
-                  </h3>
-                  <p className="mb-3 text-sm text-muted-foreground">
-                    {cardsConfig.phoneDescription}
-                  </p>
-                  <a
-                    href={`tel:+55${cardsConfig.phoneNumber?.replace(/\D/g, '')}`}
-                    className="font-medium text-sm hover:underline"
-                    style={{ color: cardsConfig.cardLinkColor || 'hsl(var(--primary))' }}
-                  >
-                    {cardsConfig.phoneNumber || '(11) 5555-5555'}
-                  </a>
-                </CardContent>
-              </Card>
+              <div className="card-modern flex flex-col items-center p-8 text-center">
+                <div
+                  className="mb-4 flex h-14 w-14 items-center justify-center rounded-full"
+                  style={{
+                    backgroundColor: colorWithAlpha(cardsConfig.cardIconColor, 0.1),
+                  }}
+                >
+                  <Phone
+                    className="h-6 w-6"
+                    style={{ color: cardsConfig.cardIconColor || 'hsl(var(--primary))' }}
+                  />
+                </div>
+                <h3 className="mb-2 text-lg font-bold font-display">
+                  {cardsConfig.phoneTitle || 'Telefone'}
+                </h3>
+                <p className="mb-3 text-sm text-muted-foreground">
+                  {cardsConfig.phoneDescription}
+                </p>
+                <a
+                  href={`tel:+55${cardsConfig.phoneNumber?.replace(/\D/g, '')}`}
+                  className="font-medium text-sm hover:underline"
+                  style={{ color: cardsConfig.cardLinkColor || 'hsl(var(--primary))' }}
+                >
+                  {cardsConfig.phoneNumber || '(11) 5555-5555'}
+                </a>
+              </div>
 
-              <Card className="border-0 shadow-sm card-hover">
-                <CardContent className="flex flex-col items-center p-8 text-center">
-                  <div
-                    className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl"
-                    style={{
-                      backgroundColor: colorWithAlpha(cardsConfig.cardIconColor, 0.1),
-                    }}
-                  >
-                    <MessageSquare
-                      className="h-6 w-6"
-                      style={{ color: cardsConfig.cardIconColor || 'hsl(var(--primary))' }}
-                    />
-                  </div>
-                  <h3 className="mb-2 text-lg font-bold">
-                    {cardsConfig.whatsappTitle || 'WhatsApp'}
-                  </h3>
-                  <p className="mb-3 text-sm text-muted-foreground">
-                    {cardsConfig.whatsappDescription}
-                  </p>
-                  <a
-                    href={`https://wa.me/55${cardsConfig.whatsappNumber?.replace(/\D/g, '')}`}
-                    className="font-medium text-sm hover:underline"
-                    style={{ color: cardsConfig.cardLinkColor || 'hsl(var(--primary))' }}
-                  >
-                    {cardsConfig.whatsappNumber || '(11) 99999-9999'}
-                  </a>
-                </CardContent>
-              </Card>
+              <div className="card-modern flex flex-col items-center p-8 text-center">
+                <div
+                  className="mb-4 flex h-14 w-14 items-center justify-center rounded-full"
+                  style={{
+                    backgroundColor: colorWithAlpha(cardsConfig.cardIconColor, 0.1),
+                  }}
+                >
+                  <MessageSquare
+                    className="h-6 w-6"
+                    style={{ color: cardsConfig.cardIconColor || 'hsl(var(--primary))' }}
+                  />
+                </div>
+                <h3 className="mb-2 text-lg font-bold font-display">
+                  {cardsConfig.whatsappTitle || 'WhatsApp'}
+                </h3>
+                <p className="mb-3 text-sm text-muted-foreground">
+                  {cardsConfig.whatsappDescription}
+                </p>
+                <a
+                  href={`https://wa.me/55${cardsConfig.whatsappNumber?.replace(/\D/g, '')}`}
+                  className="font-medium text-sm hover:underline"
+                  style={{ color: cardsConfig.cardLinkColor || 'hsl(var(--primary))' }}
+                >
+                  {cardsConfig.whatsappNumber || '(11) 99999-9999'}
+                </a>
+              </div>
 
-              <Card className="border-0 shadow-sm card-hover">
-                <CardContent className="flex flex-col items-center p-8 text-center">
-                  <div
-                    className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl"
-                    style={{
-                      backgroundColor: colorWithAlpha(cardsConfig.cardIconColor, 0.1),
-                    }}
-                  >
-                    <Mail
-                      className="h-6 w-6"
-                      style={{ color: cardsConfig.cardIconColor || 'hsl(var(--primary))' }}
-                    />
-                  </div>
-                  <h3 className="mb-2 text-lg font-bold">
-                    {cardsConfig.emailTitle || 'E-mail'}
-                  </h3>
-                  <p className="mb-3 text-sm text-muted-foreground">
-                    {cardsConfig.emailDescription}
-                  </p>
-                  <a
-                    href={`mailto:${cardsConfig.emailAddress}`}
-                    className="font-medium text-sm hover:underline"
-                    style={{ color: cardsConfig.cardLinkColor || 'hsl(var(--primary))' }}
-                  >
-                    {cardsConfig.emailAddress || 'contato@hotel.com'}
-                  </a>
-                </CardContent>
-              </Card>
+              <div className="card-modern flex flex-col items-center p-8 text-center">
+                <div
+                  className="mb-4 flex h-14 w-14 items-center justify-center rounded-full"
+                  style={{
+                    backgroundColor: colorWithAlpha(cardsConfig.cardIconColor, 0.1),
+                  }}
+                >
+                  <Mail
+                    className="h-6 w-6"
+                    style={{ color: cardsConfig.cardIconColor || 'hsl(var(--primary))' }}
+                  />
+                </div>
+                <h3 className="mb-2 text-lg font-bold font-display">
+                  {cardsConfig.emailTitle || 'E-mail'}
+                </h3>
+                <p className="mb-3 text-sm text-muted-foreground">
+                  {cardsConfig.emailDescription}
+                </p>
+                <a
+                  href={`mailto:${cardsConfig.emailAddress}`}
+                  className="font-medium text-sm hover:underline"
+                  style={{ color: cardsConfig.cardLinkColor || 'hsl(var(--primary))' }}
+                >
+                  {cardsConfig.emailAddress || 'contato@hotel.com'}
+                </a>
+              </div>
             </div>
           </div>
         </section>
@@ -224,8 +221,9 @@ const Contact: React.FC = () => {
           <div className="page-container">
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
               <div>
+                <div className="line-accent mb-6" />
                 <h2
-                  className="mb-5 text-2xl md:text-3xl font-bold"
+                  className="mb-5 text-3xl md:text-4xl font-bold font-display"
                   style={{ color: formConfig.titleColor || 'hsl(var(--primary))' }}
                 >
                   {formConfig.formTitle || 'Envie uma Mensagem'}
@@ -248,7 +246,7 @@ const Contact: React.FC = () => {
                         required
                         value={form.name}
                         onChange={handleChange}
-                        className="rounded-lg"
+                        className="rounded-xl"
                       />
                     </div>
 
@@ -263,7 +261,7 @@ const Contact: React.FC = () => {
                         required
                         value={form.email}
                         onChange={handleChange}
-                        className="rounded-lg"
+                        className="rounded-xl"
                       />
                     </div>
                   </div>
@@ -278,7 +276,7 @@ const Contact: React.FC = () => {
                       placeholder="(00) 00000-0000"
                       value={form.phone}
                       onChange={handleChange}
-                      className="rounded-lg"
+                      className="rounded-xl"
                     />
                   </div>
 
@@ -293,7 +291,7 @@ const Contact: React.FC = () => {
                       required
                       value={form.subject}
                       onChange={handleChange}
-                      className="rounded-lg"
+                      className="rounded-xl"
                     />
                   </div>
 
@@ -306,7 +304,7 @@ const Contact: React.FC = () => {
                       placeholder="Escreva sua mensagem aqui..."
                       rows={5}
                       required
-                      className="resize-none rounded-lg"
+                      className="resize-none rounded-xl"
                       value={form.message}
                       onChange={handleChange}
                     />
@@ -331,7 +329,7 @@ const Contact: React.FC = () => {
 
                   <Button
                     type="submit"
-                    className="w-full rounded-full py-3 transition-all duration-300 hover:shadow-md"
+                    className="w-full rounded-full py-3 transition-all duration-300 hover:shadow-lg hover:scale-[1.01]"
                     disabled={isSubmitting}
                     style={{
                       backgroundColor: formConfig.buttonColor || 'hsl(var(--primary))',
@@ -347,8 +345,9 @@ const Contact: React.FC = () => {
 
               <div className="space-y-7">
                 <div>
+                  <div className="line-accent mb-6" />
                   <h2
-                    className="mb-5 text-2xl md:text-3xl font-bold"
+                    className="mb-5 text-3xl md:text-4xl font-bold font-display"
                     style={{ color: formConfig.titleColor || 'hsl(var(--primary))' }}
                   >
                     {formConfig.mapTitle || 'Nossa Localizacao'}
@@ -358,7 +357,7 @@ const Contact: React.FC = () => {
                       'Visite-nos e conheca pessoalmente toda a estrutura do hotel.'}
                   </p>
 
-                  <div className="h-[380px] overflow-hidden rounded-xl">
+                  <div className="h-[380px] overflow-hidden rounded-2xl shadow-lg">
                     <MapEmbed
                       address={`${formConfig.addressLine1}, ${formConfig.addressLine2}`}
                       height="380px"
@@ -366,8 +365,8 @@ const Contact: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-gray-100 bg-gray-50/80 p-6">
-                  <h3 className="mb-4 text-lg font-bold">Informacoes de Contato</h3>
+                <div className="card-modern p-6">
+                  <h3 className="mb-4 text-lg font-bold font-display">Informacoes de Contato</h3>
 
                   <div className="space-y-4">
                     <div className="flex items-start">
@@ -405,12 +404,12 @@ const Contact: React.FC = () => {
         </section>
 
         <section
-          className="page-section-tight"
-          style={{ backgroundColor: faqCtaConfig.backgroundColor || '#F9FAFB' }}
+          className="py-16 md:py-24"
+          style={{ backgroundColor: faqCtaConfig.backgroundColor || '#F5F5F0' }}
         >
           <div className="page-container text-center">
             <h2
-              className="mb-3 text-2xl md:text-3xl font-bold"
+              className="section-title mb-3"
               style={{ color: faqCtaConfig.titleColor || '#000000' }}
             >
               {faqCtaConfig.title || 'Perguntas Frequentes'}
@@ -423,7 +422,7 @@ const Contact: React.FC = () => {
                 'Encontre respostas para as perguntas mais comuns sobre nossa hospedagem e servicos.'}
             </p>
             <Button
-              className="rounded-full px-8 py-3 transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
+              className="rounded-full px-8 py-3 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
               style={{
                 backgroundColor: faqCtaConfig.buttonColor || 'hsl(var(--primary))',
                 color: faqCtaConfig.buttonTextColor || '#FFFFFF',

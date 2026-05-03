@@ -25,65 +25,76 @@ export const HighlightsSection: React.FC = () => {
     <section
       id="highlights"
       className="page-section"
-      style={{ backgroundColor: config.backgroundColor || '#FFFFFF' }}
+      style={{ backgroundColor: config.backgroundColor || '#0A0A0A' }}
     >
       <div className="page-container">
-        <div className="mb-12">
+        <div className="text-center mb-16">
           {config.subtitle && (
             <span
               className="page-kicker"
-              style={{ color: config.subtitleColor || '#676C76' }}
+              style={{ color: config.subtitleColor || 'rgba(255,255,255,0.5)' }}
             >
               {config.subtitle}
             </span>
           )}
           {config.title && (
             <h2
-              className="text-3xl md:text-4xl lg:text-5xl font-bold mb-5 tracking-tight leading-none"
-              style={{ color: config.titleColor || '#1D1D1F' }}
+              className="section-title"
+              style={{ color: config.titleColor || '#FFFFFF' }}
             >
               {config.title}
             </h2>
           )}
           {config.description && (
             <p
-              className="text-base leading-relaxed max-w-2xl"
-              style={{ color: config.subtitleColor || '#676C76' }}
+              className="text-base leading-relaxed max-w-2xl mx-auto mt-4"
+              style={{ color: config.subtitleColor || 'rgba(255,255,255,0.5)' }}
             >
               {config.description}
             </p>
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 stagger-children">
-          {highlights.map((highlight: Highlight) => (
-            <div key={highlight.id} className="relative overflow-hidden rounded-xl group cursor-pointer">
-              <img
-                src={highlight.image}
-                alt={highlight.title}
-                className="w-full h-[333px] object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-              />
+        {/* Bento Grid Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
+          {highlights.map((highlight: Highlight, index: number) => {
+            // First item spans full width on larger layouts if there's an odd number
+            const isLarge = index === 0 && highlights.length % 2 !== 0;
+            return (
               <div
-                className="absolute inset-0 flex flex-col justify-end p-7 text-left transition-all duration-300"
-                style={{
-                  background: config.overlayGradient || 'linear-gradient(to top, rgba(0,0,0,0.65), rgba(0,0,0,0.1) 50%, transparent)'
-                }}
+                key={highlight.id}
+                className={`relative overflow-hidden rounded-2xl group cursor-pointer ${
+                  isLarge ? 'md:col-span-2 h-[400px] md:h-[500px]' : 'h-[350px] md:h-[400px]'
+                }`}
               >
-                <h4
-                  className="text-3xl md:text-4xl font-bold mb-1 transition-transform duration-300 group-hover:translate-y-[-4px]"
-                  style={{ color: config.cardTitleColor || '#FFFFFF' }}
-                >
-                  {highlight.title}
-                </h4>
-                <p
-                  className="text-base opacity-90"
-                  style={{ color: config.cardSubtitleColor || '#FFFFFF' }}
-                >
-                  {highlight.subtitle}
-                </p>
+                <img
+                  src={highlight.image}
+                  alt={highlight.title}
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-110"
+                />
+                <div
+                  className="absolute inset-0 transition-all duration-500"
+                  style={{
+                    background: config.overlayGradient || 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.05) 100%)'
+                  }}
+                />
+                <div className="absolute inset-0 flex flex-col justify-end p-8 md:p-10">
+                  <h4
+                    className="text-3xl md:text-4xl lg:text-5xl font-bold mb-2 font-display transition-transform duration-500 group-hover:-translate-y-2"
+                    style={{ color: config.cardTitleColor || '#FFFFFF' }}
+                  >
+                    {highlight.title}
+                  </h4>
+                  <p
+                    className="text-base md:text-lg opacity-0 group-hover:opacity-80 transition-all duration-500 translate-y-4 group-hover:translate-y-0"
+                    style={{ color: config.cardSubtitleColor || '#FFFFFF' }}
+                  >
+                    {highlight.subtitle}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

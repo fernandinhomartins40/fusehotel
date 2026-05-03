@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar } from "lucide-react";
+import { Calendar, ChevronDown } from "lucide-react";
 import { useHeroSlides, useLandingSettings } from '@/hooks/useLanding';
 import { defaultHeroConfig } from '@/types/landing-config';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, CarouselApi } from "@/components/ui/carousel";
@@ -17,10 +17,15 @@ export const HeroSection: React.FC = () => {
     Autoplay({ delay: (config.autoplaySpeed || 5) * 1000, stopOnInteraction: true })
   );
 
+  const scrollToContent = () => {
+    const el = document.getElementById('accommodations');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+
   if (isLoading) {
     return (
-      <section className="h-[700px] bg-gray-100 relative overflow-hidden flex items-center justify-center">
-        <div className="text-gray-400 animate-pulse">Carregando...</div>
+      <section className="h-screen bg-gray-900 relative overflow-hidden flex items-center justify-center">
+        <div className="text-white/40 animate-pulse text-lg font-display">Carregando...</div>
       </section>
     );
   }
@@ -28,11 +33,11 @@ export const HeroSection: React.FC = () => {
   if (!slides || slides.length === 0) {
     return (
       <section
-        className="page-section-hero h-[700px] relative overflow-hidden"
+        className="h-screen relative overflow-hidden"
         style={{ backgroundColor: resolveHeroColor(undefined) }}
       >
         <div
-          className="absolute inset-0 bg-cover bg-center scale-105"
+          className="absolute inset-0 bg-cover bg-center scale-110"
           style={{
             backgroundImage: 'url("/lovable-uploads/c04646a7-93df-4e87-b81e-e131b503402c.png")',
           }}
@@ -40,40 +45,41 @@ export const HeroSection: React.FC = () => {
         <div
           className="absolute inset-0"
           style={{
-            backgroundColor: resolveHeroColor(undefined),
-            opacity: 0.72,
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.7) 100%)',
           }}
         />
         <div className="absolute inset-0 flex flex-col justify-center px-4 md:px-12 lg:px-24">
-          <div className="page-container flex flex-col items-start text-left animate-fade-in-up">
-            <h2 className="text-white/80 text-[13px] tracking-[3px] font-medium mb-6 uppercase">
-              O refúgio perfeito para se desconectar
-            </h2>
-            <h1 className="text-white text-5xl md:text-7xl lg:text-[80px] leading-[0.95] tracking-tight max-w-[700px] font-bold mb-8 uppercase">
-              Refúgio dos seus sonhos
-            </h1>
-            <p className="text-white/85 text-base md:text-lg leading-relaxed max-w-[540px] mb-10">
-              Desfrute de uma estadia inesquecível em nosso resort à beira-mar,
-              com acomodações de luxo e paisagens deslumbrantes.
-            </p>
+          <div className="page-container flex flex-col items-start text-left">
+            <div className="animate-fade-in-up">
+              <div className="line-accent" style={{ backgroundColor: 'rgba(255,255,255,0.5)' }} />
+              <h2 className="text-white/60 text-[11px] md:text-[13px] tracking-[4px] font-medium mb-6 uppercase">
+                O refúgio perfeito para se desconectar
+              </h2>
+              <h1 className="text-white text-5xl md:text-7xl lg:text-8xl leading-[0.95] max-w-[800px] font-bold mb-8 font-display" style={{ fontStyle: 'italic' }}>
+                Refúgio dos
+                <br />
+                seus sonhos
+              </h1>
+              <p className="text-white/70 text-base md:text-lg leading-relaxed max-w-[500px] mb-12">
+                Desfrute de uma estadia inesquecível em nosso resort à beira-mar,
+                com acomodações de luxo e paisagens deslumbrantes.
+              </p>
 
-            <button className="flex items-center gap-2.5 text-primary-foreground font-medium text-sm bg-primary mb-10 px-8 py-4 rounded-full transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
-              <Calendar size={18} />
-              AGENDAMENTO ONLINE
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="flex">
-                {[...Array(5)].map((_, i) => (
-                  <svg key={i} width="20" height="20" viewBox="0 0 24 24" fill="#FFD700">
-                    <path d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z" />
-                  </svg>
-                ))}
-              </div>
-              <span className="text-white/75 text-sm">Mais de 1.000 avaliações</span>
+              <button className="group flex items-center gap-3 text-white font-medium text-sm bg-white/15 hover:bg-white/25 border border-white/30 backdrop-blur-sm px-8 py-4 rounded-full transition-all duration-500 hover:scale-[1.03]">
+                <Calendar size={18} />
+                AGENDAMENTO ONLINE
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Scroll indicator */}
+        <button
+          onClick={scrollToContent}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/50 hover:text-white/80 transition-all duration-300 animate-bounce"
+        >
+          <ChevronDown size={28} />
+        </button>
       </section>
     );
   }
@@ -90,7 +96,6 @@ export const HeroSection: React.FC = () => {
           const slideBackgroundType = slide.backgroundType === 'image' ? 'image' : 'color';
           const overlayColor = resolveHeroColor(slide.overlayColor);
           const overlayOpacity = slide.overlayOpacity ?? 0.6;
-          const slideHeight = config.height || '700px';
           const hasImageBackground =
             slideBackgroundType === 'image' &&
             typeof slide.backgroundValue === 'string' &&
@@ -109,15 +114,14 @@ export const HeroSection: React.FC = () => {
           return (
           <CarouselItem key={slide.id}>
             <section
-              className="relative overflow-hidden"
+              className="relative overflow-hidden h-screen"
               style={{
-                height: slideHeight,
                 backgroundColor: slideBackgroundColor,
               }}
             >
               {hasImageBackground && (
                 <div
-                  className="absolute inset-0 bg-cover bg-center scale-[1.02] transition-transform duration-[8s] ease-out"
+                  className="absolute inset-0 bg-cover bg-center scale-110"
                   style={{ backgroundImage: `url("${slide.backgroundValue}")` }}
                 />
               )}
@@ -125,7 +129,7 @@ export const HeroSection: React.FC = () => {
                 <div
                   className="absolute inset-0"
                   style={{
-                    backgroundColor: overlayColor,
+                    background: `linear-gradient(to bottom, ${overlayColor}4D 0%, ${overlayColor}80 60%, ${overlayColor}B3 100%)`,
                     opacity: overlayOpacity,
                   }}
                 />
@@ -133,15 +137,15 @@ export const HeroSection: React.FC = () => {
               <div className="absolute inset-0 flex flex-col justify-center px-4 md:px-12 lg:px-24">
                 <div className="page-container flex flex-col items-start text-left">
                   {slide.showSubtitle && slide.subtitle && (
-                    <h2 className="text-white/80 text-[13px] tracking-[3px] font-medium mb-6 uppercase">
+                    <h2 className="text-white/60 text-[11px] md:text-[13px] tracking-[4px] font-medium mb-6 uppercase">
                       {slide.subtitle}
                     </h2>
                   )}
 
                   {slide.showTitle && slide.title && (
                     <h1
-                      className="text-5xl md:text-7xl lg:text-[80px] leading-[0.95] tracking-tight max-w-[700px] font-bold mb-8 uppercase"
-                      style={{ color: slide.textColor || '#FFFFFF' }}
+                      className="text-5xl md:text-7xl lg:text-8xl leading-[0.95] max-w-[800px] font-bold mb-8 font-display"
+                      style={{ color: slide.textColor || '#FFFFFF', fontStyle: 'italic' }}
                     >
                       {slide.title}
                     </h1>
@@ -149,8 +153,8 @@ export const HeroSection: React.FC = () => {
 
                   {slide.showDescription && slide.description && (
                     <p
-                      className="text-base md:text-lg leading-relaxed max-w-[540px] mb-10"
-                      style={{ color: slide.textColor ? `${slide.textColor}d9` : 'rgba(255,255,255,0.85)' }}
+                      className="text-base md:text-lg leading-relaxed max-w-[500px] mb-12"
+                      style={{ color: 'rgba(255,255,255,0.7)' }}
                     >
                       {slide.description}
                     </p>
@@ -158,8 +162,7 @@ export const HeroSection: React.FC = () => {
 
                   {slide.showButton && slide.buttonText && (
                     <button
-                      className="flex items-center gap-2.5 text-primary-foreground font-medium text-sm mb-10 px-8 py-4 rounded-full transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
-                      style={{ backgroundColor: slide.buttonColor || 'hsl(var(--primary))' }}
+                      className="group flex items-center gap-3 text-white font-medium text-sm bg-white/15 hover:bg-white/25 border border-white/30 backdrop-blur-sm px-8 py-4 rounded-full transition-all duration-500 hover:scale-[1.03]"
                     >
                       <Calendar size={18} />
                       {slide.buttonText}
@@ -167,26 +170,34 @@ export const HeroSection: React.FC = () => {
                   )}
 
                   {slide.showRating && (
-                    <div className="flex items-center gap-3">
-                      <div className="flex">
+                    <div className="flex items-center gap-3 mt-10">
+                      <div className="flex gap-0.5">
                         {[...Array(5)].map((_, i) => (
-                          <svg key={i} width="20" height="20" viewBox="0 0 24 24" fill="#FFD700">
+                          <svg key={i} width="18" height="18" viewBox="0 0 24 24" fill="#FFD700">
                             <path d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z" />
                           </svg>
                         ))}
                       </div>
-                      <span className="text-white/75 text-sm">Mais de 1.000 avaliações</span>
+                      <span className="text-white/50 text-sm">Mais de 1.000 avaliações</span>
                     </div>
                   )}
                 </div>
               </div>
+
+              {/* Scroll indicator */}
+              <button
+                onClick={scrollToContent}
+                className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/40 hover:text-white/70 transition-all duration-300 animate-bounce"
+              >
+                <ChevronDown size={28} />
+              </button>
             </section>
           </CarouselItem>
           );
         })}
       </CarouselContent>
-      <CarouselPrevious className="left-4 bg-white/15 hover:bg-white/25 text-white border-none glass transition-all duration-300 hover:scale-110" />
-      <CarouselNext className="right-4 bg-white/15 hover:bg-white/25 text-white border-none glass transition-all duration-300 hover:scale-110" />
+      <CarouselPrevious className="left-6 h-12 w-12 bg-white/10 hover:bg-white/20 text-white border-white/20 glass transition-all duration-300" />
+      <CarouselNext className="right-6 h-12 w-12 bg-white/10 hover:bg-white/20 text-white border-white/20 glass transition-all duration-300" />
     </Carousel>
   );
 };

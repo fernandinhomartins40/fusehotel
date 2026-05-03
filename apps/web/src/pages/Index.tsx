@@ -11,9 +11,12 @@ import { NewsletterSection } from "@/components/sections/NewsletterSection";
 const Index = () => {
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
-      <main className="flex-1">
+      {/* Header overlays the hero on the landing page */}
+      <div className="relative">
+        <Header transparent />
         <HeroSection />
+      </div>
+      <main className="flex-1">
         <AccommodationsSection />
         <PromotionsSection />
         <HighlightsSection />

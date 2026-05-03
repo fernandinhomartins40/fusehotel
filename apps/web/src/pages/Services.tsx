@@ -1,7 +1,6 @@
 import React from 'react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   useLandingSettings,
@@ -55,28 +54,30 @@ const Services: React.FC = () => {
       <main className="flex-1">
         {/* Hero Section */}
         <div
-          className="text-white page-section-hero relative overflow-hidden"
+          className="text-white relative overflow-hidden"
           style={{
             backgroundColor: resolveHeroColor(heroConfig.backgroundColor),
             height: heroConfig.height,
+            minHeight: '400px',
             display: 'flex',
             alignItems: 'center',
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/30" />
-          <div className="page-container text-center relative">
-            <span className="page-kicker opacity-80" style={{ color: heroConfig.subtitleColor }}>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/50" />
+          <div className="page-container text-center relative py-20 md:py-28">
+            <div className="line-accent mx-auto mb-6" />
+            <span className="page-kicker opacity-70" style={{ color: heroConfig.subtitleColor }}>
               O que oferecemos
             </span>
             <h1
-              className="page-title mb-5"
+              className="section-title mb-5"
               style={{ color: heroConfig.titleColor }}
             >
               {heroConfig.title}
             </h1>
             {heroConfig.subtitle && (
               <p
-                className="text-base md:text-lg leading-relaxed max-w-3xl mx-auto opacity-90"
+                className="text-base md:text-lg leading-relaxed max-w-3xl mx-auto opacity-80"
                 style={{ color: heroConfig.subtitleColor }}
               >
                 {heroConfig.subtitle}
@@ -92,8 +93,9 @@ const Services: React.FC = () => {
         >
           <div className="page-container">
             <div className="text-center mb-14">
+              <div className="line-accent mx-auto mb-6" />
               <h2
-                className="text-2xl md:text-3xl font-bold mb-4"
+                className="section-title mb-4"
                 style={{ color: accommodationConfig.titleColor }}
               >
                 {accommodationConfig.title}
@@ -112,7 +114,7 @@ const Services: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-7 stagger-children">
               {accommodationItems.map((item: any) => (
-                <Card key={item.id} className="overflow-hidden card-hover border-0 shadow-sm">
+                <div key={item.id} className="card-modern overflow-hidden">
                   <div className="h-56 img-zoom">
                     <img
                       src={item.image}
@@ -120,8 +122,8 @@ const Services: React.FC = () => {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <CardContent className="p-7">
-                    <h3 className="text-lg font-bold mb-2">{item.title}</h3>
+                  <div className="p-7">
+                    <h3 className="text-lg font-bold mb-2 font-display">{item.title}</h3>
                     {item.subtitle && (
                       <p className="text-sm text-muted-foreground mb-2">{item.subtitle}</p>
                     )}
@@ -136,15 +138,15 @@ const Services: React.FC = () => {
                         ))}
                       </ul>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </div>
 
             {accommodationConfig.showButton && accommodationConfig.buttonText && (
               <div className="mt-12 text-center">
                 <Button
-                  className="rounded-full px-8 py-3 transition-all duration-300 hover:shadow-md"
+                  className="rounded-full px-8 py-3 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
                   style={{
                     backgroundColor: accommodationConfig.buttonColor,
                     color: '#FFFFFF',
@@ -165,8 +167,9 @@ const Services: React.FC = () => {
         >
           <div className="page-container">
             <div className="text-center mb-12">
+              <div className="line-accent mx-auto mb-6" />
               <h2
-                className="text-2xl md:text-3xl font-bold mb-4"
+                className="section-title mb-4"
                 style={{ color: gastronomyConfig.titleColor }}
               >
                 {gastronomyConfig.title}
@@ -185,19 +188,19 @@ const Services: React.FC = () => {
 
             <div className="space-y-5">
               {gastronomyItems.map((item: any) => (
-                <div key={item.id} className="bg-white rounded-xl p-6 shadow-sm card-hover">
+                <div key={item.id} className="card-modern p-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {item.image && (
-                      <div className="md:col-span-1 img-zoom rounded-lg">
+                      <div className="md:col-span-1 img-zoom rounded-xl overflow-hidden">
                         <img
                           src={item.image}
                           alt={item.title}
-                          className="w-full h-48 object-cover rounded-lg"
+                          className="w-full h-48 object-cover"
                         />
                       </div>
                     )}
                     <div className={item.image ? "md:col-span-2 flex flex-col justify-center" : "md:col-span-3"}>
-                      <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
+                      <h3 className="text-lg font-semibold mb-2 font-display">{item.title}</h3>
                       {item.subtitle && (
                         <p className="text-sm text-muted-foreground mb-2">{item.subtitle}</p>
                       )}
@@ -217,8 +220,9 @@ const Services: React.FC = () => {
         >
           <div className="page-container">
             <div className="text-center mb-14">
+              <div className="line-accent mx-auto mb-6" />
               <h2
-                className="text-2xl md:text-3xl font-bold mb-4"
+                className="section-title mb-4"
                 style={{ color: recreationConfig.titleColor }}
               >
                 {recreationConfig.title}
@@ -237,7 +241,7 @@ const Services: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7 stagger-children">
               {recreationItems.map((item: any) => (
-                <Card key={item.id} className="card-hover border-0 shadow-sm overflow-hidden">
+                <div key={item.id} className="card-modern overflow-hidden">
                   <div className="h-48 img-zoom">
                     <img
                       src={item.image}
@@ -245,11 +249,11 @@ const Services: React.FC = () => {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-bold mb-2">{item.title}</h3>
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold mb-2 font-display">{item.title}</h3>
                     <p className="text-gray-600 text-sm leading-relaxed">{item.description}</p>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -262,8 +266,9 @@ const Services: React.FC = () => {
         >
           <div className="page-container">
             <div className="text-center mb-12">
+              <div className="line-accent mx-auto mb-6" />
               <h2
-                className="text-2xl md:text-3xl font-bold mb-4"
+                className="section-title mb-4"
                 style={{ color: businessConfig.titleColor }}
               >
                 {businessConfig.title}
@@ -282,7 +287,7 @@ const Services: React.FC = () => {
 
             <div className="space-y-4">
               {businessItems.map((item: any) => (
-                <div key={item.id} className="bg-white rounded-xl p-6 shadow-sm card-hover">
+                <div key={item.id} className="card-modern p-6">
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 mt-0.5 h-8 w-8 rounded-full bg-primary/8 flex items-center justify-center">
                       <svg className="h-4 w-4" style={{ color: businessConfig.titleColor }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -290,7 +295,7 @@ const Services: React.FC = () => {
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-base font-semibold mb-1">{item.title}</h3>
+                      <h3 className="text-base font-semibold mb-1 font-display">{item.title}</h3>
                       <p className="text-gray-600 text-sm leading-relaxed">{item.description}</p>
                     </div>
                   </div>
@@ -301,7 +306,7 @@ const Services: React.FC = () => {
             {businessConfig.buttonText && (
               <div className="mt-10 text-center">
                 <Button
-                  className="rounded-full transition-all duration-300 hover:shadow-md"
+                  className="rounded-full transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
                   style={{
                     backgroundColor: businessConfig.buttonColor,
                     color: '#FFFFFF',
@@ -322,8 +327,9 @@ const Services: React.FC = () => {
         >
           <div className="page-container">
             <div className="text-center mb-14">
+              <div className="line-accent mx-auto mb-6" />
               <h2
-                className="text-2xl md:text-3xl font-bold mb-4"
+                className="section-title mb-4"
                 style={{ color: specialConfig.titleColor }}
               >
                 {specialConfig.title}
@@ -344,7 +350,7 @@ const Services: React.FC = () => {
               {specialItems.map((item: any) => (
                 <div key={item.id} className="text-center group">
                   <div
-                    className="w-18 h-18 rounded-2xl flex items-center justify-center mx-auto mb-5 transition-transform duration-300 group-hover:scale-105"
+                    className="rounded-2xl flex items-center justify-center mx-auto mb-5 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg"
                     style={{
                       backgroundColor: specialConfig.iconBackgroundColor || '#EFF6FF',
                       width: '72px',
@@ -359,7 +365,7 @@ const Services: React.FC = () => {
                       />
                     )}
                   </div>
-                  <h3 className="text-base font-bold mb-2">{item.title}</h3>
+                  <h3 className="text-base font-bold mb-2 font-display">{item.title}</h3>
                   <p className="text-gray-600 text-sm leading-relaxed">{item.description}</p>
                 </div>
               ))}
@@ -369,12 +375,12 @@ const Services: React.FC = () => {
 
         {/* Call to Action */}
         <section
-          className="page-section-tight"
+          className="py-16 md:py-24"
           style={{ backgroundColor: ctaConfig.backgroundColor }}
         >
           <div className="page-container text-center">
             <h2
-              className="text-2xl md:text-3xl font-bold mb-4"
+              className="section-title mb-4"
               style={{ color: ctaConfig.titleColor }}
             >
               {ctaConfig.title}

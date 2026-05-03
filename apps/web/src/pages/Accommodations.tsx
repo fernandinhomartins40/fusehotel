@@ -23,14 +23,15 @@ const Accommodations = () => {
       <Header />
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="bg-secondary text-secondary-foreground page-section-hero relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-secondary/50" />
-          <div className="page-container text-center relative">
-            <span className="page-kicker text-muted-foreground">Conheça nossos quartos</span>
-            <h1 className="page-title mb-5">
+        <section className="relative overflow-hidden bg-[#0A0A0A] text-white" style={{ minHeight: '400px', display: 'flex', alignItems: 'center' }}>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-black/60" />
+          <div className="page-container text-center relative py-20 md:py-28">
+            <div className="line-accent mx-auto mb-6" />
+            <span className="page-kicker text-white/60">Conheça nossos quartos</span>
+            <h1 className="section-title text-white mb-5">
               Acomodações
             </h1>
-            <p className="page-lead mx-auto max-w-2xl">
+            <p className="text-base md:text-lg leading-relaxed mx-auto max-w-2xl text-white/80">
               Descubra nossas acomodações luxuosas com vista para o mar,
               cada uma projetada para oferecer o máximo conforto e elegância.
             </p>
@@ -38,7 +39,7 @@ const Accommodations = () => {
         </section>
 
         {/* Rooms Grid */}
-        <section className="page-section bg-[#f9f9f9]">
+        <section className="page-section bg-white">
           <div className="page-container">
             {isLoading ? (
               <div className="flex items-center justify-center py-16">

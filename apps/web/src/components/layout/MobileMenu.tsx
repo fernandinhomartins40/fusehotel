@@ -3,12 +3,15 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export const MobileMenu: React.FC = () => {
+interface MobileMenuProps {
+  isTransparent?: boolean;
+}
+
+export const MobileMenu: React.FC<MobileMenuProps> = ({ isTransparent = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Lock body scroll when menu is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -29,12 +32,10 @@ export const MobileMenu: React.FC = () => {
 
   const handleAccommodationsClick = () => {
     setIsOpen(false);
-
     if (location.pathname === '/') {
       scrollToSection('accommodations');
       return;
     }
-
     navigate('/acomodacoes');
   };
 
@@ -52,17 +53,17 @@ export const MobileMenu: React.FC = () => {
         variant="ghost"
         size="icon"
         onClick={toggleMenu}
-        className="text-gray-600 hover:text-primary"
+        className={isTransparent ? 'text-white hover:bg-white/10' : 'text-gray-600 hover:text-primary'}
       >
         {isOpen ? <X size={22} /> : <Menu size={22} />}
       </Button>
 
       {/* Overlay */}
       <div
-        className={`fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
-        style={{ backdropFilter: isOpen ? 'blur(4px)' : 'none' }}
+        style={{ backdropFilter: isOpen ? 'blur(8px)' : 'none' }}
         onClick={toggleMenu}
       />
 
@@ -123,7 +124,7 @@ export const MobileMenu: React.FC = () => {
           <div className="mt-8 pt-6 border-t border-gray-100">
             <Link to="/area-do-cliente">
               <Button
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full py-3 shadow-sm"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full py-3"
                 onClick={toggleMenu}
               >
                 Área do Cliente
