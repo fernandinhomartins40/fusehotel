@@ -236,7 +236,7 @@ async function recalculateFolioBalance(tx: any, folioId: string) {
 }
 
 async function recalculateOrderPaidAmount(tx: any, orderId: string) {
-  const payments = await tx.posPayment.findMany({
+  const payments = await tx.pOSPayment.findMany({
     where: {
       orderId,
       status: {
@@ -258,7 +258,7 @@ async function recalculateOrderPaidAmount(tx: any, orderId: string) {
     return sum + Number(payment.amount) - Number(payment.refundedAmount ?? 0);
   }, 0);
 
-  await tx.posOrder.update({
+  await tx.pOSOrder.update({
     where: { id: orderId },
     data: { paidAmount },
   });
@@ -330,7 +330,7 @@ async function postOrderToFolio(tx: any, order: any) {
     await recalculateFolioBalance(tx, order.stay.folio.id);
   }
 
-  await tx.posOrder.update({
+  await tx.pOSOrder.update({
     where: { id: order.id },
     data: {
       postedToFolioAt: order.postedToFolioAt ?? new Date(),
@@ -679,7 +679,7 @@ export class POSService {
         totalAmount,
       } = await resolveOrderPayload(txPms, data);
 
-      return txPms.posOrder.create({
+      return txPms.pOSOrder.create({
         data: {
           orderNumber: buildOrderNumber(),
           stayId,
@@ -705,7 +705,7 @@ export class POSService {
   static async updateOrder(id: string, data: UpdatePOSOrderDto) {
     return prisma.$transaction(async (tx) => {
       const txPms = tx as any;
-      const order = await txPms.posOrder.findUnique({
+      const order = await txPms.pOSOrder.findUnique({
         where: { id },
         include: {
           items: true,
@@ -750,7 +750,7 @@ export class POSService {
         totalAmount,
       } = await resolveOrderPayload(txPms, data);
 
-      return txPms.posOrder.update({
+      return txPms.pOSOrder.update({
         where: { id },
         data: {
           stayId,
@@ -777,7 +777,7 @@ export class POSService {
   static async updateOrderStatus(id: string, data: UpdatePOSOrderStatusDto) {
     return prisma.$transaction(async (tx) => {
       const txPms = tx as any;
-      const order = await txPms.posOrder.findUnique({
+      const order = await txPms.pOSOrder.findUnique({
         where: { id },
         include: {
           stay: {
@@ -825,7 +825,7 @@ export class POSService {
         await postOrderToFolio(tx, order);
       }
 
-      return txPms.posOrder.update({
+      return txPms.pOSOrder.update({
         where: { id },
         data: {
           status: data.status,
@@ -868,7 +868,7 @@ export class POSService {
   static async registerPayment(data: RegisterPOSPaymentDto, user?: { id?: string; email?: string }) {
     return prisma.$transaction(async (tx) => {
       const txPms = tx as any;
-      const order = await txPms.posOrder.findUnique({
+      const order = await txPms.pOSOrder.findUnique({
         where: { id: data.orderId },
         include: {
           payments: true,
@@ -906,7 +906,7 @@ export class POSService {
         throw new BadRequestError('Abra um caixa antes de registrar pagamentos');
       }
 
-      const payment = await txPms.posPayment.create({
+      const payment = await txPms.pOSPayment.create({
         data: {
           orderId: order.id,
           cashSessionId,
@@ -940,7 +940,7 @@ export class POSService {
 
       await recalculateOrderPaidAmount(txPms, order.id);
 
-      return txPms.posOrder.findUnique({
+      return txPms.pOSOrder.findUnique({
         where: { id: order.id },
         include: {
           stay: {
@@ -979,7 +979,7 @@ export class POSService {
   static async refundPayment(data: RefundPOSPaymentDto, user?: { id?: string; email?: string }) {
     return prisma.$transaction(async (tx) => {
       const txPms = tx as any;
-      const payment = await txPms.posPayment.findUnique({
+      const payment = await txPms.pOSPayment.findUnique({
         where: { id: data.paymentId },
         include: {
           order: true,
@@ -1007,7 +1007,7 @@ export class POSService {
       const nextStatus =
         cumulativeRefund < Number(payment.amount) ? PaymentStatus.PARTIALLY_REFUNDED : PaymentStatus.REFUNDED;
 
-      await txPms.posPayment.update({
+      await txPms.pOSPayment.update({
         where: { id: payment.id },
         data: {
           status: nextStatus,
@@ -1035,7 +1035,7 @@ export class POSService {
 
       await recalculateOrderPaidAmount(txPms, payment.orderId);
 
-      return txPms.posOrder.findUnique({
+      return txPms.pOSOrder.findUnique({
         where: { id: payment.orderId },
         include: {
           stay: {
@@ -1074,7 +1074,7 @@ export class POSService {
   static async cancelOrder(id: string, data: CancelPOSOrderDto, user?: { id?: string; email?: string }) {
     return prisma.$transaction(async (tx) => {
       const txPms = tx as any;
-      const order = await txPms.posOrder.findUnique({
+      const order = await txPms.pOSOrder.findUnique({
         where: { id },
         include: {
           stay: {
@@ -1106,7 +1106,7 @@ export class POSService {
         for (const payment of activePayments) {
           const refundAmount = Number(payment.amount);
 
-          await txPms.posPayment.update({
+          await txPms.pOSPayment.update({
             where: { id: payment.id },
             data: {
               status: PaymentStatus.REFUNDED,
@@ -1165,7 +1165,7 @@ export class POSService {
         await adjustOrderStock(txPms, order, 'RESTORE');
       }
 
-      return txPms.posOrder.update({
+      return txPms.pOSOrder.update({
         where: { id: order.id },
         data: {
           status: POSOrderStatus.CANCELLED,
