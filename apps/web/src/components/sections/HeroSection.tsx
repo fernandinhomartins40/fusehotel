@@ -25,7 +25,7 @@ export const HeroSection: React.FC = () => {
   if (isLoading) {
     return (
       <section className="h-screen bg-gray-900 relative overflow-hidden flex items-center justify-center">
-        <div className="text-white/40 animate-pulse text-lg font-display">Carregando...</div>
+        <div className="text-white/40 animate-pulse text-lg">Carregando...</div>
       </section>
     );
   }
@@ -55,7 +55,7 @@ export const HeroSection: React.FC = () => {
               <h2 className="text-white/60 text-[11px] md:text-[13px] tracking-[4px] font-medium mb-6 uppercase">
                 O refúgio perfeito para se desconectar
               </h2>
-              <h1 className="text-white text-5xl md:text-7xl lg:text-8xl leading-[0.95] max-w-[800px] font-bold mb-8 font-display" style={{ fontStyle: 'italic' }}>
+              <h1 className="text-white text-5xl md:text-7xl lg:text-8xl leading-[0.95] max-w-[800px] font-bold mb-8">
                 Refúgio dos
                 <br />
                 seus sonhos
@@ -144,8 +144,8 @@ export const HeroSection: React.FC = () => {
 
                   {slide.showTitle && slide.title && (
                     <h1
-                      className="text-5xl md:text-7xl lg:text-8xl leading-[0.95] max-w-[800px] font-bold mb-8 font-display"
-                      style={{ color: slide.textColor || '#FFFFFF', fontStyle: 'italic' }}
+                      className="text-5xl md:text-7xl lg:text-8xl leading-[0.95] max-w-[800px] font-bold mb-8"
+                      style={{ color: slide.textColor || '#FFFFFF' }}
                     >
                       {slide.title}
                     </h1>

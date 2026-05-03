@@ -142,7 +142,7 @@ const Contact: React.FC = () => {
                     style={{ color: cardsConfig.cardIconColor || 'hsl(var(--primary))' }}
                   />
                 </div>
-                <h3 className="mb-2 text-lg font-bold font-display">
+                <h3 className="mb-2 text-lg font-bold">
                   {cardsConfig.phoneTitle || 'Telefone'}
                 </h3>
                 <p className="mb-3 text-sm text-muted-foreground">
@@ -169,7 +169,7 @@ const Contact: React.FC = () => {
                     style={{ color: cardsConfig.cardIconColor || 'hsl(var(--primary))' }}
                   />
                 </div>
-                <h3 className="mb-2 text-lg font-bold font-display">
+                <h3 className="mb-2 text-lg font-bold">
                   {cardsConfig.whatsappTitle || 'WhatsApp'}
                 </h3>
                 <p className="mb-3 text-sm text-muted-foreground">
@@ -196,7 +196,7 @@ const Contact: React.FC = () => {
                     style={{ color: cardsConfig.cardIconColor || 'hsl(var(--primary))' }}
                   />
                 </div>
-                <h3 className="mb-2 text-lg font-bold font-display">
+                <h3 className="mb-2 text-lg font-bold">
                   {cardsConfig.emailTitle || 'E-mail'}
                 </h3>
                 <p className="mb-3 text-sm text-muted-foreground">
@@ -223,7 +223,7 @@ const Contact: React.FC = () => {
               <div>
                 <div className="line-accent mb-6" />
                 <h2
-                  className="mb-5 text-3xl md:text-4xl font-bold font-display"
+                  className="mb-5 text-3xl md:text-4xl font-bold"
                   style={{ color: formConfig.titleColor || 'hsl(var(--primary))' }}
                 >
                   {formConfig.formTitle || 'Envie uma Mensagem'}
@@ -347,7 +347,7 @@ const Contact: React.FC = () => {
                 <div>
                   <div className="line-accent mb-6" />
                   <h2
-                    className="mb-5 text-3xl md:text-4xl font-bold font-display"
+                    className="mb-5 text-3xl md:text-4xl font-bold"
                     style={{ color: formConfig.titleColor || 'hsl(var(--primary))' }}
                   >
                     {formConfig.mapTitle || 'Nossa Localizacao'}
@@ -366,7 +366,7 @@ const Contact: React.FC = () => {
                 </div>
 
                 <div className="card-modern p-6">
-                  <h3 className="mb-4 text-lg font-bold font-display">Informacoes de Contato</h3>
+                  <h3 className="mb-4 text-lg font-bold">Informacoes de Contato</h3>
 
                   <div className="space-y-4">
                     <div className="flex items-start">

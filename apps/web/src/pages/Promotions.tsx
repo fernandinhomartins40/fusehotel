@@ -47,7 +47,7 @@ const Promotions: React.FC = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <h2 className="text-xl font-bold mb-2 font-display">Erro ao carregar promoções</h2>
+                  <h2 className="text-xl font-bold mb-2">Erro ao carregar promoções</h2>
                   <p className="text-muted-foreground">
                     {(error as any)?.response?.data?.message || 'Ocorreu um erro ao carregar as promoções'}
                   </p>
@@ -65,7 +65,7 @@ const Promotions: React.FC = () => {
                   <div className="text-gray-300 mb-4">
                     <Tag size={56} />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-800 mb-3 font-display">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-3">
                     Nenhuma promoção disponível no momento
                   </h2>
                   <p className="text-muted-foreground">

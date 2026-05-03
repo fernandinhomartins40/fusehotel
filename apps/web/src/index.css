@@ -45,7 +45,6 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
 
     --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-    --font-display: 'Playfair Display', Georgia, serif;
   }
 
   .dark {
@@ -118,28 +117,21 @@
     @apply py-24 md:py-32;
   }
 
-  /* Display font for headings */
-  .font-display {
-    font-family: var(--font-display);
-  }
-
   .page-kicker {
     @apply text-xs uppercase tracking-[3px] font-semibold mb-4 inline-block;
   }
 
   .page-title {
     @apply text-4xl md:text-6xl font-bold tracking-tight leading-[1.1];
-    font-family: var(--font-display);
   }
 
   .page-lead {
     @apply text-lg md:text-xl leading-relaxed;
   }
 
-  /* Section title - serif display font */
+  /* Section title */
   .section-title {
     @apply text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6;
-    font-family: var(--font-display);
   }
 
   /* Modern card with shadow instead of border */

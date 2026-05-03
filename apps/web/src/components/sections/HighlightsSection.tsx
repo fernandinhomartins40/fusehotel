@@ -80,7 +80,7 @@ export const HighlightsSection: React.FC = () => {
                 />
                 <div className="absolute inset-0 flex flex-col justify-end p-8 md:p-10">
                   <h4
-                    className="text-3xl md:text-4xl lg:text-5xl font-bold mb-2 font-display transition-transform duration-500 group-hover:-translate-y-2"
+                    className="text-3xl md:text-4xl lg:text-5xl font-bold mb-2 transition-transform duration-500 group-hover:-translate-y-2"
                     style={{ color: config.cardTitleColor || '#FFFFFF' }}
                   >
                     {highlight.title}

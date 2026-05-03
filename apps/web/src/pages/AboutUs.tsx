@@ -76,7 +76,7 @@ const AboutUs: React.FC = () => {
               <div>
                 <div className="line-accent mb-6" />
                 <h2
-                  className="text-3xl md:text-4xl font-bold mb-6 font-display"
+                  className="text-3xl md:text-4xl font-bold mb-6"
                   style={{ color: historyConfig.titleColor || 'hsl(var(--primary))' }}
                 >
                   {historyConfig.title || 'Nossa História'}
@@ -122,7 +122,7 @@ const AboutUs: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-7 stagger-children">
               <div className="card-modern p-8">
                 <h3
-                  className="text-lg font-bold mb-4 font-display"
+                  className="text-lg font-bold mb-4"
                   style={{ color: mvvConfig.subtitleColor || 'hsl(var(--primary))' }}
                 >
                   {mvvConfig.missionTitle || 'Missão'}
@@ -132,7 +132,7 @@ const AboutUs: React.FC = () => {
 
               <div className="card-modern p-8">
                 <h3
-                  className="text-lg font-bold mb-4 font-display"
+                  className="text-lg font-bold mb-4"
                   style={{ color: mvvConfig.subtitleColor || 'hsl(var(--primary))' }}
                 >
                   {mvvConfig.visionTitle || 'Visão'}
@@ -142,7 +142,7 @@ const AboutUs: React.FC = () => {
 
               <div className="card-modern p-8">
                 <h3
-                  className="text-lg font-bold mb-4 font-display"
+                  className="text-lg font-bold mb-4"
                   style={{ color: mvvConfig.subtitleColor || 'hsl(var(--primary))' }}
                 >
                   {mvvConfig.valuesTitle || 'Valores'}
@@ -187,7 +187,7 @@ const AboutUs: React.FC = () => {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <h3 className="text-lg font-bold mb-1 font-display">{member.name}</h3>
+                  <h3 className="text-lg font-bold mb-1">{member.name}</h3>
                   <p
                     className="text-sm mb-3"
                     style={{ color: teamConfig.subtitleColor || 'hsl(var(--primary))' }}
@@ -236,7 +236,7 @@ const AboutUs: React.FC = () => {
                       fallbackClassName="text-3xl leading-none"
                     />
                   </div>
-                  <h3 className="text-base font-bold mb-2 font-display">{award.title}</h3>
+                  <h3 className="text-base font-bold mb-2">{award.title}</h3>
                   <p className="text-gray-600 text-sm leading-relaxed">{award.description}</p>
                 </div>
               ))}

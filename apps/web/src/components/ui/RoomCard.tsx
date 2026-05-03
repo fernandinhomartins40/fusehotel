@@ -70,7 +70,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({
 
       <div className="p-7">
         <h3
-          className="text-xl font-bold mb-2 font-display"
+          className="text-xl font-bold mb-2"
           style={{ color: titleColor }}
         >
           {title}
@@ -101,7 +101,7 @@ export const RoomCard: React.FC<RoomCardProps> = ({
         <div className="flex items-center justify-between pt-5">
           <div style={{ color: priceLabelColor }}>
             <span className="text-xs">A partir de</span>
-            <div className="text-lg font-bold font-display" style={{ color: priceValueColor }}>{price}</div>
+            <div className="text-lg font-bold" style={{ color: priceValueColor }}>{price}</div>
           </div>
 
           <Link to={linkPath}>

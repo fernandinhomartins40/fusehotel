@@ -77,7 +77,7 @@ const FAQ: React.FC = () => {
                   return categoryItems.length > 0 ? (
                     <div key={category.id} className="border-b border-gray-100 pb-8 last:border-b-0">
                       <h2
-                        className="text-xl font-bold mb-5 font-display"
+                        className="text-xl font-bold mb-5"
                         style={{ color: contentConfig.categoryTitleColor || 'hsl(var(--primary))' }}
                       >
                         {category.name}
@@ -111,7 +111,7 @@ const FAQ: React.FC = () => {
                 style={{ backgroundColor: contactConfig.backgroundColor || '#F9FAFB' }}
               >
                 <h2
-                  className="text-xl font-bold mb-3 font-display"
+                  className="text-xl font-bold mb-3"
                   style={{ color: contactConfig.titleColor || '#000000' }}
                 >
                   {contactConfig.title || 'Ainda tem dúvidas?'}

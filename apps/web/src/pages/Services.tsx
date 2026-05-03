@@ -123,7 +123,7 @@ const Services: React.FC = () => {
                     />
                   </div>
                   <div className="p-7">
-                    <h3 className="text-lg font-bold mb-2 font-display">{item.title}</h3>
+                    <h3 className="text-lg font-bold mb-2">{item.title}</h3>
                     {item.subtitle && (
                       <p className="text-sm text-muted-foreground mb-2">{item.subtitle}</p>
                     )}
@@ -200,7 +200,7 @@ const Services: React.FC = () => {
                       </div>
                     )}
                     <div className={item.image ? "md:col-span-2 flex flex-col justify-center" : "md:col-span-3"}>
-                      <h3 className="text-lg font-semibold mb-2 font-display">{item.title}</h3>
+                      <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
                       {item.subtitle && (
                         <p className="text-sm text-muted-foreground mb-2">{item.subtitle}</p>
                       )}
@@ -250,7 +250,7 @@ const Services: React.FC = () => {
                     />
                   </div>
                   <div className="p-6">
-                    <h3 className="text-lg font-bold mb-2 font-display">{item.title}</h3>
+                    <h3 className="text-lg font-bold mb-2">{item.title}</h3>
                     <p className="text-gray-600 text-sm leading-relaxed">{item.description}</p>
                   </div>
                 </div>
@@ -295,7 +295,7 @@ const Services: React.FC = () => {
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-base font-semibold mb-1 font-display">{item.title}</h3>
+                      <h3 className="text-base font-semibold mb-1">{item.title}</h3>
                       <p className="text-gray-600 text-sm leading-relaxed">{item.description}</p>
                     </div>
                   </div>
@@ -365,7 +365,7 @@ const Services: React.FC = () => {
                       />
                     )}
                   </div>
-                  <h3 className="text-base font-bold mb-2 font-display">{item.title}</h3>
+                  <h3 className="text-base font-bold mb-2">{item.title}</h3>
                   <p className="text-gray-600 text-sm leading-relaxed">{item.description}</p>
                 </div>
               ))}
