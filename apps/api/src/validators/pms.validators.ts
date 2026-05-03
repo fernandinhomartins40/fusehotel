@@ -52,6 +52,7 @@ export const createRoomUnitSchema = z.object({
 });
 
 export const updateRoomUnitSchema = z.object({
+  code: z.string().min(1).max(20).optional(),
   name: z.string().min(2).max(80).optional(),
   floor: z.number().int().optional(),
   status: z.nativeEnum(RoomUnitStatus).optional(),

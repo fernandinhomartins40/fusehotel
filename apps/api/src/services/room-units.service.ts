@@ -154,9 +154,20 @@ export class RoomUnitsService {
       throw new NotFoundError('Quarto nao encontrado');
     }
 
+    if (data.code && data.code.trim().toUpperCase() !== roomUnit.code) {
+      const existingCode = await prisma.roomUnit.findUnique({
+        where: { code: data.code.trim().toUpperCase() },
+      });
+
+      if (existingCode) {
+        throw new BadRequestError('Ja existe um quarto com este codigo');
+      }
+    }
+
     return prisma.roomUnit.update({
       where: { id },
       data: {
+        code: data.code?.trim().toUpperCase(),
         name: data.name?.trim(),
         floor: data.floor,
         status: data.status,

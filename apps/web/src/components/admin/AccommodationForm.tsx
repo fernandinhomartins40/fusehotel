@@ -21,10 +21,12 @@ import { accommodationSchema, AccommodationFormData } from '@/lib/validations/ac
 import { AmenitiesSelector } from './AmenitiesSelector';
 import { MultiImageUpload } from './MultiImageUpload';
 import { Accommodation } from '@/types/accommodation';
+import type { RoomUnit } from '@/types/pms';
 import { toast } from 'sonner';
 
 interface AccommodationFormProps {
   accommodation?: Accommodation | null;
+  roomUnit?: RoomUnit | null;
   onSubmit: (data: AccommodationFormData) => void;
   isLoading?: boolean;
 }
@@ -37,8 +39,15 @@ const accommodationTypes = [
   { value: 'APARTMENT', label: 'Apartamento' },
 ] as const;
 
-const getDefaultValues = (accommodation?: Accommodation | null): AccommodationFormData => ({
+const getDefaultValues = (
+  accommodation?: Accommodation | null,
+  roomUnit?: RoomUnit | null
+): AccommodationFormData => ({
   name: accommodation?.name || '',
+  roomCode: roomUnit?.code || '',
+  roomName: roomUnit?.name || accommodation?.name || '',
+  roomNotes: roomUnit?.notes || '',
+  roomIsActive: roomUnit?.isActive ?? true,
   type: accommodation?.type || 'SUITE',
   capacity: accommodation?.capacity || 2,
   pricePerNight:
@@ -90,17 +99,17 @@ const getFirstErrorMessage = (value: unknown): string | undefined => {
   return undefined;
 };
 
-export function AccommodationForm({ accommodation, onSubmit, isLoading }: AccommodationFormProps) {
+export function AccommodationForm({ accommodation, roomUnit, onSubmit, isLoading }: AccommodationFormProps) {
   const [activeTab, setActiveTab] = React.useState('basic');
 
   const form = useForm<AccommodationFormData>({
     resolver: zodResolver(accommodationSchema),
-    defaultValues: getDefaultValues(accommodation),
+    defaultValues: getDefaultValues(accommodation, roomUnit),
   });
 
   React.useEffect(() => {
-    form.reset(getDefaultValues(accommodation));
-  }, [accommodation, form]);
+    form.reset(getDefaultValues(accommodation, roomUnit));
+  }, [accommodation, roomUnit, form]);
 
   const watchedImages = form.watch('images');
   const watchedAmenityIds = form.watch('amenityIds');
@@ -138,6 +147,7 @@ export function AccommodationForm({ accommodation, onSubmit, isLoading }: Accomm
         'maxExtraBeds',
         'extraBedPrice',
         'cancellationPolicy',
+        'roomNotes',
       ].includes(fieldName)
     ) {
       return 'details';
@@ -211,8 +221,41 @@ export function AccommodationForm({ accommodation, onSubmit, isLoading }: Accomm
                       </FormControl>
                       <FormMessage />
                     </FormItem>
-                  )}
+                    )}
                 />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="roomCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Código do Quarto</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: 101" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Identificador operacional do quarto real.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="roomName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome Operacional</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Opcional - se vazio usa o nome comercial" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
@@ -303,6 +346,22 @@ export function AccommodationForm({ accommodation, onSubmit, isLoading }: Accomm
                 />
 
                 <div className="flex gap-4">
+                  <FormField
+                    control={form.control}
+                    name="roomIsActive"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormLabel>Quarto ativo na operação</FormLabel>
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     control={form.control}
                     name="isAvailable"
@@ -521,6 +580,23 @@ export function AccommodationForm({ accommodation, onSubmit, isLoading }: Accomm
                       <FormControl>
                         <Textarea
                           placeholder="Descreva a política de cancelamento..."
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                    )}
+                  />
+
+                <FormField
+                  control={form.control}
+                  name="roomNotes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Observações Operacionais do Quarto</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Informações úteis para recepção, governança ou manutenção..."
                           {...field}
                         />
                       </FormControl>

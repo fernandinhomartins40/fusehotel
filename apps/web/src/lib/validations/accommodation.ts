@@ -21,6 +21,10 @@ const imageUrlSchema = z.string().refine((value) => {
 
 export const accommodationSchema = z.object({
   name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres').max(100),
+  roomCode: z.string().min(1, 'Codigo do quarto e obrigatorio').max(20),
+  roomName: z.string().max(100).optional(),
+  roomNotes: z.string().max(500).optional(),
+  roomIsActive: z.boolean().default(true),
   type: accommodationTypeEnum,
   capacity: z.number().int().min(1, 'Capacidade minima e 1').max(20, 'Capacidade maxima e 20'),
   pricePerNight: z.number().positive('Preco deve ser positivo'),

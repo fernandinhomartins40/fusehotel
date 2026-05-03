@@ -57,6 +57,10 @@ export interface Accommodation {
 
 export interface AccommodationFormData {
   name: string;
+  roomCode: string;
+  roomName?: string;
+  roomNotes?: string;
+  roomIsActive?: boolean;
   type: AccommodationType;
   capacity: number;
   pricePerNight: number;

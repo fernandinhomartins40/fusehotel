@@ -57,6 +57,7 @@ export interface CreateRoomUnitDto {
 }
 
 export interface UpdateRoomUnitDto {
+  code?: string;
   name?: string;
   floor?: number;
   status?: RoomUnitStatus;
