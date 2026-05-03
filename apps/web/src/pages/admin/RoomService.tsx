@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
+import { AlertTriangle, BedSingle, ChevronDown, ConciergeBell, Loader2, Plus, Trash2 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +17,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertTriangle, BedSingle, ConciergeBell, Loader2, Plus, Trash2 } from 'lucide-react';
 import { useFrontdeskDashboard, useStays } from '@/hooks/useFrontdesk';
 import { usePOSProducts } from '@/hooks/usePOS';
 import { useRoomUnits } from '@/hooks/useRoomUnits';
@@ -24,12 +25,14 @@ import {
   useRoomServiceConfigurations,
   useUpsertRoomServiceConfiguration,
 } from '@/hooks/useRoomService';
-import type { POSProduct, RoomServiceConfigType } from '@/types/pms';
+import type { POSProduct, RoomServiceConfiguration, RoomServiceConfigType } from '@/types/pms';
 
 const sourceLabels: Record<RoomServiceConfigType, string> = {
   MINIBAR: 'Frigobar',
   IN_ROOM: 'No quarto',
 };
+
+const sourceOrder: RoomServiceConfigType[] = ['MINIBAR', 'IN_ROOM'];
 
 const currency = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -42,6 +45,7 @@ export default function RoomService() {
   const { data: dashboard } = useFrontdeskDashboard();
   const { data: stays = [] } = useStays();
   const [selectedRoomUnitId, setSelectedRoomUnitId] = useState('');
+  const [expandedConfiguredRoomId, setExpandedConfiguredRoomId] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({
     productId: '',
@@ -57,35 +61,62 @@ export default function RoomService() {
   const upsertConfiguration = useUpsertRoomServiceConfiguration();
   const deleteConfiguration = useDeleteRoomServiceConfiguration();
 
-  const availableProducts = useMemo(
-    () => products.filter((product) => product.isActive),
-    [products]
-  );
+  const availableProducts = useMemo(() => products.filter((product) => product.isActive), [products]);
 
   const selectedRoom = useMemo(
     () => roomUnits.find((room) => room.id === selectedRoomUnitId) ?? null,
     [roomUnits, selectedRoomUnitId]
   );
 
+  const configuredRooms = useMemo(() => {
+    const grouped = new Map<
+      string,
+      {
+        roomUnit: RoomServiceConfiguration['roomUnit'];
+        items: RoomServiceConfiguration[];
+      }
+    >();
+
+    allConfigurations.forEach((item) => {
+      const current = grouped.get(item.roomUnitId);
+      if (current) {
+        current.items.push(item);
+        return;
+      }
+
+      grouped.set(item.roomUnitId, {
+        roomUnit: item.roomUnit,
+        items: [item],
+      });
+    });
+
+    return Array.from(grouped.values())
+      .map((group) => ({
+        ...group,
+        items: [...group.items].sort((left, right) => left.product.name.localeCompare(right.product.name, 'pt-BR')),
+      }))
+      .sort((left, right) => left.roomUnit.code.localeCompare(right.roomUnit.code, 'pt-BR', { numeric: true }));
+  }, [allConfigurations]);
+
   const pendingConferenceStays = useMemo(() => {
-    const configuredRoomIdsAll = new Set(allConfigurations.map((item) => item.roomUnitId));
+    const configuredRoomIds = new Set(allConfigurations.map((item) => item.roomUnitId));
     return stays.filter(
       (stay) =>
         stay.status === 'IN_HOUSE' &&
         stay.roomUnitId &&
-        configuredRoomIdsAll.has(stay.roomUnitId) &&
+        configuredRoomIds.has(stay.roomUnitId) &&
         !stay.roomServiceConferenceAt
     );
   }, [allConfigurations, stays]);
 
   const summary = useMemo(
     () => ({
-      roomsWithItems: new Set(allConfigurations.map((item) => item.roomUnitId)).size,
+      roomsWithItems: configuredRooms.length,
       minibarItems: allConfigurations.filter((item) => item.configType === 'MINIBAR').length,
       inRoomItems: allConfigurations.filter((item) => item.configType === 'IN_ROOM').length,
       dndAlerts: dashboard?.alerts.length ?? 0,
     }),
-    [allConfigurations, dashboard?.alerts]
+    [allConfigurations, configuredRooms.length, dashboard?.alerts]
   );
 
   const openCreateDialog = () => {
@@ -154,7 +185,7 @@ export default function RoomService() {
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold">{summary.inRoomItems}</div>
-              <div className="text-xs text-muted-foreground">Itens de quarto</div>
+              <div className="text-xs text-muted-foreground">Itens no quarto</div>
             </CardContent>
           </Card>
           <Card>
@@ -171,7 +202,7 @@ export default function RoomService() {
               <div className="space-y-1">
                 <CardTitle>Configuração por quarto</CardTitle>
                 <CardDescription>
-                  Escolha o quarto e monte a lista de itens que precisam ser conferidos no checkout.
+                  Escolha o quarto, monte a lista de itens e use a lista lateral para revisar os quartos já configurados.
                 </CardDescription>
               </div>
               <div className="flex w-full flex-col gap-2 md:w-80">
@@ -273,6 +304,84 @@ export default function RoomService() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
+                <CardTitle>Quartos configurados</CardTitle>
+                <CardDescription>
+                  Expanda cada quarto para ver onde fica cada item e o respectivo conteúdo configurado.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {configuredRooms.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">Nenhum quarto configurado ainda.</div>
+                ) : (
+                  configuredRooms.map((group) => {
+                    const isExpanded = expandedConfiguredRoomId === group.roomUnit.id;
+
+                    return (
+                      <Collapsible
+                        key={group.roomUnit.id}
+                        open={isExpanded}
+                        onOpenChange={(open) => setExpandedConfiguredRoomId(open ? group.roomUnit.id : null)}
+                      >
+                        <div className="overflow-hidden rounded-xl border">
+                          <CollapsibleTrigger asChild>
+                            <button
+                              type="button"
+                              className="flex w-full items-center justify-between gap-3 bg-white p-4 text-left transition hover:bg-slate-50"
+                            >
+                              <div className="min-w-0">
+                                <div className="font-medium">
+                                  Quarto {group.roomUnit.code} · {group.roomUnit.name}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {group.roomUnit.accommodation?.name ?? 'Sem categoria'} · {group.items.length} itens configurados
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    setSelectedRoomUnitId(group.roomUnit.id);
+                                  }}
+                                >
+                                  Selecionar
+                                </Button>
+                                <ChevronDown
+                                  className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                />
+                              </div>
+                            </button>
+                          </CollapsibleTrigger>
+
+                          <CollapsibleContent className="border-t bg-slate-50/80">
+                            <div className="space-y-4 p-4">
+                              {sourceOrder.map((sourceType) => (
+                                <RoomConfigBucket
+                                  key={`${group.roomUnit.id}-${sourceType}`}
+                                  title={sourceLabels[sourceType]}
+                                  items={group.items.filter((item) => item.configType === sourceType)}
+                                  emptyLabel={
+                                    sourceType === 'MINIBAR'
+                                      ? 'Nenhum item configurado no frigobar.'
+                                      : 'Nenhum item configurado diretamente no quarto.'
+                                  }
+                                />
+                              ))}
+                            </div>
+                          </CollapsibleContent>
+                        </div>
+                      </Collapsible>
+                    );
+                  })
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
                 <CardTitle>Conferências pendentes</CardTitle>
                 <CardDescription>
                   Hospedagens ativas que ainda precisam de conferência do quarto antes do checkout.
@@ -339,7 +448,10 @@ export default function RoomService() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Produto</Label>
-                <Select value={form.productId} onValueChange={(value) => setForm((current) => ({ ...current, productId: value }))}>
+                <Select
+                  value={form.productId}
+                  onValueChange={(value) => setForm((current) => ({ ...current, productId: value }))}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o produto" />
                   </SelectTrigger>
@@ -406,5 +518,47 @@ export default function RoomService() {
         </Dialog>
       </div>
     </AdminLayout>
+  );
+}
+
+function RoomConfigBucket({
+  title,
+  items,
+  emptyLabel,
+}: {
+  title: string;
+  items: RoomServiceConfiguration[];
+  emptyLabel: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-medium">{title}</div>
+        <Badge variant="secondary">{items.length} itens</Badge>
+      </div>
+
+      {items.length === 0 ? (
+        <div className="rounded-lg border border-dashed bg-white px-3 py-4 text-sm text-muted-foreground">
+          {emptyLabel}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {items.map((item) => (
+            <div key={item.id} className="rounded-lg border bg-white p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-medium">{item.product.name}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {item.product.category.label} · {currency.format(Number(item.product.price))}
+                  </div>
+                </div>
+                <Badge variant="outline">Qtd. {item.quantity}</Badge>
+              </div>
+              {item.notes ? <div className="mt-2 text-sm text-muted-foreground">{item.notes}</div> : null}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
