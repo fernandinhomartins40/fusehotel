@@ -105,6 +105,13 @@ type CartItem = {
   quantity: number;
 };
 
+type PendingPayment = {
+  id: string;
+  method: PaymentMethod;
+  amount: number;
+  reference?: string;
+};
+
 type NumericField = 'serviceFee' | 'discount' | 'payment';
 type DialogKey =
   | 'sale'
@@ -204,6 +211,8 @@ export default function POS() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('PIX');
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentReference, setPaymentReference] = useState('');
+  const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
+  const [checkoutDetailsOpen, setCheckoutDetailsOpen] = useState(false);
   const [orderNotes, setOrderNotes] = useState('');
   const [activeNumericField, setActiveNumericField] = useState<NumericField>('payment');
   const [salePreset, setSalePreset] = useState<SalePreset>('BALCAO');
@@ -350,6 +359,16 @@ export default function POS() {
     return Math.max(subtotal + service - discount, 0);
   }, [discountAmount, serviceFeeAmount, subtotal]);
 
+  const pendingPaymentTotal = useMemo(
+    () => pendingPayments.reduce((sum, payment) => sum + payment.amount, 0),
+    [pendingPayments]
+  );
+
+  const directPaymentBalance = useMemo(
+    () => Math.max(total - pendingPaymentTotal, 0),
+    [pendingPaymentTotal, total]
+  );
+
   const selectedOrder = useMemo(
     () => orders.find((order) => order.id === selectedOrderId) ?? null,
     [orders, selectedOrderId]
@@ -376,6 +395,12 @@ export default function POS() {
         .some((value) => value!.toLowerCase().includes(normalizedReferenceLookup))
     );
   }, [normalizedReferenceLookup, openOrders]);
+
+  const referencedDrafts = useMemo(() => {
+    if (!normalizedReferenceLookup) return savedDrafts.slice(0, 8);
+
+    return savedDrafts.filter((draft) => draft.reference.toLowerCase().includes(normalizedReferenceLookup));
+  }, [normalizedReferenceLookup, savedDrafts]);
 
   const canEditSelectedOrder = useMemo(() => {
     if (!selectedOrder) return false;
@@ -457,6 +482,7 @@ export default function POS() {
     setDiscountAmount('');
     setPaymentAmount('');
     setPaymentReference('');
+    setPendingPayments([]);
     setOrderNotes('');
     setDraftReference('');
     setReferenceLookup('');
@@ -683,6 +709,7 @@ export default function POS() {
     setPaymentMethod(draft.paymentMethod);
     setPaymentAmount(draft.paymentAmount);
     setPaymentReference(draft.paymentReference);
+    setPendingPayments([]);
     setOrderNotes(draft.orderNotes);
     setCartItems(draft.cartItems);
     setDraftReference(draft.reference);
@@ -761,6 +788,7 @@ export default function POS() {
     setDiscountAmount(String(Number(order.discountAmount || 0) || ''));
     setPaymentAmount('');
     setPaymentReference('');
+    setPendingPayments([]);
     setOrderNotes(order.notes ?? '');
 
     if (order.settlementType === 'FOLIO' || order.origin === 'ROOM_SERVICE') {
@@ -819,6 +847,36 @@ export default function POS() {
     setSearch('');
     setQuickCode('');
     setQuickQuantity('1');
+  };
+
+  const handleAddPendingPayment = () => {
+    const amount = Number(paymentAmount || directPaymentBalance || 0);
+
+    if (amount <= 0) {
+      toast.error('Informe um valor de pagamento válido');
+      return;
+    }
+
+    if (paymentMethod === 'CASH' && !activeCashSession) {
+      toast.error('Abra o caixa antes de receber em dinheiro');
+      return;
+    }
+
+    setPendingPayments((current) => [
+      ...current,
+      {
+        id: crypto.randomUUID(),
+        method: paymentMethod,
+        amount,
+        reference: paymentReference.trim() || undefined,
+      },
+    ]);
+    setPaymentAmount('');
+    setPaymentReference('');
+  };
+
+  const removePendingPayment = (id: string) => {
+    setPendingPayments((current) => current.filter((payment) => payment.id !== id));
   };
 
   useEffect(() => {
@@ -1009,7 +1067,23 @@ export default function POS() {
       return;
     }
 
-    if (settlementType === 'DIRECT' && paymentMethod === 'CASH' && !activeCashSession) {
+    const directPayments =
+      settlementType === 'DIRECT'
+        ? pendingPayments.length
+          ? pendingPayments
+          : Number(paymentAmount || total) > 0
+            ? [
+                {
+                  id: 'current',
+                  method: paymentMethod,
+                  amount: Number(paymentAmount || total),
+                  reference: paymentReference.trim() || undefined,
+                },
+              ]
+            : []
+        : [];
+
+    if (settlementType === 'DIRECT' && directPayments.some((payment) => payment.method === 'CASH') && !activeCashSession) {
       toast.error('Abra o caixa antes de receber em dinheiro');
       return;
     }
@@ -1043,15 +1117,15 @@ export default function POS() {
 
       if (settlementType === 'DIRECT') {
         const remainingAmount = Math.max(Number(order.totalAmount) - Number(order.paidAmount), 0);
-        const amountToPay = editingOrderId ? Number(paymentAmount || 0) : Number(paymentAmount || total);
+        const amountToPay = directPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
-        if (amountToPay > 0) {
+        for (const payment of directPayments) {
           await registerPayment.mutateAsync({
             orderId: order.id,
-            amount: amountToPay,
-            method: paymentMethod,
-            cashSessionId: paymentMethod === 'CASH' ? activeCashSession?.id : undefined,
-            reference: paymentReference || undefined,
+            amount: payment.amount,
+            method: payment.method,
+            cashSessionId: payment.method === 'CASH' ? activeCashSession?.id : undefined,
+            reference: payment.reference,
           });
         }
 
@@ -1366,6 +1440,99 @@ export default function POS() {
     </div>
   );
 
+  const renderDirectPaymentControls = (allowEmptyPayment = false) => (
+    <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+      <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_160px]">
+        <div className="space-y-2">
+          <Label>Valor do pagamento</Label>
+          <Input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="0.01"
+            value={paymentAmount}
+            onChange={(event) => setPaymentAmount(event.target.value)}
+            onFocus={() => setActiveNumericField('payment')}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                handleAddPendingPayment();
+              }
+            }}
+            placeholder={directPaymentBalance ? directPaymentBalance.toFixed(2) : '0.00'}
+            className="h-12 rounded-2xl bg-white text-base font-semibold"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Detalhes</Label>
+          <Button variant="outline" className="h-12 w-full rounded-2xl" onClick={() => setCheckoutDetailsOpen(true)}>
+            Ajustes e detalhes
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        {(['PIX', 'CASH', 'CREDIT_CARD', 'DEBIT_CARD'] as PaymentMethod[]).map((method) => (
+          <button
+            key={method}
+            type="button"
+            onClick={() => setPaymentMethod(method)}
+            className={`rounded-2xl py-3 text-sm font-semibold transition ${
+              paymentMethod === method
+                ? 'bg-sky-700 text-white'
+                : 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+            }`}
+          >
+            {paymentMethodLabels[method]}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px]">
+        <div className="rounded-2xl border bg-white p-3 text-sm">
+          <div className="flex items-center justify-between text-slate-600">
+            <span>Total</span>
+            <span>{currency.format(total)}</span>
+          </div>
+          <div className="mt-1 flex items-center justify-between text-slate-600">
+            <span>Recebido</span>
+            <span>{currency.format(pendingPaymentTotal)}</span>
+          </div>
+          <div className="mt-2 flex items-center justify-between font-semibold text-slate-950">
+            <span>Restante</span>
+            <span>{currency.format(directPaymentBalance)}</span>
+          </div>
+        </div>
+        <Button className="h-full min-h-16 rounded-2xl" onClick={handleAddPendingPayment}>
+          Adicionar pagamento
+        </Button>
+      </div>
+
+      {pendingPayments.length ? (
+        <div className="space-y-2">
+          {pendingPayments.map((payment) => (
+            <div key={payment.id} className="flex items-center justify-between gap-3 rounded-2xl border bg-white px-3 py-2 text-sm">
+              <div>
+                <div className="font-medium text-slate-900">{paymentMethodLabels[payment.method]}</div>
+                {payment.reference ? <div className="text-xs text-slate-500">{payment.reference}</div> : null}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">{currency.format(payment.amount)}</span>
+                <Button variant="ghost" size="sm" onClick={() => removePendingPayment(payment.id)}>
+                  Remover
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : allowEmptyPayment ? (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-3 text-sm text-slate-600">
+          Adicione um pagamento para receber agora ou deixe sem pagamento para manter em aberto.
+        </div>
+      ) : null}
+    </div>
+  );
+
   const renderPaymentStep = () => (
     <div className="space-y-4">
       <div>
@@ -1394,68 +1561,7 @@ export default function POS() {
         />
       </div>
 
-      {salePreset === 'BALCAO' && settlementType === 'DIRECT' && (
-        <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_180px]">
-          <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_160px]">
-              <FieldButton
-                label="Pagamento"
-                value={paymentAmount}
-                active={activeNumericField === 'payment'}
-                onClick={() => setActiveNumericField('payment')}
-                dark={false}
-              />
-              <Button variant="outline" className="rounded-2xl" onClick={() => setActiveDialog('details')}>
-                Ajustes e detalhes
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              {(['PIX', 'CASH', 'CREDIT_CARD', 'DEBIT_CARD'] as PaymentMethod[]).map((method) => (
-                <button
-                  key={method}
-                  type="button"
-                  onClick={() => setPaymentMethod(method)}
-                  className={`rounded-2xl py-3 text-sm font-semibold transition ${
-                    paymentMethod === method
-                      ? 'bg-sky-700 text-white'
-                      : 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                  }`}
-                >
-                  {paymentMethodLabels[method]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            {['7', '8', '9', '4', '5', '6', '1', '2', '3', '0', '00', '.'].map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => applyKeypad(key)}
-                className="rounded-2xl py-3 text-base font-semibold bg-sky-700 text-white hover:bg-sky-600 transition"
-              >
-                {key}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => applyKeypad('clear')}
-              className="col-span-2 rounded-2xl py-3 text-base font-semibold bg-red-500 text-white transition"
-            >
-              C
-            </button>
-            <button
-              type="button"
-              onClick={() => applyKeypad('back')}
-              className="rounded-2xl py-3 text-base font-semibold bg-amber-400 text-slate-950 transition"
-            >
-              ←
-            </button>
-          </div>
-        </div>
-      )}
+      {salePreset === 'BALCAO' && settlementType === 'DIRECT' && renderDirectPaymentControls(false)}
 
       {salePreset === 'COMANDA' && (
         <div className="space-y-4">
@@ -1511,41 +1617,7 @@ export default function POS() {
             </div>
           </div>
 
-          {settlementType === 'DIRECT' && (
-            <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_160px]">
-                <FieldButton
-                  label="Pagamento"
-                  value={paymentAmount}
-                  active={activeNumericField === 'payment'}
-                  onClick={() => setActiveNumericField('payment')}
-                  dark={false}
-                />
-                <Button variant="outline" className="rounded-2xl" onClick={() => setActiveDialog('details')}>
-                  Ajustes e detalhes
-                </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {(['PIX', 'CASH', 'CREDIT_CARD', 'DEBIT_CARD'] as PaymentMethod[]).map((method) => (
-                  <button
-                    key={method}
-                    type="button"
-                    onClick={() => setPaymentMethod(method)}
-                    className={`rounded-2xl py-3 text-sm font-semibold transition ${
-                      paymentMethod === method
-                        ? 'bg-sky-700 text-white'
-                        : 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                    }`}
-                  >
-                    {paymentMethodLabels[method]}
-                  </button>
-                ))}
-              </div>
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-3 text-sm text-slate-600">
-                Deixe o valor zerado para manter a comanda em aberto sem receber agora.
-              </div>
-            </div>
-          )}
+          {settlementType === 'DIRECT' && renderDirectPaymentControls(true)}
 
           {settlementType === 'FOLIO' && (
             <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
@@ -1659,7 +1731,7 @@ export default function POS() {
           <div className="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
             O consumo será lançado diretamente na conta da hospedagem e poderá ser acertado no check-out.
           </div>
-          <Button variant="outline" className="rounded-2xl" onClick={() => setActiveDialog('details')}>
+          <Button variant="outline" className="rounded-2xl" onClick={() => setCheckoutDetailsOpen(true)}>
             Ajustes e detalhes
           </Button>
         </div>
@@ -1846,7 +1918,7 @@ export default function POS() {
               >
                 {editingOrder
                   ? settlementType === 'DIRECT'
-                    ? Number(paymentAmount || 0) > 0
+                    ? pendingPaymentTotal > 0 || Number(paymentAmount || 0) > 0
                       ? 'Salvar e receber'
                       : 'Salvar comanda'
                     : 'Atualizar e lanÃ§ar consumo'
@@ -1916,7 +1988,7 @@ export default function POS() {
                 <SideAction icon={ShoppingCart} label="Pedidos" description="Serviço de quarto e entrega" shortcut="Alt + 1" active={activeDialog === 'room-service-orders'} tone="amber" onClick={() => setActiveDialog('room-service-orders')} />
                 <SideAction icon={Wallet} label="Caixa" description="Abertura e fechamento" shortcut="Alt + 2" active={activeDialog === 'cash'} tone="teal" onClick={() => setActiveDialog('cash')} />
                 <SideAction icon={Receipt} label="Pré-vendas" description="Suspensas e retomada" shortcut="Alt + 9" active={activeDialog === 'drafts'} tone="indigo" onClick={() => setActiveDialog('drafts')} />
-                <SideAction icon={Search} label="Referências" description="Mesa, comanda ou hóspede" shortcut="Alt + 0" active={activeDialog === 'references'} tone="slate" onClick={() => setActiveDialog('references')} />
+                <SideAction icon={Search} label="Buscar venda" description="Pedido, mesa ou comanda" shortcut="Alt + 0" active={activeDialog === 'references'} tone="slate" onClick={() => setActiveDialog('references')} />
               </div>
               {(cartDetailedItems.length || editingOrder) ? (
                 <div className="mt-3 flex justify-end">
@@ -1945,7 +2017,7 @@ export default function POS() {
           </div>
         </SheetContent>
       </Sheet>
-      <Dialog open={activeDialog === 'details'} onOpenChange={(open) => setActiveDialog(open ? 'details' : null)}>
+      <Dialog open={checkoutDetailsOpen} onOpenChange={setCheckoutDetailsOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Ajustes e detalhes</DialogTitle>
@@ -2610,29 +2682,37 @@ export default function POS() {
       <Sheet open={activeDialog === 'references'} onOpenChange={(open) => setActiveDialog(open ? 'references' : null)}>
         <SheetContent side="right" className="w-full sm:max-w-[920px] overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Referências rápidas</SheetTitle>
-            <SheetDescription>Encontre mesas, comandas, nomes ou pedidos sem sair do caixa.</SheetDescription>
+            <SheetTitle>Buscar venda ou comanda</SheetTitle>
+            <SheetDescription>Localize pedidos em aberto e rascunhos deste caixa sem misturar os fluxos.</SheetDescription>
           </SheetHeader>
           <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
             <Card>
               <CardContent className="space-y-3 p-4">
-                <div className="font-medium">Buscar referência</div>
+                <div>
+                  <div className="font-medium">Busca operacional</div>
+                  <p className="text-sm text-slate-500">Use pedido, mesa, comanda, quarto ou cliente.</p>
+                </div>
                 <Input
                   value={referenceLookup}
                   onChange={(event) => setReferenceLookup(event.target.value)}
-                  placeholder="Mesa, comanda, cliente ou pedido"
+                  placeholder="Pedido, mesa, comanda ou cliente"
                 />
-                <div className="rounded-2xl border bg-slate-50 p-3 text-sm text-slate-600">
-                  {normalizedReferenceLookup
-                    ? `${referencedOpenOrders.length} pedido(s) encontrado(s) em aberto`
-                    : 'Digite uma referência para filtrar pedidos e vendas suspensas.'}
+                <div className="grid gap-2 rounded-2xl border bg-slate-50 p-3 text-sm text-slate-600">
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Pedidos salvos no sistema</span>
+                    <Badge variant="outline">{referencedOpenOrders.length}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Rascunhos deste caixa</span>
+                    <Badge variant="outline">{referencedDrafts.length}</Badge>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="outline" onClick={() => setActiveDialog('orders')}>
-                    Ir para pedidos
+                    Ver pedidos
                   </Button>
                   <Button variant="outline" onClick={() => setActiveDialog('drafts')}>
-                    Ir para pré-vendas
+                    Ver pré-vendas
                   </Button>
                 </div>
               </CardContent>
@@ -2641,9 +2721,12 @@ export default function POS() {
             <div className="grid gap-4">
               <Card>
                 <CardContent className="space-y-3 p-4">
-                  <div className="font-medium">Pedidos em aberto</div>
+                  <div>
+                    <div className="font-medium">Pedidos salvos no sistema</div>
+                    <p className="text-sm text-slate-500">Dados persistidos no backend e visíveis para todos os operadores.</p>
+                  </div>
                   {!referencedOpenOrders.length ? (
-                    <EmptyInline text="Nenhum pedido aberto para esta referência." />
+                    <EmptyInline text="Nenhum pedido em aberto encontrado." />
                   ) : (
                     referencedOpenOrders.map((order) => (
                       <div
@@ -2700,14 +2783,14 @@ export default function POS() {
 
               <Card>
                 <CardContent className="space-y-3 p-4">
-                  <div className="font-medium">Pré-vendas salvas</div>
-                  {!savedDrafts.filter((draft) =>
-                    !normalizedReferenceLookup || draft.reference.toLowerCase().includes(normalizedReferenceLookup)
-                  ).length ? (
-                    <EmptyInline text="Nenhuma pré-venda salva para esta referência." />
+                  <div>
+                    <div className="font-medium">Rascunhos deste caixa</div>
+                    <p className="text-sm text-slate-500">Pré-vendas salvas apenas neste navegador para retomada rápida.</p>
+                  </div>
+                  {!referencedDrafts.length ? (
+                    <EmptyInline text="Nenhum rascunho local encontrado." />
                   ) : (
-                    savedDrafts
-                      .filter((draft) => !normalizedReferenceLookup || draft.reference.toLowerCase().includes(normalizedReferenceLookup))
+                    referencedDrafts
                       .map((draft) => (
                         <div key={draft.id} className="rounded-2xl border p-4">
                           <div className="flex items-start justify-between gap-3">
