@@ -47,7 +47,7 @@ export class InventoryService {
 
     return prisma.$transaction(async (tx) => {
       const txPms = tx as any;
-      const updatedProduct = await txPms.posProduct.update({
+      const updatedProduct = await txPms.pOSProduct.update({
         where: { id: data.productId },
         data: {
           stockQuantity: nextQuantity,

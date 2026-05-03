@@ -150,7 +150,7 @@ async function resolveOrderPayload(tx: any, data: CreatePOSOrderDto | UpdatePOSO
     resolvedCustomerName = 'Consumidor';
   }
 
-  const products = await tx.posProduct.findMany({
+  const products = await tx.pOSProduct.findMany({
     where: {
       id: {
         in: data.items.map((item) => item.productId),
@@ -268,7 +268,7 @@ async function adjustOrderStock(tx: any, order: any, mode: 'CONSUME' | 'RESTORE'
   const sign = mode === 'CONSUME' ? -1 : 1;
 
   for (const item of order.items) {
-    const product = await tx.posProduct.findUnique({
+    const product = await tx.pOSProduct.findUnique({
       where: { id: item.productId },
     });
 
@@ -283,7 +283,7 @@ async function adjustOrderStock(tx: any, order: any, mode: 'CONSUME' | 'RESTORE'
       throw new BadRequestError(`Estoque insuficiente para ${product.name}`);
     }
 
-    await tx.posProduct.update({
+    await tx.pOSProduct.update({
       where: { id: product.id },
       data: {
         stockQuantity: nextQuantity,

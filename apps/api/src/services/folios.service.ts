@@ -102,7 +102,7 @@ export class FoliosService {
       if (!folio) throw new NotFoundError('Folio nao encontrado');
       if (folio.isClosed) throw new BadRequestError('Nao e possivel lancar em um folio fechado');
 
-      const product = await txPms.posProduct.findUnique({ where: { id: data.productId } });
+      const product = await txPms.pOSProduct.findUnique({ where: { id: data.productId } });
       if (!product) throw new NotFoundError('Produto nao encontrado');
       if (!product.isActive) throw new BadRequestError('Produto inativo');
 
@@ -117,7 +117,7 @@ export class FoliosService {
           throw new BadRequestError(`Estoque insuficiente para ${product.name}`);
         }
 
-        await txPms.posProduct.update({
+        await txPms.pOSProduct.update({
           where: { id: product.id },
           data: { stockQuantity: nextQuantity },
         });
