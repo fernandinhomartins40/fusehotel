@@ -1059,7 +1059,7 @@ export default function POS() {
         ))}
       </div>
 
-      <ScrollArea className="max-h-[58vh] rounded-2xl border border-slate-200">
+      <ScrollArea className="h-[42vh] min-h-[320px] max-h-[560px] overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <div className="grid gap-3 p-3 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
           {!filteredProducts.length ? (
             <div className="col-span-full rounded-2xl border border-dashed p-8 text-center text-slate-500">
