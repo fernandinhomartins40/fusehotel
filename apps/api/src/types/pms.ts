@@ -47,6 +47,7 @@ export type MarkupType = 'FIXED' | 'PERCENT';
 export type BusinessAccountType = 'COMPANY' | 'OPERATOR' | 'AGENCY' | 'CORPORATE';
 export type ChannelConnectionType = 'BOOKING' | 'AIRBNB' | 'EXPEDIA' | 'DIRECT' | 'OTHER';
 export type ServiceCategory = 'ACCOMMODATION' | 'GASTRONOMY' | 'RECREATION' | 'BUSINESS' | 'SPECIAL';
+export type RoomServiceConfigType = 'MINIBAR' | 'IN_ROOM';
 
 export interface CreateRoomUnitDto {
   accommodationId: string;
@@ -144,11 +145,36 @@ export interface CreatePOSProductDto {
   minStockQuantity?: number;
   saleUnit?: string;
   trackStock?: boolean;
+  isRoomServiceEnabled?: boolean;
   description?: string;
   showOnServicesPage?: boolean;
   servicesPageCategory?: ServiceCategory;
   servicesPageSubtitle?: string;
   servicesPageFeatures?: string[];
+}
+
+export interface UpsertRoomServiceConfigurationDto {
+  roomUnitId: string;
+  productId: string;
+  configType: RoomServiceConfigType;
+  quantity: number;
+  notes?: string;
+}
+
+export interface ConfirmRoomServiceConferenceDto {
+  items: Array<{
+    productId: string;
+    configurationId?: string;
+    source: RoomServiceConfigType;
+    quantity: number;
+    notes?: string;
+  }>;
+  notes?: string;
+}
+
+export interface ToggleDoNotDisturbDto {
+  enabled: boolean;
+  note?: string;
 }
 
 export interface CreatePOSOrderDto {

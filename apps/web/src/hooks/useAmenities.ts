@@ -7,7 +7,7 @@ export function useAmenities() {
     queryKey: ['amenities'],
     queryFn: async () => {
       const { data } = await apiClient.get('/amenities');
-      return data.data as Amenity[];
+      return (data.data as Amenity[]).sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'));
     },
   });
 }

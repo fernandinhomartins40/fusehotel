@@ -4,6 +4,7 @@ import {
   BarChart3,
   BedDouble,
   Calendar,
+  ConciergeBell,
   FileText,
   HelpCircle,
   Home,
@@ -111,6 +112,13 @@ const catalogItems: MenuItem[] = [
     icon: ShoppingCart,
     activeClassName:
       'data-[active=true]:bg-amber-50 data-[active=true]:text-amber-700 data-[active=true]:border-r-2 data-[active=true]:border-amber-600',
+  },
+  {
+    path: '/admin/room-service',
+    label: 'Serviço de quarto',
+    icon: ConciergeBell,
+    activeClassName:
+      'data-[active=true]:bg-violet-50 data-[active=true]:text-violet-700 data-[active=true]:border-r-2 data-[active=true]:border-violet-600',
   },
   {
     path: '/admin/packages-promotions',

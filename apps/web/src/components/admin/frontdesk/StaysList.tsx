@@ -222,7 +222,14 @@ export function StaysList({
                       <TableCell>
                         <div>
                           <div className="font-medium">{stay.reservation.guestName}</div>
-                          <div className="text-xs text-gray-500 font-mono">{stay.reservation.reservationCode}</div>
+                          <div className="flex items-center gap-2">
+                            <div className="text-xs text-gray-500 font-mono">{stay.reservation.reservationCode}</div>
+                            {stay.doNotDisturb && (
+                              <Badge variant="outline" className="border-amber-300 bg-amber-50 text-[10px] text-amber-700">
+                                Não perturbe
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>

@@ -8,11 +8,20 @@ export interface AccommodationImage {
   isPrimary: boolean;
 }
 
+export type AmenityCategory =
+  | 'BEDROOM'
+  | 'BATHROOM'
+  | 'ENTERTAINMENT'
+  | 'KITCHEN'
+  | 'OUTDOOR'
+  | 'ACCESSIBILITY'
+  | 'GENERAL';
+
 export interface Amenity {
   id: string;
   name: string;
   icon: string;
-  category: string;
+  category: AmenityCategory;
   description?: string;
 }
 

@@ -52,6 +52,7 @@ export function useCreatePOSProduct() {
       minStockQuantity?: number;
       saleUnit?: string;
       trackStock?: boolean;
+      isRoomServiceEnabled?: boolean;
       description?: string;
       showOnServicesPage?: boolean;
       servicesPageCategory?: ServiceCategory;
@@ -89,6 +90,7 @@ export function useUpdatePOSProduct() {
         saleUnit?: string;
         trackStock?: boolean;
         isActive?: boolean;
+        isRoomServiceEnabled?: boolean;
         description?: string;
         showOnServicesPage?: boolean;
         servicesPageCategory?: ServiceCategory;

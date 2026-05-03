@@ -42,6 +42,7 @@ const stockMovementTypeSchema = z.enum([
 const financialEntryTypeSchema = z.enum(['RECEIVABLE', 'PAYABLE']);
 const financialEntryStatusSchema = z.enum(['OPEN', 'PARTIALLY_PAID', 'PAID', 'OVERDUE', 'CANCELLED']);
 const serviceCategorySchema = z.enum(['ACCOMMODATION', 'GASTRONOMY', 'RECREATION', 'BUSINESS', 'SPECIAL']);
+const roomServiceConfigTypeSchema = z.enum(['MINIBAR', 'IN_ROOM']);
 
 export const createRoomUnitSchema = z.object({
   accommodationId: uuidSchema,
@@ -157,6 +158,7 @@ export const createPOSProductSchema = z
     minStockQuantity: z.number().nonnegative().optional(),
     saleUnit: z.string().max(10).optional(),
     trackStock: z.boolean().optional(),
+    isRoomServiceEnabled: z.boolean().optional(),
     description: z.string().max(500).optional(),
     showOnServicesPage: z.boolean().optional(),
     servicesPageCategory: serviceCategorySchema.optional(),
@@ -255,6 +257,45 @@ export const registerPOSPaymentSchema = z.object({
 export const refundPOSPaymentSchema = z.object({
   paymentId: uuidSchema,
   amount: z.number().positive().optional(),
+  notes: z.string().max(500).optional(),
+});
+
+export const upsertRoomServiceConfigurationSchema = z.object({
+  roomUnitId: uuidSchema,
+  productId: uuidSchema,
+  configType: roomServiceConfigTypeSchema,
+  quantity: z.number().int().positive(),
+  notes: z.string().max(500).optional(),
+});
+
+export const confirmRoomServiceConferenceSchema = z.object({
+  items: z.array(
+    z.object({
+      productId: uuidSchema,
+      configurationId: uuidSchema.optional(),
+      source: roomServiceConfigTypeSchema,
+      quantity: z.number().int().min(0),
+      notes: z.string().max(500).optional(),
+    })
+  ),
+  notes: z.string().max(500).optional(),
+});
+
+export const toggleDoNotDisturbSchema = z.object({
+  enabled: z.boolean(),
+  note: z.string().max(300).optional(),
+});
+
+export const createGuestRoomServiceOrderSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        productId: uuidSchema,
+        quantity: z.number().int().positive(),
+        notes: z.string().max(500).optional(),
+      })
+    )
+    .min(1),
   notes: z.string().max(500).optional(),
 });
 

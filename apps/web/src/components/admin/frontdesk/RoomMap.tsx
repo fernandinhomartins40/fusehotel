@@ -141,6 +141,11 @@ function RoomCard({ room, onClickOccupied, onClickAvailable, onClickDirty }: Roo
                 <div className="truncate text-xs font-medium text-gray-800">
                   {room.guest.guestName}
                 </div>
+                {room.guest.doNotDisturb && (
+                  <Badge variant="outline" className="w-fit border-amber-300 bg-amber-50 text-[10px] text-amber-700">
+                    Não perturbe
+                  </Badge>
+                )}
                 <div className="flex items-center justify-between">
                   {nightProgress && (
                     <span className="text-[10px] text-gray-500">
@@ -194,6 +199,7 @@ function RoomCard({ room, onClickOccupied, onClickAvailable, onClickDirty }: Roo
             {isOccupied && room.guest && (
               <>
                 <div>Hospede: {room.guest.guestName}</div>
+                {room.guest.doNotDisturb && <div>Alerta: não perturbe ativo</div>}
                 <div>Saida: {new Date(room.guest.checkOutDate).toLocaleDateString('pt-BR')}</div>
                 <div>Saldo: {currencyFormatter.format(room.guest.folioBalance)}</div>
               </>

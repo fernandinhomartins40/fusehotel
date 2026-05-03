@@ -94,6 +94,7 @@ export type MarkupType = 'FIXED' | 'PERCENT';
 export type BusinessAccountType = 'COMPANY' | 'OPERATOR' | 'AGENCY' | 'CORPORATE';
 export type ChannelConnectionType = 'BOOKING' | 'AIRBNB' | 'EXPEDIA' | 'DIRECT' | 'OTHER';
 export type ServiceCategory = 'ACCOMMODATION' | 'GASTRONOMY' | 'RECREATION' | 'BUSINESS' | 'SPECIAL';
+export type RoomServiceConfigType = 'MINIBAR' | 'IN_ROOM';
 
 export interface RoomUnit {
   id: string;
@@ -121,6 +122,11 @@ export interface Stay {
   status: StayStatus;
   adults: number;
   children: number;
+  doNotDisturb?: boolean;
+  doNotDisturbNote?: string | null;
+  doNotDisturbUpdatedAt?: string | null;
+  roomServiceConferenceAt?: string | null;
+  roomServiceConferenceNotes?: string | null;
   notes: string | null;
   expectedCheckInAt: string | null;
   expectedCheckOutAt: string | null;
@@ -234,6 +240,8 @@ export interface RoomMapRoom {
     checkInDate: string;
     numberOfNights: number;
     folioBalance: number;
+    doNotDisturb?: boolean;
+    doNotDisturbNote?: string | null;
   } | null;
   housekeepingTasks: Array<{
     id: string;
@@ -269,6 +277,15 @@ export interface FrontdeskDashboard {
   arrivals: Reservation[];
   inHouse: Stay[];
   departures: Stay[];
+  alerts: Array<{
+    type: 'DO_NOT_DISTURB';
+    stayId: string;
+    roomUnitId: string | null;
+    roomCode: string | null;
+    guestName: string;
+    note: string | null;
+    updatedAt: string | null;
+  }>;
   roomStats: {
     total: number;
     available: number;
@@ -316,6 +333,7 @@ export interface POSProduct {
   saleUnit: string;
   trackStock: boolean;
   isActive: boolean;
+  isRoomServiceEnabled: boolean;
   description: string | null;
   showOnServicesPage: boolean;
   servicesPageCategory: ServiceCategory | null;
@@ -324,6 +342,48 @@ export interface POSProduct {
   servicesPageFeatures: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface RoomServiceConfiguration {
+  id: string;
+  roomUnitId: string;
+  productId: string;
+  configType: RoomServiceConfigType;
+  quantity: number;
+  notes: string | null;
+  roomUnit: RoomUnit & {
+    accommodation?: {
+      id: string;
+      name: string;
+    };
+  };
+  product: POSProduct;
+}
+
+export interface RoomServiceConferencePreview {
+  stay: {
+    id: string;
+    roomUnitId: string | null;
+    guestName: string;
+    reservationCode: string;
+    roomCode: string | null;
+    roomName: string | null;
+    conferenceCompletedAt: string | null;
+    conferenceNotes: string | null;
+  };
+  items: Array<{
+    id: string;
+    configType: RoomServiceConfigType;
+    configuredQuantity: number;
+    notes: string | null;
+    product: POSProduct;
+    alreadyChargedQuantity: number;
+  }>;
+}
+
+export interface MyRoomServiceStay extends Stay {
+  roomServiceConfigurations: RoomServiceConfiguration[];
+  roomServiceOrders: POSOrder[];
 }
 
 export interface POSOrderItem {

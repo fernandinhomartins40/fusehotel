@@ -64,6 +64,7 @@ type ProductFormData = {
   saleUnit: string;
   trackStock: boolean;
   isActive: boolean;
+  isRoomServiceEnabled: boolean;
   description: string;
   showOnServicesPage: boolean;
   servicesPageCategory: ServiceCategory | '';
@@ -83,6 +84,7 @@ const emptyForm: ProductFormData = {
   saleUnit: 'UN',
   trackStock: false,
   isActive: true,
+  isRoomServiceEnabled: false,
   description: '',
   showOnServicesPage: false,
   servicesPageCategory: '',
@@ -111,6 +113,7 @@ function productToForm(product: POSProduct): ProductFormData {
     saleUnit: product.saleUnit,
     trackStock: product.trackStock,
     isActive: product.isActive,
+    isRoomServiceEnabled: product.isRoomServiceEnabled,
     description: product.description ?? '',
     showOnServicesPage: product.showOnServicesPage,
     servicesPageCategory: product.servicesPageCategory ?? '',
@@ -202,6 +205,7 @@ export default function Products() {
       saleUnit: form.saleUnit.trim() || undefined,
       trackStock: form.trackStock,
       isActive: form.isActive,
+      isRoomServiceEnabled: form.isRoomServiceEnabled,
       description: form.description.trim() || undefined,
       showOnServicesPage: form.showOnServicesPage,
       servicesPageCategory: form.showOnServicesPage ? (form.servicesPageCategory || undefined) : undefined,
@@ -527,6 +531,19 @@ export default function Products() {
               <div>
                 <Label>Controlar estoque</Label>
                 <p className="text-xs text-muted-foreground">Habilite para rastrear entrada e saida deste produto.</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-lg border p-4">
+              <Switch
+                checked={form.isRoomServiceEnabled}
+                onCheckedChange={(v) => updateField('isRoomServiceEnabled', v)}
+              />
+              <div>
+                <Label>Disponível para serviço de quarto</Label>
+                <p className="text-xs text-muted-foreground">
+                  Quando habilitado, o hóspede pode solicitar este item pelo painel do cliente.
+                </p>
               </div>
             </div>
 

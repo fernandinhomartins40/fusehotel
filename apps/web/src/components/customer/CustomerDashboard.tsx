@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,10 +8,11 @@ import { ReservationTimeline } from './ReservationTimeline';
 import { ReservationFilters } from './ReservationFilters';
 import { ProfileForm } from './ProfileForm';
 import { ChangePasswordForm } from './ChangePasswordForm';
+import { RoomServiceTab } from './RoomServiceTab';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useMyReservations } from '@/hooks/useReservations';
-import { User, LogOut, Calendar, Filter, Loader2, UserCircle, Lock } from 'lucide-react';
+import { User, LogOut, Calendar, Filter, Loader2, UserCircle, Lock, ConciergeBell } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const CustomerDashboard: React.FC = () => {
@@ -22,7 +22,6 @@ export const CustomerDashboard: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState<any>(null);
 
-  // Buscar reservas da API
   const { data: reservations, isLoading, error } = useMyReservations();
 
   const handleLogout = () => {
@@ -35,35 +34,29 @@ export const CustomerDashboard: React.FC = () => {
     setDateRange(filters.dateRange || null);
   };
 
-  // Aplicar filtros
   const filteredReservations = useMemo(() => {
     if (!reservations) return [];
 
     let filtered = [...reservations];
 
     if (statusFilter && statusFilter !== 'all') {
-      filtered = filtered.filter(r => r.status === statusFilter);
-    }
-
-    if (dateRange) {
-      // Apply date filtering logic here if needed
+      filtered = filtered.filter((reservation) => reservation.status === statusFilter);
     }
 
     return filtered;
   }, [reservations, statusFilter, dateRange]);
 
-  // Renderizar erro
   if (error) {
     return (
       <div className="page-container py-8 md:py-10">
         <Card>
           <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-            <div className="text-red-600 mb-4">
-              <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="mb-4 text-red-600">
+              <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold mb-2">Erro ao carregar reservas</h2>
+            <h2 className="mb-2 text-xl font-bold">Erro ao carregar reservas</h2>
             <p className="text-gray-600">
               {(error as any)?.response?.data?.message || 'Ocorreu um erro ao carregar suas reservas'}
             </p>
@@ -75,21 +68,20 @@ export const CustomerDashboard: React.FC = () => {
 
   return (
     <div className="page-container py-8 md:py-10">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      <div className="mb-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Olá, {user?.name}!
-            </h1>
+          <div className="mb-2 flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-gray-900">Olá, {user?.name}!</h1>
             {profile?.isProvisional && (
               <Badge variant="outline" className="border-orange-500 text-orange-600">
-                Cadastro Provisório
+                Cadastro provisório
               </Badge>
             )}
           </div>
           <p className="text-gray-600">
-            {isLoading ? 'Carregando...' : `${filteredReservations.length} reserva${filteredReservations.length !== 1 ? 's' : ''} encontrada${filteredReservations.length !== 1 ? 's' : ''}`}
+            {isLoading
+              ? 'Carregando...'
+              : `${filteredReservations.length} reserva${filteredReservations.length !== 1 ? 's' : ''} encontrada${filteredReservations.length !== 1 ? 's' : ''}`}
           </p>
         </div>
 
@@ -98,38 +90,35 @@ export const CustomerDashboard: React.FC = () => {
             <User size={20} />
             <span>{user?.email}</span>
           </div>
-          <Button
-            variant="outline"
-            onClick={handleLogout}
-            className="flex items-center gap-2"
-          >
+          <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
             <LogOut size={18} />
             Sair
           </Button>
         </div>
       </div>
 
-      {/* Tabs Navigation */}
       <Tabs defaultValue="reservations" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
+        <TabsList className="mb-6 grid w-full grid-cols-2 gap-2 md:grid-cols-4">
           <TabsTrigger value="reservations" className="flex items-center gap-2">
             <Calendar size={16} />
-            Minhas Reservas
+            Minhas reservas
+          </TabsTrigger>
+          <TabsTrigger value="room-service" className="flex items-center gap-2">
+            <ConciergeBell size={16} />
+            Meu quarto
           </TabsTrigger>
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <UserCircle size={16} />
-            Meu Perfil
+            Meu perfil
           </TabsTrigger>
           <TabsTrigger value="password" className="flex items-center gap-2">
             <Lock size={16} />
-            Alterar Senha
+            Alterar senha
           </TabsTrigger>
         </TabsList>
 
-        {/* Reservations Tab */}
         <TabsContent value="reservations">
-          {/* Controls */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <div className="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
             <ReservationFilters onFilterChange={handleFilterChange} />
 
             <div className="flex items-center gap-2">
@@ -154,7 +143,6 @@ export const CustomerDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Loading State */}
           {isLoading ? (
             <Card>
               <CardContent className="flex items-center justify-center p-12">
@@ -163,25 +151,20 @@ export const CustomerDashboard: React.FC = () => {
               </CardContent>
             </Card>
           ) : filteredReservations.length > 0 ? (
-            <>
-              {/* Content */}
-              {viewMode === 'cards' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredReservations.map((reservation) => (
-                    <ReservationCard key={reservation.id} reservation={reservation} />
-                  ))}
-                </div>
-              ) : (
-                <ReservationTimeline reservations={filteredReservations} />
-              )}
-            </>
+            viewMode === 'cards' ? (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {filteredReservations.map((reservation) => (
+                  <ReservationCard key={reservation.id} reservation={reservation} />
+                ))}
+              </div>
+            ) : (
+              <ReservationTimeline reservations={filteredReservations} />
+            )
           ) : (
             <Card>
               <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-                <Calendar size={48} className="mx-auto text-gray-400 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-600 mb-2">
-                  Nenhuma reserva encontrada
-                </h3>
+                <Calendar size={48} className="mx-auto mb-4 text-gray-400" />
+                <h3 className="mb-2 text-xl font-semibold text-gray-600">Nenhuma reserva encontrada</h3>
                 <p className="text-gray-500">
                   {statusFilter !== 'all'
                     ? 'Nenhuma reserva encontrada para o filtro selecionado.'
@@ -192,12 +175,14 @@ export const CustomerDashboard: React.FC = () => {
           )}
         </TabsContent>
 
-        {/* Profile Tab */}
+        <TabsContent value="room-service">
+          <RoomServiceTab />
+        </TabsContent>
+
         <TabsContent value="profile">
           <ProfileForm />
         </TabsContent>
 
-        {/* Password Tab */}
         <TabsContent value="password">
           <ChangePasswordForm />
         </TabsContent>

@@ -31,6 +31,7 @@ import Housekeeping from "./pages/admin/Housekeeping";
 import Maintenance from "./pages/admin/Maintenance";
 import POS from "./pages/admin/POS";
 import Products from "./pages/admin/Products";
+import RoomService from "./pages/admin/RoomService";
 import PMSCentral from "./pages/admin/PMSCentral";
 import Reports from "./pages/admin/Reports";
 import AboutUs from "./pages/AboutUs";
@@ -172,6 +173,14 @@ const App = () => {
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
                     <Products />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/room-service"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER']}>
+                    <RoomService />
                   </ProtectedRoute>
                 }
               />

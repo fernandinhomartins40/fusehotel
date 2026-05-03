@@ -21,6 +21,7 @@ import { useCheckOut } from '@/hooks/useFrontdesk';
 import type { FolioEntryType, Stay } from '@/types/pms';
 import { ConsumeTab } from './ConsumeTab';
 import { HistoryTab } from './HistoryTab';
+import { RoomConferenceTab } from './RoomConferenceTab';
 
 interface GuestSheetProps {
   stay: Stay | null;
@@ -164,6 +165,12 @@ export function GuestSheet({ stay, open, onOpenChange }: GuestSheetProps) {
             {new Date(reservation.checkInDate).toLocaleDateString('pt-BR')} -{' '}
             {new Date(reservation.checkOutDate).toLocaleDateString('pt-BR')}
           </div>
+          {stay.doNotDisturb && (
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              Quarto marcado como não perturbe.
+              {stay.doNotDisturbNote ? ` ${stay.doNotDisturbNote}` : ''}
+            </div>
+          )}
         </div>
 
         <Separator />
@@ -175,6 +182,9 @@ export function GuestSheet({ stay, open, onOpenChange }: GuestSheetProps) {
             </TabsTrigger>
             <TabsTrigger value="consumo" className="rounded-xl px-4 py-2">
               Consumo
+            </TabsTrigger>
+            <TabsTrigger value="conferencia" className="rounded-xl px-4 py-2">
+              Conferência
             </TabsTrigger>
             <TabsTrigger value="acoes" className="rounded-xl px-4 py-2">
               Acoes
@@ -236,6 +246,10 @@ export function GuestSheet({ stay, open, onOpenChange }: GuestSheetProps) {
                 Carregando conta...
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="conferencia" className="flex-1 overflow-hidden mt-0 px-6 pb-6">
+            <RoomConferenceTab stayId={stay.id} />
           </TabsContent>
 
           <TabsContent value="acoes" className="flex-1 overflow-hidden mt-0 px-6 pb-6">

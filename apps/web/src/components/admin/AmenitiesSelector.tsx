@@ -1,8 +1,11 @@
 import React from 'react';
+import { Loader2, Plus } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { useAmenities } from '@/hooks/useAmenities';
-import { Loader2 } from 'lucide-react';
+import { AmenitiesManagerDialog } from './AmenitiesManagerDialog';
+import { getAmenityIcon } from '@/lib/amenity-icons';
 
 interface AmenitiesSelectorProps {
   value: string[];
@@ -11,10 +14,11 @@ interface AmenitiesSelectorProps {
 
 export function AmenitiesSelector({ value, onChange }: AmenitiesSelectorProps) {
   const { data: amenities, isLoading } = useAmenities();
+  const [managerOpen, setManagerOpen] = React.useState(false);
 
   const handleToggle = (amenityId: string) => {
     const newAmenities = value.includes(amenityId)
-      ? value.filter(id => id !== amenityId)
+      ? value.filter((id) => id !== amenityId)
       : [...value, amenityId];
     onChange(newAmenities);
   };
@@ -30,13 +34,19 @@ export function AmenitiesSelector({ value, onChange }: AmenitiesSelectorProps) {
 
   if (!amenities || amenities.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        Nenhuma comodidade disponível. Entre em contato com o administrador.
-      </div>
+      <>
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-gray-500">
+          <p>Nenhuma comodidade cadastrada ainda.</p>
+          <Button type="button" variant="outline" className="mt-4" onClick={() => setManagerOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Cadastrar comodidade
+          </Button>
+        </div>
+        <AmenitiesManagerDialog open={managerOpen} onOpenChange={setManagerOpen} amenities={[]} />
+      </>
     );
   }
 
-  // Group amenities by category
   const groupedAmenities = amenities.reduce((acc, amenity) => {
     if (!acc[amenity.category]) {
       acc[amenity.category] = [];
@@ -50,46 +60,76 @@ export function AmenitiesSelector({ value, onChange }: AmenitiesSelectorProps) {
     BATHROOM: 'Banheiro',
     ENTERTAINMENT: 'Entretenimento',
     KITCHEN: 'Cozinha',
-    OUTDOOR: 'Área Externa',
+    OUTDOOR: '?rea externa',
     ACCESSIBILITY: 'Acessibilidade',
     GENERAL: 'Geral',
   };
 
   return (
-    <div className="space-y-6">
-      {Object.entries(groupedAmenities).map(([category, categoryAmenities]) => (
-        <div key={category} className="space-y-3">
-          <Label className="text-sm font-semibold text-gray-700">
-            {categoryLabels[category] || category}
-          </Label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {categoryAmenities.map((amenity) => (
-              <div key={amenity.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={amenity.id}
-                  checked={value.includes(amenity.id)}
-                  onCheckedChange={() => handleToggle(amenity.id)}
-                />
-                <Label
-                  htmlFor={amenity.id}
-                  className="text-sm font-normal cursor-pointer"
-                >
-                  {amenity.icon && <span className="mr-1">{amenity.icon}</span>}
-                  {amenity.name}
-                </Label>
-              </div>
-            ))}
+    <>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="text-sm font-medium text-slate-900">Comodidades dispon?veis</div>
+            <div className="text-sm text-slate-500">
+              {amenities.length} comodidades cadastradas para uso nos quartos.
+            </div>
           </div>
+          <Button type="button" variant="outline" onClick={() => setManagerOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Gerenciar comodidades
+          </Button>
         </div>
-      ))}
 
-      {value.length > 0 && (
-        <div className="pt-4 border-t">
-          <Label className="text-sm font-medium">
-            {value.length} comodidade{value.length > 1 ? 's' : ''} selecionada{value.length > 1 ? 's' : ''}
-          </Label>
-        </div>
-      )}
-    </div>
+        {Object.entries(groupedAmenities).map(([category, categoryAmenities]) => (
+          <div key={category} className="space-y-3">
+            <Label className="text-sm font-semibold text-gray-700">
+              {categoryLabels[category] || category}
+            </Label>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {categoryAmenities.map((amenity) => {
+                const Icon = getAmenityIcon(amenity.icon);
+
+                return (
+                  <div
+                    key={amenity.id}
+                    className={`flex items-start gap-3 rounded-xl border p-3 transition ${
+                      value.includes(amenity.id) ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white'
+                    }`}
+                  >
+                    <Checkbox
+                      id={amenity.id}
+                      checked={value.includes(amenity.id)}
+                      onCheckedChange={() => handleToggle(amenity.id)}
+                      className="mt-1"
+                    />
+                    <Label htmlFor={amenity.id} className="flex cursor-pointer items-start gap-3 text-sm font-normal">
+                      <span className="rounded-lg bg-slate-100 p-2 text-slate-700">
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <span className="space-y-1">
+                        <span className="block font-medium text-slate-900">{amenity.name}</span>
+                        {amenity.description && (
+                          <span className="block text-xs leading-relaxed text-slate-500">{amenity.description}</span>
+                        )}
+                      </span>
+                    </Label>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+        {value.length > 0 && (
+          <div className="border-t pt-4">
+            <Label className="text-sm font-medium">
+              {value.length} comodidade{value.length > 1 ? 's' : ''} selecionada{value.length > 1 ? 's' : ''}
+            </Label>
+          </div>
+        )}
+      </div>
+      <AmenitiesManagerDialog open={managerOpen} onOpenChange={setManagerOpen} amenities={amenities} />
+    </>
   );
 }

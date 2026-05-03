@@ -240,6 +240,9 @@ export default function Frontdesk() {
               <Link to="/admin/housekeeping">Governanca</Link>
             </Button>
             <Button asChild variant="outline" size="sm">
+              <Link to="/admin/room-service">Serviço de quarto</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
               <Link to="/admin/room-units">Quartos</Link>
             </Button>
           </div>

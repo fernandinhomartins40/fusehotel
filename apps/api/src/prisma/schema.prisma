@@ -491,6 +491,8 @@ model RoomUnit {
   housekeepingTasks  HousekeepingTask[]
   maintenanceOrders  MaintenanceOrder[]
   posOrders          POSOrder[]
+  roomServiceConfigurations RoomServiceConfiguration[]
+  roomServiceCharges RoomServiceCharge[]
   inventoryBlocks    InventoryBlock[]
   lostFoundItems     LostFoundItem[]
 
@@ -507,6 +509,11 @@ model Stay {
   status             StayStatus  @default(RESERVED)
   adults             Int
   children           Int         @default(0)
+  doNotDisturb       Boolean     @default(false)
+  doNotDisturbNote   String?     @db.Text
+  doNotDisturbUpdatedAt DateTime?
+  roomServiceConferenceAt DateTime?
+  roomServiceConferenceNotes String? @db.Text
   notes              String?     @db.Text
   expectedCheckInAt  DateTime?
   expectedCheckOutAt DateTime?
@@ -521,6 +528,7 @@ model Stay {
   folio              Folio?
   housekeepingTasks  HousekeepingTask[]
   posOrders          POSOrder[]
+  roomServiceCharges RoomServiceCharge[]
   lostFoundItems     LostFoundItem[]
 
   @@index([roomUnitId])
@@ -651,6 +659,7 @@ model POSProduct {
   saleUnit    String             @default("UN")
   trackStock  Boolean            @default(false)
   isActive    Boolean            @default(true)
+  isRoomServiceEnabled Boolean   @default(false)
   description String?            @db.Text
   showOnServicesPage Boolean     @default(false)
   servicesPageCategory ServiceCategory?
@@ -661,10 +670,13 @@ model POSProduct {
   updatedAt   DateTime           @updatedAt
 
   items       POSOrderItem[]
+  roomServiceConfigurations RoomServiceConfiguration[]
+  roomServiceCharges RoomServiceCharge[]
   inventoryMovements InventoryMovement[]
 
   @@index([categoryId])
   @@index([isActive])
+  @@index([isRoomServiceEnabled])
   @@index([showOnServicesPage])
   @@index([servicesPageCategory])
 }
@@ -697,12 +709,65 @@ model POSOrder {
   items       POSOrderItem[]
   payments    POSPayment[]
   cashMovements CashMovement[]
+  roomServiceCharges RoomServiceCharge[]
 
   @@index([stayId])
   @@index([roomUnitId])
   @@index([origin])
   @@index([status])
   @@index([settlementType])
+}
+
+model RoomServiceConfiguration {
+  id         String                @id @default(uuid())
+  roomUnitId String
+  productId  String
+  configType RoomServiceConfigType
+  quantity   Int                   @default(1)
+  notes      String?               @db.Text
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+
+  roomUnit   RoomUnit              @relation(fields: [roomUnitId], references: [id], onDelete: Cascade)
+  product    POSProduct            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  charges    RoomServiceCharge[]
+
+  @@unique([roomUnitId, productId, configType])
+  @@index([roomUnitId])
+  @@index([productId])
+  @@index([configType])
+}
+
+model RoomServiceCharge {
+  id               String                  @id @default(uuid())
+  stayId           String
+  roomUnitId       String
+  productId        String
+  configurationId  String?
+  posOrderId       String?
+  folioEntryId     String?
+  source           RoomServiceChargeSource
+  quantity         Int
+  unitPrice        Decimal                 @db.Decimal(10, 2)
+  totalAmount      Decimal                 @db.Decimal(10, 2)
+  notes            String?                 @db.Text
+  confirmedByUserId String?
+  confirmedByEmail String?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  stay            Stay                      @relation(fields: [stayId], references: [id], onDelete: Cascade)
+  roomUnit        RoomUnit                  @relation(fields: [roomUnitId], references: [id], onDelete: Cascade)
+  product         POSProduct                @relation(fields: [productId], references: [id], onDelete: Restrict)
+  configuration   RoomServiceConfiguration? @relation(fields: [configurationId], references: [id], onDelete: SetNull)
+  posOrder        POSOrder?                 @relation(fields: [posOrderId], references: [id], onDelete: SetNull)
+
+  @@index([stayId])
+  @@index([roomUnitId])
+  @@index([productId])
+  @@index([configurationId])
+  @@index([posOrderId])
+  @@index([source])
 }
 
 model POSOrderItem {
@@ -1339,6 +1404,17 @@ enum ServiceCategory {
   RECREATION
   BUSINESS
   SPECIAL
+}
+
+enum RoomServiceConfigType {
+  MINIBAR
+  IN_ROOM
+}
+
+enum RoomServiceChargeSource {
+  MINIBAR
+  IN_ROOM
+  GUEST_REQUEST
 }
 
 model ServiceItem {

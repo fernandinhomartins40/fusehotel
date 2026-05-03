@@ -1,6 +1,7 @@
 import { HousekeepingTaskStatus, HousekeepingStatus, RoomUnitStatus } from '@prisma/client';
 import { prisma } from '../config/database';
-import { NotFoundError } from '../utils/errors';
+import { BadRequestError, NotFoundError } from '../utils/errors';
+import { RoomServiceService } from './room-service.service';
 
 export class HousekeepingService {
   static async listTasks() {
@@ -47,6 +48,16 @@ export class HousekeepingService {
     }
 
     const updatedTask = await prisma.$transaction(async (tx) => {
+      if (status === HousekeepingTaskStatus.IN_PROGRESS) {
+        const activeDndStay = await RoomServiceService.getActiveDoNotDisturbStayForRoom(task.roomUnitId);
+
+        if (activeDndStay) {
+          throw new BadRequestError(
+            `Quarto em não perturbe para ${activeDndStay.reservation.guestName}. A governança está bloqueada.`
+          );
+        }
+      }
+
       const nextTimestamps: Record<string, Date | null> = {};
       const roomUnitUpdate: Record<string, string> = {};
 

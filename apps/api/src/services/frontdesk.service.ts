@@ -177,6 +177,17 @@ export class FrontdeskService {
       arrivals,
       inHouse,
       departures,
+      alerts: inHouse
+        .filter((stay) => stay.doNotDisturb)
+        .map((stay) => ({
+          type: 'DO_NOT_DISTURB',
+          stayId: stay.id,
+          roomUnitId: stay.roomUnit?.id ?? null,
+          roomCode: stay.roomUnit?.code ?? null,
+          guestName: stay.reservation.guestName,
+          note: stay.doNotDisturbNote,
+          updatedAt: stay.doNotDisturbUpdatedAt,
+        })),
       roomStats: {
         total: roomUnits.length,
         available: roomUnits.filter((room) => room.status === RoomUnitStatus.AVAILABLE).length,
@@ -532,6 +543,9 @@ export class FrontdeskService {
         select: {
           id: true,
           roomUnitId: true,
+          doNotDisturb: true,
+          doNotDisturbNote: true,
+          doNotDisturbUpdatedAt: true,
           reservation: {
             select: {
               id: true,
@@ -621,6 +635,8 @@ export class FrontdeskService {
               checkInDate: stay.reservation.checkInDate,
               numberOfNights: stay.reservation.numberOfNights,
               folioBalance: stay.folio ? Number(stay.folio.balance) : 0,
+              doNotDisturb: stay.doNotDisturb,
+              doNotDisturbNote: stay.doNotDisturbNote,
             }
           : null,
         housekeepingTasks: tasks,
@@ -655,6 +671,16 @@ export class FrontdeskService {
 
       if (!stay.folio) {
         throw new BadRequestError('Hospedagem sem folio financeiro');
+      }
+
+      if (stay.roomUnitId) {
+        const roomConfigurationsCount = await tx.roomServiceConfiguration.count({
+          where: { roomUnitId: stay.roomUnitId },
+        });
+
+        if (roomConfigurationsCount > 0 && !stay.roomServiceConferenceAt) {
+          throw new BadRequestError('A conferência do quarto ainda não foi registrada para este checkout');
+        }
       }
 
       await FoliosService.ensureSettled(stay.folio.id, tx);

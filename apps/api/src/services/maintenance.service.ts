@@ -3,11 +3,12 @@ import {
   RoomUnitStatus,
 } from '@prisma/client';
 import { prisma } from '../config/database';
-import { NotFoundError } from '../utils/errors';
+import { BadRequestError, NotFoundError } from '../utils/errors';
 import {
   CreateMaintenanceOrderDto,
   UpdateMaintenanceOrderDto,
 } from '../types/pms';
+import { RoomServiceService } from './room-service.service';
 
 const prismaPms = prisma as any;
 
@@ -37,6 +38,14 @@ export class MaintenanceService {
 
     if (!roomUnit) {
       throw new NotFoundError('Quarto nao encontrado');
+    }
+
+    const activeDndStay = await RoomServiceService.getActiveDoNotDisturbStayForRoom(data.roomUnitId);
+
+    if (activeDndStay) {
+      throw new BadRequestError(
+        `Quarto em não perturbe para ${activeDndStay.reservation.guestName}. A manutenção está bloqueada.`
+      );
     }
 
     return prisma.$transaction(async (tx) => {
@@ -104,6 +113,16 @@ export class MaintenanceService {
     return prisma.$transaction(async (tx) => {
       const txPms = tx as any;
       const timestamps: Record<string, Date> = {};
+
+      if (data.status === 'IN_PROGRESS') {
+        const activeDndStay = await RoomServiceService.getActiveDoNotDisturbStayForRoom(order.roomUnitId);
+
+        if (activeDndStay) {
+          throw new BadRequestError(
+            `Quarto em não perturbe para ${activeDndStay.reservation.guestName}. A manutenção está bloqueada.`
+          );
+        }
+      }
 
       if (
         data.status === 'IN_PROGRESS' &&
