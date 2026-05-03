@@ -4,6 +4,8 @@ import {
   CreditCard,
   Grid2x2,
   Keyboard,
+  LogIn,
+  LogOut,
   Maximize2,
   Minimize2,
   Receipt,
@@ -13,6 +15,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { CreateCustomerDialog } from '@/components/admin/customers/CreateCustomerDialog';
+import { GuestSheet } from '@/components/admin/frontdesk/GuestSheet';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,14 +24,17 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { useStays } from '@/hooks/useFrontdesk';
+import { useCustomers } from '@/hooks/useCustomers';
+import { useCheckIn, useFrontdeskDashboard, useStays, useWalkInCheckIn } from '@/hooks/useFrontdesk';
 import {
   useActiveCashSession,
   useCancelPOSOrder,
@@ -43,7 +50,9 @@ import {
   useUpdatePOSOrderStatus,
   useProductCategories,
 } from '@/hooks/usePOS';
+import { usePromotions } from '@/hooks/usePromotions';
 import { useOperationsReport } from '@/hooks/useReports';
+import { useRoomUnits } from '@/hooks/useRoomUnits';
 import type {
   CashMovementType,
   PaymentMethod,
@@ -51,7 +60,10 @@ import type {
   POSOrderStatus,
   POSProduct,
   POSSettlementType,
+  RoomUnit,
+  Stay,
 } from '@/types/pms';
+import type { Reservation } from '@/types/reservation';
 
 const currency = new Intl.NumberFormat('pt-BR', {
   style: 'currency',
@@ -93,7 +105,17 @@ type CartItem = {
 };
 
 type NumericField = 'serviceFee' | 'discount' | 'payment';
-type DialogKey = 'cash' | 'orders' | 'drafts' | 'references' | 'details' | null;
+type DialogKey =
+  | 'cash'
+  | 'orders'
+  | 'drafts'
+  | 'references'
+  | 'details'
+  | 'checkin'
+  | 'checkout'
+  | 'room-service-orders'
+  | 'charge-stay'
+  | null;
 type SalePreset = 'BALCAO' | 'COMANDA' | 'QUARTO';
 type POSStep = 'items' | 'payment' | 'review';
 
@@ -130,11 +152,17 @@ type SavedDraft = {
 
 export default function POS() {
   const { data: report } = useOperationsReport();
+  const { data: dashboard } = useFrontdeskDashboard();
   const { data: stays = [] } = useStays();
+  const { data: roomUnits = [] } = useRoomUnits();
+  const { data: customers = [] } = useCustomers({ role: 'CUSTOMER' });
+  const { data: promotions = [] } = usePromotions({ isActive: true });
   const { data: products = [] } = usePOSProducts();
   const { data: orders = [] } = usePOSOrders();
   const { data: activeCashSession } = useActiveCashSession();
   const { data: productCategories = [] } = useProductCategories();
+  const checkIn = useCheckIn();
+  const walkInCheckIn = useWalkInCheckIn();
 
   const createOrder = useCreatePOSOrder();
   const updateOrder = useUpdatePOSOrder();
@@ -151,6 +179,7 @@ export default function POS() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [editingOrderId, setEditingOrderId] = useState('');
   const [activeDialog, setActiveDialog] = useState<DialogKey>(null);
+  const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState('');
   const [settlementType, setSettlementType] = useState<POSSettlementType>('DIRECT');
   const [origin, setOrigin] = useState<POSOrderOrigin>('FRONTDESK');
@@ -172,6 +201,27 @@ export default function POS() {
   const [referenceLookup, setReferenceLookup] = useState('');
   const [currentStep, setCurrentStep] = useState<POSStep>('items');
   const [roomSearch, setRoomSearch] = useState('');
+  const [guestSheetOpen, setGuestSheetOpen] = useState(false);
+  const [guestSheetStay, setGuestSheetStay] = useState<Stay | null>(null);
+  const [guestSheetInitialTab, setGuestSheetInitialTab] = useState<'conta' | 'consumo' | 'conferencia' | 'acoes' | 'historico'>('conta');
+  const [checkInReservation, setCheckInReservation] = useState<Reservation | null>(null);
+  const [checkInRoomId, setCheckInRoomId] = useState('');
+  const [walkInSearch, setWalkInSearch] = useState('');
+  const [walkInForm, setWalkInForm] = useState({
+    roomUnitId: '',
+    customerId: '',
+    guestName: '',
+    guestEmail: '',
+    guestPhone: '',
+    guestWhatsApp: '',
+    guestCpf: '',
+    checkInDate: new Date().toISOString().slice(0, 10),
+    checkOutDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
+    adults: '1',
+    children: '0',
+    notes: '',
+    promotionId: '',
+  });
   const [refundPaymentId, setRefundPaymentId] = useState('');
   const [refundAmount, setRefundAmount] = useState('');
   const [refundNotes, setRefundNotes] = useState('');
@@ -189,11 +239,65 @@ export default function POS() {
   const scannerTimeoutRef = useRef<number | null>(null);
 
   const inHouseStays = useMemo(() => stays.filter((stay) => stay.status === 'IN_HOUSE'), [stays]);
+  const arrivals = useMemo(() => dashboard?.arrivals ?? [], [dashboard?.arrivals]);
   const activeProducts = useMemo(() => products.filter((product) => product.isActive), [products]);
   const openOrders = useMemo(
     () => orders.filter((order) => order.status !== 'CLOSED' && order.status !== 'CANCELLED'),
     [orders]
   );
+  const roomServiceOrders = useMemo(
+    () => orders.filter((order) => order.origin === 'ROOM_SERVICE' && order.status !== 'CANCELLED'),
+    [orders]
+  );
+
+  const availableRoomUnitsByAccommodation = useMemo(() => {
+    return roomUnits.reduce<Record<string, RoomUnit[]>>((acc, roomUnit) => {
+      if (!roomUnit.isActive) return acc;
+      const roomReady =
+        ['AVAILABLE', 'INSPECTED'].includes(roomUnit.status) &&
+        ['CLEAN', 'INSPECTED'].includes(roomUnit.housekeepingStatus);
+      if (!roomReady) return acc;
+      if (!acc[roomUnit.accommodationId]) acc[roomUnit.accommodationId] = [];
+      acc[roomUnit.accommodationId].push(roomUnit);
+      return acc;
+    }, {});
+  }, [roomUnits]);
+
+  const availableWalkInRooms = useMemo(
+    () =>
+      roomUnits.filter(
+        (roomUnit) =>
+          roomUnit.isActive &&
+          ['AVAILABLE', 'INSPECTED'].includes(roomUnit.status) &&
+          ['CLEAN', 'INSPECTED'].includes(roomUnit.housekeepingStatus)
+      ),
+    [roomUnits]
+  );
+
+  const customerSearchResults = useMemo(() => {
+    const query = walkInSearch.trim().toLowerCase();
+    if (!query) return [];
+    return customers.filter((customer) =>
+      [customer.name, customer.email, customer.phone, customer.whatsapp, customer.cpf]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [customers, walkInSearch]);
+
+  const selectedWalkInCustomer = useMemo(
+    () => customers.find((customer) => customer.id === walkInForm.customerId),
+    [customers, walkInForm.customerId]
+  );
+
+  const selectedWalkInRoom = useMemo(
+    () => availableWalkInRooms.find((roomUnit) => roomUnit.id === walkInForm.roomUnitId),
+    [availableWalkInRooms, walkInForm.roomUnitId]
+  );
+  const checkInCandidateRooms = checkInReservation
+    ? availableRoomUnitsByAccommodation[checkInReservation.accommodationId] ?? []
+    : [];
 
   const filteredProducts = useMemo(() => {
     return activeProducts.filter((product) => {
@@ -234,8 +338,8 @@ export default function POS() {
   }, [discountAmount, serviceFeeAmount, subtotal]);
 
   const selectedOrder = useMemo(
-    () => openOrders.find((order) => order.id === selectedOrderId) ?? null,
-    [openOrders, selectedOrderId]
+    () => orders.find((order) => order.id === selectedOrderId) ?? null,
+    [orders, selectedOrderId]
   );
 
   const selectedStay = useMemo(
@@ -370,6 +474,109 @@ export default function POS() {
       setSettlementType('FOLIO');
       setTableNumber('');
     }
+  };
+
+  const openGuestSheetFromStay = (
+    stay: Stay,
+    initialTab: 'conta' | 'consumo' | 'conferencia' | 'acoes' | 'historico'
+  ) => {
+    setGuestSheetStay(stay);
+    setGuestSheetInitialTab(initialTab);
+    setGuestSheetOpen(true);
+  };
+
+  const handleSelectArrivalForCheckIn = (reservation: Reservation) => {
+    setCheckInReservation(reservation);
+    setCheckInRoomId('');
+  };
+
+  const handleConfirmCheckIn = async () => {
+    if (!checkInReservation || !checkInRoomId) return;
+
+    await checkIn.mutateAsync({
+      reservationId: checkInReservation.id,
+      roomUnitId: checkInRoomId,
+    });
+
+    setCheckInReservation(null);
+    setCheckInRoomId('');
+    setActiveDialog(null);
+  };
+
+  const handleWalkInSearchChange = (value: string) => {
+    setWalkInSearch(value);
+    if (walkInForm.customerId) {
+      setWalkInForm((current) => ({ ...current, customerId: '' }));
+    }
+  };
+
+  const handleSelectCustomerFromSearch = (customerId: string) => {
+    const customer = customers.find((item) => item.id === customerId);
+    if (!customer) return;
+
+    setWalkInSearch(customer.name);
+    setWalkInForm((current) => ({
+      ...current,
+      customerId: customer.id,
+      guestName: '',
+      guestEmail: '',
+      guestPhone: '',
+      guestWhatsApp: '',
+      guestCpf: '',
+    }));
+  };
+
+  const handleWalkInCheckIn = async () => {
+    if (!walkInForm.roomUnitId) return;
+
+    await walkInCheckIn.mutateAsync({
+      roomUnitId: walkInForm.roomUnitId,
+      customerId: walkInForm.customerId || undefined,
+      guestName: walkInForm.customerId ? undefined : walkInForm.guestName.trim(),
+      guestEmail: walkInForm.customerId ? undefined : walkInForm.guestEmail.trim() || undefined,
+      guestPhone: walkInForm.customerId ? undefined : walkInForm.guestPhone.trim() || undefined,
+      guestWhatsApp: walkInForm.customerId ? undefined : walkInForm.guestWhatsApp.trim() || undefined,
+      guestCpf: walkInForm.customerId ? undefined : walkInForm.guestCpf.trim() || undefined,
+      checkInDate: walkInForm.checkInDate,
+      checkOutDate: walkInForm.checkOutDate,
+      adults: Number(walkInForm.adults),
+      children: Number(walkInForm.children || 0),
+      notes: walkInForm.notes.trim() || undefined,
+      promotionId: walkInForm.promotionId || undefined,
+    });
+
+    setWalkInForm({
+      roomUnitId: '',
+      customerId: '',
+      guestName: '',
+      guestEmail: '',
+      guestPhone: '',
+      guestWhatsApp: '',
+      guestCpf: '',
+      checkInDate: new Date().toISOString().slice(0, 10),
+      checkOutDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
+      adults: '1',
+      children: '0',
+      notes: '',
+      promotionId: '',
+    });
+    setWalkInSearch('');
+    setActiveDialog(null);
+  };
+
+  const handleStartGuestCharge = (stay: Stay) => {
+    if (cartItems.length || editingOrderId) {
+      toast.error('Finalize ou limpe a venda atual antes de vincular outra conta.');
+      return;
+    }
+
+    applySalePreset('QUARTO');
+    setSelectedStayId(stay.id);
+    setRoomSearch(stay.roomUnit?.code ?? '');
+    setCustomerName(stay.reservation.guestName);
+    setCurrentStep('items');
+    setActiveDialog(null);
+    toast.success(`Conta do hóspede ${stay.reservation.guestName} vinculada ao PDV`);
   };
 
   const resolveQuickProduct = (query: string) => {
@@ -604,7 +811,7 @@ export default function POS() {
 
       if (event.altKey && event.key === '1') {
         event.preventDefault();
-        setActiveDialog('orders');
+        setActiveDialog('room-service-orders');
       }
 
       if (event.altKey && event.key === '2') {
@@ -614,22 +821,17 @@ export default function POS() {
 
       if (event.altKey && event.key === '3') {
         event.preventDefault();
-        window.open('/admin/frontdesk', '_blank');
+        setActiveDialog('checkin');
+      }
+
+      if (event.altKey && event.key === '4') {
+        event.preventDefault();
+        setActiveDialog('checkout');
       }
 
       if (event.altKey && event.key === '5') {
         event.preventDefault();
-        applySalePreset('BALCAO');
-      }
-
-      if (event.altKey && event.key === '6') {
-        event.preventDefault();
-        applySalePreset('COMANDA');
-      }
-
-      if (event.altKey && event.key === '7') {
-        event.preventDefault();
-        applySalePreset('QUARTO');
+        setActiveDialog('charge-stay');
       }
 
       if (event.altKey && event.key === '9') {
@@ -835,7 +1037,7 @@ export default function POS() {
 
       setSelectedOrderId(order.id);
       clearDraft();
-      setActiveDialog('orders');
+      setActiveDialog(order.origin === 'ROOM_SERVICE' ? 'room-service-orders' : 'orders');
     } catch {
       return;
     }
@@ -895,6 +1097,19 @@ export default function POS() {
       setRefundPaymentId('');
       setRefundAmount('');
       setRefundNotes('');
+    } catch {
+      return;
+    }
+  };
+
+  const handleUpdateSelectedOrderStatus = async (status: POSOrderStatus) => {
+    if (!selectedOrder) {
+      toast.error('Selecione um pedido');
+      return;
+    }
+
+    try {
+      await updateOrderStatus.mutateAsync({ id: selectedOrder.id, status });
     } catch {
       return;
     }
@@ -1469,12 +1684,12 @@ export default function POS() {
                 <div className="rounded-2xl bg-slate-950 px-3 py-2 text-sm font-semibold text-white">PDV</div>
                 <div className="min-w-0">
                   <h1 className="truncate text-xl font-semibold tracking-tight text-slate-900">Caixa / PDV</h1>
-                  <p className="text-sm text-slate-500">Venda direta e consumo na conta do hóspede.</p>
+                  <p className="text-sm text-slate-500">Venda direta, room service e cobrança na conta do hóspede.</p>
                 </div>
               </div>
               <div className="inline-flex max-w-full items-center gap-2 overflow-hidden rounded-full bg-slate-100 px-3 py-1 text-[11px] text-slate-600 2xl:flex-none">
                 <Keyboard className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate whitespace-nowrap">Alt+1 pedidos • Alt+2 caixa • Alt+3 hospedagens • Alt+9 pré-vendas • Alt+0 referências • Ctrl+Enter finalizar</span>
+                <span className="truncate whitespace-nowrap">Alt+1 pedidos • Alt+2 caixa • Alt+3 check-in • Alt+4 checkout • Alt+5 despesas • Alt+9 pré-vendas • Alt+0 referências</span>
               </div>
             </div>
 
@@ -1496,12 +1711,22 @@ export default function POS() {
         <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_420px]">
           <div className="space-y-4">
           <div className="rounded-3xl border bg-slate-950 p-3 text-white shadow-sm">
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
-              <SideAction icon={ShoppingCart} label="Pedidos" description="Abertos e recebimento" shortcut="Alt + 1" active={activeDialog === 'orders'} onClick={() => setActiveDialog('orders')} />
-              <SideAction icon={Wallet} label="Caixa" description="Abertura e fechamento" shortcut="Alt + 2" active={activeDialog === 'cash'} onClick={() => setActiveDialog('cash')} />
-              <SideAction icon={BedDouble} label="Hospedagens" description="Abrir em nova aba" shortcut="Alt + 3" active={false} onClick={() => window.open('/admin/frontdesk', '_blank')} />
-              <SideAction icon={Receipt} label="Pré-venda" description="Suspensas e retomada" shortcut="Alt + 9" active={activeDialog === 'drafts'} onClick={() => setActiveDialog('drafts')} />
-              <SideAction icon={Search} label="Referências" description="Mesa, comanda ou hóspede" shortcut="Alt + 0" active={activeDialog === 'references'} onClick={() => setActiveDialog('references')} />
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              <SideAction icon={LogIn} label="Check-in" description="Chegadas confirmadas e walk-in" shortcut="Alt + 3" active={activeDialog === 'checkin'} onClick={() => setActiveDialog('checkin')} />
+              <SideAction icon={LogOut} label="Checkout" description="Conferência e saída do hóspede" shortcut="Alt + 4" active={activeDialog === 'checkout'} onClick={() => setActiveDialog('checkout')} />
+              <SideAction icon={ShoppingCart} label="Pedidos" description="Serviço de quarto e entrega" shortcut="Alt + 1" active={activeDialog === 'room-service-orders'} onClick={() => setActiveDialog('room-service-orders')} />
+              <SideAction icon={Receipt} label="Incluir despesas" description="Lançar produtos na conta do hóspede" shortcut="Alt + 5" active={activeDialog === 'charge-stay'} onClick={() => setActiveDialog('charge-stay')} />
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button variant="secondary" size="sm" className="rounded-2xl bg-white/10 text-white hover:bg-white/15" onClick={() => setActiveDialog('cash')}>
+                Caixa
+              </Button>
+              <Button variant="secondary" size="sm" className="rounded-2xl bg-white/10 text-white hover:bg-white/15" onClick={() => setActiveDialog('drafts')}>
+                Pré-vendas
+              </Button>
+              <Button variant="secondary" size="sm" className="rounded-2xl bg-white/10 text-white hover:bg-white/15" onClick={() => setActiveDialog('references')}>
+                Referências
+              </Button>
             </div>
           </div>
 
@@ -1689,6 +1914,489 @@ export default function POS() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <GuestSheet
+        stay={guestSheetStay}
+        open={guestSheetOpen}
+        onOpenChange={setGuestSheetOpen}
+        initialTab={guestSheetInitialTab}
+      />
+
+      <Dialog open={activeDialog === 'checkin'} onOpenChange={(open) => setActiveDialog(open ? 'checkin' : null)}>
+        <DialogContent className="max-h-[90dvh] max-w-6xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Check-in pelo PDV</DialogTitle>
+            <DialogDescription>Use o mesmo fluxo da recepção para abrir uma hospedagem sem sair do caixa.</DialogDescription>
+          </DialogHeader>
+
+          <Tabs defaultValue="arrivals" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="arrivals">Chegadas confirmadas</TabsTrigger>
+              <TabsTrigger value="walkin">Walk-in</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="arrivals" className="space-y-4">
+              <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
+                <Card>
+                  <CardContent className="space-y-3 p-4">
+                    <div className="font-medium">Reservas aguardando check-in</div>
+                    {!arrivals.length ? (
+                      <EmptyInline text="Nenhuma chegada confirmada no momento." />
+                    ) : (
+                      arrivals.map((reservation) => (
+                        <button
+                          key={reservation.id}
+                          type="button"
+                          onClick={() => handleSelectArrivalForCheckIn(reservation)}
+                          className={`w-full rounded-2xl border p-3 text-left transition ${
+                            checkInReservation?.id === reservation.id ? 'border-slate-900 bg-slate-50' : 'hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="font-medium">{reservation.guestName}</div>
+                          <div className="mt-1 text-sm text-slate-500">{reservation.reservationCode}</div>
+                          <div className="mt-2 text-sm text-slate-600">
+                            {new Date(reservation.checkInDate).toLocaleDateString('pt-BR')} - {new Date(reservation.checkOutDate).toLocaleDateString('pt-BR')}
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="space-y-4 p-4">
+                    {!checkInReservation ? (
+                      <EmptyInline text="Selecione uma chegada para escolher o quarto e confirmar o check-in." />
+                    ) : (
+                      <>
+                        <div className="rounded-2xl border p-4">
+                          <div className="font-medium">{checkInReservation.guestName}</div>
+                          <div className="mt-1 text-sm text-slate-500">{checkInReservation.reservationCode}</div>
+                          <div className="mt-3 text-sm text-slate-600">
+                            {checkInReservation.accommodation?.name} • {checkInReservation.numberOfGuests} hóspede(s)
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Selecionar quarto disponível</Label>
+                          <Select value={checkInRoomId || 'none'} onValueChange={(value) => setCheckInRoomId(value === 'none' ? '' : value)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Escolha um quarto" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Selecione</SelectItem>
+                              {checkInCandidateRooms.map((roomUnit) => (
+                                <SelectItem key={roomUnit.id} value={roomUnit.id}>
+                                  {roomUnit.code} - {roomUnit.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {!checkInCandidateRooms.length && (
+                            <p className="text-sm text-amber-600">Nenhum quarto disponível para esta reserva.</p>
+                          )}
+                        </div>
+
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setCheckInReservation(null)}>
+                            Cancelar
+                          </Button>
+                          <Button onClick={() => void handleConfirmCheckIn()} disabled={!checkInRoomId || checkIn.isPending}>
+                            Confirmar check-in
+                          </Button>
+                        </DialogFooter>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="walkin" className="space-y-4">
+              <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+                <Card>
+                  <CardContent className="space-y-4 p-4">
+                    <div className="space-y-2">
+                      <Label>Pesquisar cliente</Label>
+                      <Input
+                        value={walkInSearch}
+                        onChange={(event) => handleWalkInSearchChange(event.target.value)}
+                        placeholder="Nome, WhatsApp, telefone, email ou CPF"
+                      />
+                    </div>
+
+                    {walkInSearch.trim() ? (
+                      <div className="rounded-2xl border">
+                        {customerSearchResults.length ? (
+                          <div className="max-h-72 overflow-y-auto py-1">
+                            {customerSearchResults.slice(0, 8).map((customer) => (
+                              <button
+                                key={customer.id}
+                                type="button"
+                                className={`flex w-full flex-col items-start px-3 py-2 text-left text-sm transition hover:bg-slate-50 ${
+                                  walkInForm.customerId === customer.id ? 'bg-sky-50' : ''
+                                }`}
+                                onClick={() => handleSelectCustomerFromSearch(customer.id)}
+                              >
+                                <span className="font-medium text-slate-900">{customer.name}</span>
+                                <span className="text-slate-500">
+                                  {customer.whatsapp || customer.phone || customer.email || 'Sem contato'}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="px-3 py-2 text-sm text-slate-500">Nenhum hóspede encontrado para essa pesquisa.</div>
+                        )}
+                      </div>
+                    ) : null}
+
+                    <div className="flex gap-2">
+                      <Button variant="outline" onClick={() => setCustomerDialogOpen(true)}>
+                        Cadastrar cliente
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Cliente cadastrado</Label>
+                      <Select
+                        value={walkInForm.customerId || 'none'}
+                        onValueChange={(value) =>
+                          setWalkInForm((current) => ({
+                            ...current,
+                            customerId: value === 'none' ? '' : value,
+                            guestName: value === 'none' ? current.guestName : '',
+                          }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar cliente existente" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Informar hóspede manualmente</SelectItem>
+                          {customers.map((customer) => (
+                            <SelectItem key={customer.id} value={customer.id}>
+                              {customer.name} {customer.whatsapp ? `- ${customer.whatsapp}` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {selectedWalkInCustomer ? (
+                      <div className="rounded-2xl border p-4 text-sm text-slate-600">
+                        <div className="font-medium text-slate-900">{selectedWalkInCustomer.name}</div>
+                        <div>{selectedWalkInCustomer.email}</div>
+                        <div>{selectedWalkInCustomer.whatsapp || selectedWalkInCustomer.phone || 'Sem telefone'}</div>
+                      </div>
+                    ) : (
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label>Nome do hóspede</Label>
+                          <Input value={walkInForm.guestName} onChange={(event) => setWalkInForm((current) => ({ ...current, guestName: event.target.value }))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Email</Label>
+                          <Input type="email" value={walkInForm.guestEmail} onChange={(event) => setWalkInForm((current) => ({ ...current, guestEmail: event.target.value }))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Telefone</Label>
+                          <Input value={walkInForm.guestPhone} onChange={(event) => setWalkInForm((current) => ({ ...current, guestPhone: event.target.value }))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>WhatsApp</Label>
+                          <Input value={walkInForm.guestWhatsApp} onChange={(event) => setWalkInForm((current) => ({ ...current, guestWhatsApp: event.target.value }))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>CPF</Label>
+                          <Input value={walkInForm.guestCpf} onChange={(event) => setWalkInForm((current) => ({ ...current, guestCpf: event.target.value }))} />
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="space-y-4 p-4">
+                    <div className="space-y-2">
+                      <Label>Quarto disponível</Label>
+                      <Select
+                        value={walkInForm.roomUnitId || 'none'}
+                        onValueChange={(value) => setWalkInForm((current) => ({ ...current, roomUnitId: value === 'none' ? '' : value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar quarto disponível" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Selecione</SelectItem>
+                          {availableWalkInRooms.map((roomUnit) => (
+                            <SelectItem key={roomUnit.id} value={roomUnit.id}>
+                              {roomUnit.code} - {roomUnit.name} - {roomUnit.accommodation?.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Check-in</Label>
+                        <Input type="date" value={walkInForm.checkInDate} onChange={(event) => setWalkInForm((current) => ({ ...current, checkInDate: event.target.value }))} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Check-out</Label>
+                        <Input type="date" value={walkInForm.checkOutDate} onChange={(event) => setWalkInForm((current) => ({ ...current, checkOutDate: event.target.value }))} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Adultos</Label>
+                        <Input type="number" min={1} value={walkInForm.adults} onChange={(event) => setWalkInForm((current) => ({ ...current, adults: event.target.value }))} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Crianças</Label>
+                        <Input type="number" min={0} value={walkInForm.children} onChange={(event) => setWalkInForm((current) => ({ ...current, children: event.target.value }))} />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Promoção / Pacote</Label>
+                      <Select
+                        value={walkInForm.promotionId || 'none'}
+                        onValueChange={(value) => setWalkInForm((current) => ({ ...current, promotionId: value === 'none' ? '' : value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Nenhuma promoção" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Nenhuma promoção</SelectItem>
+                          {promotions.map((promotion: any) => (
+                            <SelectItem key={promotion.id} value={promotion.id}>
+                              {promotion.title}
+                              {promotion.discountPercent ? ` (-${promotion.discountPercent}%)` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Observações</Label>
+                      <Textarea
+                        value={walkInForm.notes}
+                        onChange={(event) => setWalkInForm((current) => ({ ...current, notes: event.target.value }))}
+                        placeholder="Preferências, garantia, observações da recepção..."
+                      />
+                    </div>
+
+                    <div className="rounded-2xl border p-4 text-sm text-slate-600">
+                      <div className="font-medium text-slate-900">
+                        {selectedWalkInRoom?.accommodation?.name || 'Selecione um quarto'}
+                      </div>
+                      <div>{selectedWalkInRoom ? `${selectedWalkInRoom.code} - ${selectedWalkInRoom.name}` : 'Sem quarto definido'}</div>
+                    </div>
+
+                    <DialogFooter>
+                      <Button onClick={() => void handleWalkInCheckIn()} disabled={!walkInForm.roomUnitId || walkInCheckIn.isPending}>
+                        Fazer check-in no quarto
+                      </Button>
+                    </DialogFooter>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'checkout'} onOpenChange={(open) => setActiveDialog(open ? 'checkout' : null)}>
+        <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Checkout pelo PDV</DialogTitle>
+            <DialogDescription>Abra a ficha da hospedagem para conferir o quarto, receber saldo pendente e concluir a saída.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            {!inHouseStays.length ? (
+              <EmptyInline text="Nenhuma hospedagem ativa no momento." />
+            ) : (
+              inHouseStays.map((stay) => {
+                const balance = Number(stay.folio?.balance ?? 0);
+                const checkoutReady = Boolean(stay.checkoutReleasedAt);
+                return (
+                  <div key={stay.id} className="rounded-2xl border p-4">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <div className="font-medium">{stay.reservation.guestName}</div>
+                        <div className="mt-1 text-sm text-slate-500">
+                          Quarto {stay.roomUnit?.code ?? 'S/N'} • Saída prevista em {new Date(stay.reservation.checkOutDate).toLocaleDateString('pt-BR')}
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <Badge variant="outline">{checkoutReady ? 'Conferência liberada' : 'Aguardando conferência'}</Badge>
+                          {balance > 0 && <Badge variant="outline">Saldo {currency.format(balance)}</Badge>}
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setActiveDialog(null);
+                            openGuestSheetFromStay(stay, checkoutReady ? 'acoes' : 'conferencia');
+                          }}
+                        >
+                          Abrir checkout
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'charge-stay'} onOpenChange={(open) => setActiveDialog(open ? 'charge-stay' : null)}>
+        <DialogContent className="max-h-[90dvh] max-w-4xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Incluir despesas na conta do hóspede</DialogTitle>
+            <DialogDescription>Selecione uma hospedagem ativa para lançar produtos e serviços diretamente na conta do quarto.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            {!inHouseStays.length ? (
+              <EmptyInline text="Nenhuma hospedagem ativa disponível para lançamento em conta." />
+            ) : (
+              inHouseStays.map((stay) => (
+                <div key={stay.id} className="rounded-2xl border p-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <div className="font-medium">{stay.reservation.guestName}</div>
+                      <div className="mt-1 text-sm text-slate-500">
+                        Quarto {stay.roomUnit?.code ?? 'S/N'} • Saldo atual {currency.format(Number(stay.folio?.balance ?? 0))}
+                      </div>
+                    </div>
+                    <Button onClick={() => handleStartGuestCharge(stay)}>Lançar despesas no PDV</Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'room-service-orders'} onOpenChange={(open) => setActiveDialog(open ? 'room-service-orders' : null)}>
+        <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Pedidos do serviço de quarto</DialogTitle>
+            <DialogDescription>Visualize, coloque em preparo, entregue e gerencie pedidos feitos pelo hóspede sem sair do PDV.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
+            <Card>
+              <CardContent className="space-y-3 p-4">
+                <div className="font-medium">Pedidos do quarto</div>
+                {!roomServiceOrders.length ? (
+                  <EmptyInline text="Nenhum pedido de serviço de quarto encontrado." />
+                ) : (
+                  roomServiceOrders.map((order) => (
+                    <button
+                      key={order.id}
+                      type="button"
+                      onClick={() => setSelectedOrderId(order.id)}
+                      className={`w-full rounded-2xl border p-3 text-left transition ${
+                        selectedOrderId === order.id ? 'border-slate-900 bg-slate-50' : 'hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="font-medium">{order.orderNumber}</div>
+                      <div className="mt-1 text-sm text-slate-500">
+                        {order.customerName || order.stay?.reservation.guestName || 'Hóspede'} • Quarto {order.roomUnit?.code || order.stay?.roomUnit?.code || 'S/N'}
+                      </div>
+                      <div className="mt-2 flex items-center justify-between">
+                        <Badge variant="outline">{orderStatusLabels[order.status]}</Badge>
+                        <span className="text-sm font-medium text-slate-900">{currency.format(Number(order.totalAmount))}</span>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="space-y-4 p-4">
+                {!selectedOrder || selectedOrder.origin !== 'ROOM_SERVICE' ? (
+                  <EmptyInline text="Selecione um pedido de serviço de quarto para gerenciar." />
+                ) : (
+                  <>
+                    <div className="rounded-2xl border p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="font-medium">{selectedOrder.orderNumber}</div>
+                          <div className="mt-1 text-sm text-slate-500">
+                            {selectedOrder.customerName || selectedOrder.stay?.reservation.guestName || 'Hóspede'} • Quarto {selectedOrder.roomUnit?.code || selectedOrder.stay?.roomUnit?.code || 'S/N'}
+                          </div>
+                        </div>
+                        <Badge variant="outline">{orderStatusLabels[selectedOrder.status]}</Badge>
+                      </div>
+                      <div className="mt-4 grid gap-2 text-sm text-slate-600">
+                        <span>Total {currency.format(Number(selectedOrder.totalAmount))}</span>
+                        <span>Pago {currency.format(Number(selectedOrder.paidAmount))}</span>
+                        <span>Liquidação {settlementLabels[selectedOrder.settlementType]}</span>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {selectedOrder.status === 'OPEN' && (
+                          <Button variant="outline" onClick={() => void handleUpdateSelectedOrderStatus('PREPARING')} disabled={updateOrderStatus.isPending}>
+                            Colocar em preparo
+                          </Button>
+                        )}
+                        {(selectedOrder.status === 'OPEN' || selectedOrder.status === 'PREPARING') && (
+                          <Button variant="outline" onClick={() => void handleUpdateSelectedOrderStatus('DELIVERED')} disabled={updateOrderStatus.isPending}>
+                            Marcar como entregue
+                          </Button>
+                        )}
+                        {selectedOrder.status === 'DELIVERED' && selectedOrder.settlementType === 'DIRECT' && (
+                          <Button variant="outline" onClick={() => void handleUpdateSelectedOrderStatus('CLOSED')} disabled={updateOrderStatus.isPending}>
+                            Fechar pedido
+                          </Button>
+                        )}
+                        {selectedOrder.stay && (
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setActiveDialog(null);
+                              openGuestSheetFromStay(selectedOrder.stay as Stay, 'conta');
+                            }}
+                          >
+                            Abrir conta do hóspede
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      {selectedOrder.items.map((item) => (
+                        <div key={item.id} className="flex items-center justify-between rounded-xl border p-3 text-sm">
+                          <span>{item.quantity}x {item.productName}</span>
+                          <span>{currency.format(Number(item.totalPrice))}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="grid gap-3 xl:grid-cols-[1fr_220px]">
+                      <Input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Motivo do cancelamento" />
+                      <Button variant="destructive" onClick={handleCancelOrder} disabled={cancelOrder.isPending}>
+                        Cancelar pedido
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <CreateCustomerDialog
+        open={customerDialogOpen}
+        onOpenChange={setCustomerDialogOpen}
+        hideRoleField
+        defaultRole="CUSTOMER"
+      />
 
       <Dialog open={activeDialog === 'cash'} onOpenChange={(open) => setActiveDialog(open ? 'cash' : null)}>
         <DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto">

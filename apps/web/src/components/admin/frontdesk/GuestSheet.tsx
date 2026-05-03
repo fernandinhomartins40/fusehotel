@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { differenceInDays } from 'date-fns';
 import { Banknote, LogOut, Mail, Phone, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +27,7 @@ interface GuestSheetProps {
   stay: Stay | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialTab?: 'conta' | 'consumo' | 'conferencia' | 'acoes' | 'historico';
 }
 
 const currencyFormatter = new Intl.NumberFormat('pt-BR', {
@@ -47,7 +48,7 @@ const entryTypeLabels: Record<FolioEntryType, string> = {
   ADJUSTMENT: 'Ajuste',
 };
 
-export function GuestSheet({ stay, open, onOpenChange }: GuestSheetProps) {
+export function GuestSheet({ stay, open, onOpenChange, initialTab = 'conta' }: GuestSheetProps) {
   const { data: folio } = useFolio(stay?.id);
   const addFolioEntry = useAddFolioEntry();
   const checkOut = useCheckOut();
@@ -55,6 +56,13 @@ export function GuestSheet({ stay, open, onOpenChange }: GuestSheetProps) {
   const [entryAmount, setEntryAmount] = useState('');
   const [entryDescription, setEntryDescription] = useState('');
   const [entryType, setEntryType] = useState<'PAYMENT' | 'ROOM_SERVICE' | 'ADJUSTMENT'>('PAYMENT');
+  const [activeTab, setActiveTab] = useState<'conta' | 'consumo' | 'conferencia' | 'acoes' | 'historico'>(initialTab);
+
+  useEffect(() => {
+    if (open) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, open, stay?.id]);
 
   const folioSummary = useMemo(() => {
     if (!folio) return { charges: 0, credits: 0 };
@@ -186,7 +194,7 @@ export function GuestSheet({ stay, open, onOpenChange }: GuestSheetProps) {
 
         <Separator />
 
-        <Tabs defaultValue="conta" className="flex-1 flex flex-col overflow-hidden">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)} className="flex-1 flex flex-col overflow-hidden">
           <TabsList className="mx-6 mt-3 h-auto flex-wrap rounded-2xl bg-slate-100 p-1">
             <TabsTrigger value="conta" className="rounded-xl px-4 py-2">
               Conta
