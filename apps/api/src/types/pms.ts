@@ -48,6 +48,7 @@ export type BusinessAccountType = 'COMPANY' | 'OPERATOR' | 'AGENCY' | 'CORPORATE
 export type ChannelConnectionType = 'BOOKING' | 'AIRBNB' | 'EXPEDIA' | 'DIRECT' | 'OTHER';
 export type ServiceCategory = 'ACCOMMODATION' | 'GASTRONOMY' | 'RECREATION' | 'BUSINESS' | 'SPECIAL';
 export type RoomServiceConfigType = 'MINIBAR' | 'IN_ROOM';
+export type RoomConditionStatus = 'APPROVED' | 'NEEDS_ATTENTION' | 'DAMAGE_REPORTED';
 
 export interface CreateRoomUnitDto {
   accommodationId: string;
@@ -170,6 +171,17 @@ export interface ConfirmRoomServiceConferenceDto {
     notes?: string;
   }>;
   notes?: string;
+  roomConditionStatus: RoomConditionStatus;
+  roomConditionNotes?: string;
+  roomConditionChecklist: {
+    minibarChecked: boolean;
+    bathroomChecked: boolean;
+    linensChecked: boolean;
+    furnitureChecked: boolean;
+    electronicsChecked: boolean;
+    visualInspectionChecked: boolean;
+  };
+  releaseCheckout: boolean;
 }
 
 export interface ToggleDoNotDisturbDto {

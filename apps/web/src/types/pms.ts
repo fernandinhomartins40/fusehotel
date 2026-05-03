@@ -95,6 +95,7 @@ export type BusinessAccountType = 'COMPANY' | 'OPERATOR' | 'AGENCY' | 'CORPORATE
 export type ChannelConnectionType = 'BOOKING' | 'AIRBNB' | 'EXPEDIA' | 'DIRECT' | 'OTHER';
 export type ServiceCategory = 'ACCOMMODATION' | 'GASTRONOMY' | 'RECREATION' | 'BUSINESS' | 'SPECIAL';
 export type RoomServiceConfigType = 'MINIBAR' | 'IN_ROOM';
+export type RoomConditionStatus = 'APPROVED' | 'NEEDS_ATTENTION' | 'DAMAGE_REPORTED';
 
 export interface RoomUnit {
   id: string;
@@ -127,6 +128,20 @@ export interface Stay {
   doNotDisturbUpdatedAt?: string | null;
   roomServiceConferenceAt?: string | null;
   roomServiceConferenceNotes?: string | null;
+  roomConditionConferenceAt?: string | null;
+  roomConditionConferenceNotes?: string | null;
+  roomConditionStatus?: RoomConditionStatus | null;
+  roomConditionChecklist?: {
+    minibarChecked: boolean;
+    bathroomChecked: boolean;
+    linensChecked: boolean;
+    furnitureChecked: boolean;
+    electronicsChecked: boolean;
+    visualInspectionChecked: boolean;
+  } | null;
+  checkoutReleasedAt?: string | null;
+  checkoutReleasedByUserId?: string | null;
+  checkoutReleasedByEmail?: string | null;
   notes: string | null;
   expectedCheckInAt: string | null;
   expectedCheckOutAt: string | null;
@@ -370,6 +385,18 @@ export interface RoomServiceConferencePreview {
     roomName: string | null;
     conferenceCompletedAt: string | null;
     conferenceNotes: string | null;
+    roomConditionConferenceAt: string | null;
+    roomConditionConferenceNotes: string | null;
+    roomConditionStatus: RoomConditionStatus | null;
+    roomConditionChecklist: {
+      minibarChecked: boolean;
+      bathroomChecked: boolean;
+      linensChecked: boolean;
+      furnitureChecked: boolean;
+      electronicsChecked: boolean;
+      visualInspectionChecked: boolean;
+    } | null;
+    checkoutReleasedAt: string | null;
   };
   items: Array<{
     id: string;

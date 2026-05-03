@@ -43,6 +43,7 @@ const financialEntryTypeSchema = z.enum(['RECEIVABLE', 'PAYABLE']);
 const financialEntryStatusSchema = z.enum(['OPEN', 'PARTIALLY_PAID', 'PAID', 'OVERDUE', 'CANCELLED']);
 const serviceCategorySchema = z.enum(['ACCOMMODATION', 'GASTRONOMY', 'RECREATION', 'BUSINESS', 'SPECIAL']);
 const roomServiceConfigTypeSchema = z.enum(['MINIBAR', 'IN_ROOM']);
+const roomConditionStatusSchema = z.enum(['APPROVED', 'NEEDS_ATTENTION', 'DAMAGE_REPORTED']);
 
 export const createRoomUnitSchema = z.object({
   accommodationId: uuidSchema,
@@ -279,6 +280,33 @@ export const confirmRoomServiceConferenceSchema = z.object({
     })
   ),
   notes: z.string().max(500).optional(),
+  roomConditionStatus: roomConditionStatusSchema,
+  roomConditionNotes: z.string().max(1000).optional(),
+  roomConditionChecklist: z.object({
+    minibarChecked: z.boolean(),
+    bathroomChecked: z.boolean(),
+    linensChecked: z.boolean(),
+    furnitureChecked: z.boolean(),
+    electronicsChecked: z.boolean(),
+    visualInspectionChecked: z.boolean(),
+  }),
+  releaseCheckout: z.boolean(),
+}).superRefine((data, ctx) => {
+  if (!data.releaseCheckout) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['releaseCheckout'],
+      message: 'A conferência precisa liberar o checkout para conclusão da saída',
+    });
+  }
+
+  if (data.roomConditionStatus !== 'APPROVED' && !data.roomConditionNotes?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['roomConditionNotes'],
+      message: 'Descreva o problema encontrado no quarto',
+    });
+  }
 });
 
 export const toggleDoNotDisturbSchema = z.object({

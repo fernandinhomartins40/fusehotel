@@ -673,14 +673,8 @@ export class FrontdeskService {
         throw new BadRequestError('Hospedagem sem folio financeiro');
       }
 
-      if (stay.roomUnitId) {
-        const roomConfigurationsCount = await tx.roomServiceConfiguration.count({
-          where: { roomUnitId: stay.roomUnitId },
-        });
-
-        if (roomConfigurationsCount > 0 && !stay.roomServiceConferenceAt) {
-          throw new BadRequestError('A conferência do quarto ainda não foi registrada para este checkout');
-        }
+      if (stay.roomUnitId && !stay.checkoutReleasedAt) {
+        throw new BadRequestError('O quarto ainda não foi conferido e liberado para este checkout');
       }
 
       await FoliosService.ensureSettled(stay.folio.id, tx);
@@ -706,7 +700,10 @@ export class FrontdeskService {
         await tx.roomUnit.update({
           where: { id: stay.roomUnitId },
           data: {
-            status: RoomUnitStatus.DIRTY,
+            status:
+              stay.roomConditionStatus && stay.roomConditionStatus !== 'APPROVED'
+                ? RoomUnitStatus.OUT_OF_ORDER
+                : RoomUnitStatus.DIRTY,
             housekeepingStatus: HousekeepingStatus.DIRTY,
           },
         });

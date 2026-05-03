@@ -5,6 +5,7 @@ import type {
   MyRoomServiceStay,
   POSOrder,
   POSProduct,
+  RoomConditionStatus,
   RoomServiceConferencePreview,
   RoomServiceConfiguration,
   RoomServiceConfigType,
@@ -104,6 +105,17 @@ export function useConfirmRoomServiceConference(stayId?: string) {
         notes?: string;
       }>;
       notes?: string;
+      roomConditionStatus: RoomConditionStatus;
+      roomConditionNotes?: string;
+      roomConditionChecklist: {
+        minibarChecked: boolean;
+        bathroomChecked: boolean;
+        linensChecked: boolean;
+        furnitureChecked: boolean;
+        electronicsChecked: boolean;
+        visualInspectionChecked: boolean;
+      };
+      releaseCheckout: boolean;
     }) => {
       const { data } = await apiClient.post(`/room-service/checkout/${stayId}`, payload);
       return data.data;

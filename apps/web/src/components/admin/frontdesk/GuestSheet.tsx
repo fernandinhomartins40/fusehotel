@@ -75,6 +75,7 @@ export function GuestSheet({ stay, open, onOpenChange }: GuestSheetProps) {
 
   const reservation = stay.reservation;
   const balance = Number(folio?.balance ?? stay.folio?.balance ?? 0);
+  const checkoutReleased = Boolean(stay.checkoutReleasedAt);
   const currentNight = Math.max(differenceInDays(new Date(), new Date(reservation.checkInDate)), 0) + 1;
   const totalNights = reservation.numberOfNights ?? 0;
   const guest = (reservation as any).user;
@@ -171,6 +172,16 @@ export function GuestSheet({ stay, open, onOpenChange }: GuestSheetProps) {
               {stay.doNotDisturbNote ? ` ${stay.doNotDisturbNote}` : ''}
             </div>
           )}
+          {!checkoutReleased && (
+            <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+              O checkout só pode ser concluído depois da conferência dos itens e do estado do quarto.
+            </div>
+          )}
+          {stay.roomConditionStatus && stay.roomConditionStatus !== 'APPROVED' && (
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              Este quarto saiu da conferência com apontamento de manutenção. A saída pode ser concluída, mas o quarto seguirá bloqueado no operacional.
+            </div>
+          )}
         </div>
 
         <Separator />
@@ -187,10 +198,10 @@ export function GuestSheet({ stay, open, onOpenChange }: GuestSheetProps) {
               Conferência
             </TabsTrigger>
             <TabsTrigger value="acoes" className="rounded-xl px-4 py-2">
-              Acoes
+              Ações
             </TabsTrigger>
             <TabsTrigger value="historico" className="rounded-xl px-4 py-2">
-              Historico
+              Histórico
             </TabsTrigger>
           </TabsList>
 
@@ -212,7 +223,7 @@ export function GuestSheet({ stay, open, onOpenChange }: GuestSheetProps) {
                   <div className="text-center text-sm text-gray-500 py-6">Carregando conta...</div>
                 ) : !folio.entries.length ? (
                   <div className="rounded-xl border border-dashed p-6 text-center text-sm text-slate-500">
-                    Nenhum lancamento encontrado.
+                    Nenhum lançamento encontrado.
                   </div>
                 ) : (
                   folio.entries.map((entry) => {
@@ -314,20 +325,26 @@ export function GuestSheet({ stay, open, onOpenChange }: GuestSheetProps) {
                 <Separator />
 
                 <div className="space-y-3">
-                  <h4 className="font-semibold text-sm">Operacoes</h4>
+                  <h4 className="font-semibold text-sm">Operações</h4>
                   <Button
                     variant="outline"
                     className="w-full justify-start"
                     onClick={handleCheckOut}
-                    disabled={checkOut.isPending}
+                    disabled={checkOut.isPending || balance > 0 || !checkoutReleased}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     Fazer check-out
                   </Button>
 
+                  {!checkoutReleased && (
+                    <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+                      Abra a aba <strong>Conferência</strong>, registre os consumos do quarto, avalie o estado do ambiente e libere o checkout no sistema.
+                    </div>
+                  )}
+
                   {balance > 0 && (
                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                      Hospede tem saldo pendente de {currencyFormatter.format(balance)}. Registre o pagamento antes do check-out.
+                      Hóspede tem saldo pendente de {currencyFormatter.format(balance)}. Registre o pagamento antes do check-out.
                     </div>
                   )}
                 </div>

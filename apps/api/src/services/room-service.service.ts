@@ -2,6 +2,7 @@ import {
   FolioEntrySource,
   FolioEntryType,
   POSSettlementType,
+  RoomConditionStatus,
   StayStatus,
   type Prisma,
 } from '@prisma/client';
@@ -17,6 +18,14 @@ import { POSService } from './pos.service';
 
 function toRoomServiceLabel(source: 'MINIBAR' | 'IN_ROOM') {
   return source === 'MINIBAR' ? 'Frigobar' : 'Quarto';
+}
+
+function buildConditionTitle(status: RoomConditionStatus, roomCode?: string | null) {
+  const target = roomCode ? `quarto ${roomCode}` : 'quarto';
+  if (status === 'DAMAGE_REPORTED') {
+    return `Avaria identificada no ${target}`;
+  }
+  return `Ajustes identificados no ${target}`;
 }
 
 async function recalculateFolioBalance(tx: Prisma.TransactionClient, folioId: string) {
@@ -222,6 +231,11 @@ export class RoomServiceService {
         roomName: stay.roomUnit?.name ?? null,
         conferenceCompletedAt: stay.roomServiceConferenceAt,
         conferenceNotes: stay.roomServiceConferenceNotes,
+        roomConditionConferenceAt: stay.roomConditionConferenceAt,
+        roomConditionConferenceNotes: stay.roomConditionConferenceNotes,
+        roomConditionStatus: stay.roomConditionStatus,
+        roomConditionChecklist: stay.roomConditionChecklist,
+        checkoutReleasedAt: stay.checkoutReleasedAt,
       },
       items: configurations.map((config) => ({
         id: config.id,
@@ -383,6 +397,44 @@ export class RoomServiceService {
         });
       }
 
+      if (data.roomConditionStatus !== RoomConditionStatus.APPROVED) {
+        const issueMarker = `[checkout-conference:${stay.id}]`;
+        const existingOrder = await tx.maintenanceOrder.findFirst({
+          where: {
+            roomUnitId: stay.roomUnitId,
+            status: {
+              in: ['OPEN', 'IN_PROGRESS'],
+            },
+            notes: {
+              contains: issueMarker,
+            },
+          },
+        });
+
+        const maintenancePayload = {
+          title: buildConditionTitle(data.roomConditionStatus, stay.roomUnit?.code),
+          description: data.roomConditionNotes?.trim() || 'Conferência de checkout apontou necessidade de atenção.',
+          priority: data.roomConditionStatus === RoomConditionStatus.DAMAGE_REPORTED ? 'HIGH' : 'MEDIUM',
+          notes: `${issueMarker} ${data.roomConditionNotes?.trim() || ''}`.trim(),
+          blockedFrom: new Date(),
+        } as const;
+
+        if (existingOrder) {
+          await tx.maintenanceOrder.update({
+            where: { id: existingOrder.id },
+            data: maintenancePayload,
+          });
+        } else {
+          await tx.maintenanceOrder.create({
+            data: {
+              roomUnitId: stay.roomUnitId,
+              status: 'OPEN',
+              ...maintenancePayload,
+            },
+          });
+        }
+      }
+
       await recalculateFolioBalance(tx, stay.folio.id);
 
       await tx.stay.update({
@@ -390,6 +442,13 @@ export class RoomServiceService {
         data: {
           roomServiceConferenceAt: new Date(),
           roomServiceConferenceNotes: data.notes?.trim() || undefined,
+          roomConditionConferenceAt: new Date(),
+          roomConditionConferenceNotes: data.roomConditionNotes?.trim() || undefined,
+          roomConditionStatus: data.roomConditionStatus,
+          roomConditionChecklist: data.roomConditionChecklist,
+          checkoutReleasedAt: data.releaseCheckout ? new Date() : null,
+          checkoutReleasedByUserId: data.releaseCheckout ? user.id : null,
+          checkoutReleasedByEmail: data.releaseCheckout ? user.email ?? null : null,
         },
       });
     });
@@ -571,9 +630,9 @@ export class RoomServiceService {
       throw new BadRequestError('Nenhuma hospedagem ativa encontrada para atualizar a sinalização do quarto');
     }
 
-    return prisma.stay.update({
-      where: { id: stay.id },
-      data: {
+      return prisma.stay.update({
+        where: { id: stay.id },
+        data: {
         doNotDisturb: data.enabled,
         doNotDisturbNote: data.note?.trim() || null,
         doNotDisturbUpdatedAt: new Date(),

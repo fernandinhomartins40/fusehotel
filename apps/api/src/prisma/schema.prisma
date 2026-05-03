@@ -514,6 +514,13 @@ model Stay {
   doNotDisturbUpdatedAt DateTime?
   roomServiceConferenceAt DateTime?
   roomServiceConferenceNotes String? @db.Text
+  roomConditionConferenceAt DateTime?
+  roomConditionConferenceNotes String? @db.Text
+  roomConditionStatus RoomConditionStatus?
+  roomConditionChecklist Json?
+  checkoutReleasedAt DateTime?
+  checkoutReleasedByUserId String?
+  checkoutReleasedByEmail String?
   notes              String?     @db.Text
   expectedCheckInAt  DateTime?
   expectedCheckOutAt DateTime?
@@ -1415,6 +1422,12 @@ enum RoomServiceChargeSource {
   MINIBAR
   IN_ROOM
   GUEST_REQUEST
+}
+
+enum RoomConditionStatus {
+  APPROVED
+  NEEDS_ATTENTION
+  DAMAGE_REPORTED
 }
 
 model ServiceItem {
