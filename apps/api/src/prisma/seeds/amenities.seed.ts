@@ -1,4 +1,4 @@
-import { PrismaClient, AmenityCategory } from '@prisma/client';
+import { AmenityCategory, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -44,7 +44,7 @@ const amenities = [
   { id: 'Transfer', name: 'Transfer', icon: 'car-taxi-front', category: AmenityCategory.GENERAL },
   { id: 'Acesso para cadeirantes', name: 'Acesso para cadeirantes', icon: 'accessibility', category: AmenityCategory.ACCESSIBILITY },
   { id: 'Elevador', name: 'Elevador', icon: 'arrow-up-down', category: AmenityCategory.ACCESSIBILITY },
-  { id: 'Roupa de Cama', name: 'Roupa de Cama', icon: 'bed', category: AmenityCategory.BEDROOM },
+  { id: 'Roupa de Cama', name: 'Roupa de cama premium', icon: 'bed', category: AmenityCategory.BEDROOM },
 ] as const;
 
 export async function seedAmenities() {

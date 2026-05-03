@@ -94,6 +94,8 @@ async function clearOperationalData() {
   await prisma.review.deleteMany();
   await prisma.guestFeedback.deleteMany();
   await prisma.preCheckIn.deleteMany();
+  await prisma.roomServiceCharge.deleteMany();
+  await prisma.roomServiceConfiguration.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.folioEntry.deleteMany();
   await prisma.folio.deleteMany();
@@ -161,31 +163,31 @@ export async function seedPmsData() {
   const businessByName = new Map(businessAccounts.map((item) => [item.name, item]));
 
   const roomUnitsPayload: Array<[string, string, string, number, RoomUnitStatus, HousekeepingStatus, boolean]> = [
-    ['Quarto Standard Vista Jardim', 'Quarto 101', '101', 1, RoomUnitStatus.OCCUPIED, HousekeepingStatus.CLEAN, true],
-    ['Quarto Standard Vista Jardim', 'Quarto 102', '102', 1, RoomUnitStatus.AVAILABLE, HousekeepingStatus.INSPECTED, true],
-    ['Quarto Standard Vista Jardim', 'Quarto 103', '103', 1, RoomUnitStatus.DIRTY, HousekeepingStatus.DIRTY, true],
-    ['Quarto Standard Vista Jardim', 'Quarto 104', '104', 1, RoomUnitStatus.CLEANING, HousekeepingStatus.IN_PROGRESS, true],
-    ['Quarto Standard Vista Jardim', 'Quarto 105', '105', 1, RoomUnitStatus.BLOCKED, HousekeepingStatus.CLEAN, true],
-    ['Quarto Standard Vista Jardim', 'Quarto 106', '106', 1, RoomUnitStatus.OUT_OF_ORDER, HousekeepingStatus.DIRTY, true],
-    ['Quarto Standard Vista Jardim', 'Quarto 107', '107', 1, RoomUnitStatus.AVAILABLE, HousekeepingStatus.CLEAN, true],
-    ['Quarto Standard Vista Jardim', 'Quarto 108', '108', 1, RoomUnitStatus.OUT_OF_SERVICE, HousekeepingStatus.CLEAN, false],
-    ['Quarto Deluxe Vista Mar', 'Quarto 201', '201', 2, RoomUnitStatus.AVAILABLE, HousekeepingStatus.CLEAN, true],
-    ['Quarto Deluxe Vista Mar', 'Quarto 202', '202', 2, RoomUnitStatus.INSPECTED, HousekeepingStatus.INSPECTED, true],
-    ['Quarto Deluxe Vista Mar', 'Quarto 203', '203', 2, RoomUnitStatus.OUT_OF_ORDER, HousekeepingStatus.DIRTY, true],
-    ['Quarto Deluxe Vista Mar', 'Quarto 204', '204', 2, RoomUnitStatus.AVAILABLE, HousekeepingStatus.CLEAN, true],
-    ['Quarto Deluxe Vista Mar', 'Quarto 205', '205', 2, RoomUnitStatus.AVAILABLE, HousekeepingStatus.CLEAN, true],
-    ['Quarto Deluxe Vista Mar', 'Quarto 206', '206', 2, RoomUnitStatus.BLOCKED, HousekeepingStatus.CLEAN, true],
-    ['Suíte Master com Hidromassagem', 'Suíte 301', '301', 3, RoomUnitStatus.AVAILABLE, HousekeepingStatus.INSPECTED, true],
-    ['Suíte Master com Hidromassagem', 'Suíte 302', '302', 3, RoomUnitStatus.OCCUPIED, HousekeepingStatus.CLEAN, true],
-    ['Suíte Master com Hidromassagem', 'Suíte 303', '303', 3, RoomUnitStatus.AVAILABLE, HousekeepingStatus.CLEAN, true],
-    ['Suíte Família', 'Suíte Família 401', '401', 4, RoomUnitStatus.OCCUPIED, HousekeepingStatus.CLEAN, true],
-    ['Suíte Família', 'Suíte Família 402', '402', 4, RoomUnitStatus.AVAILABLE, HousekeepingStatus.CLEAN, true],
-    ['Suíte Família', 'Suíte Família 403', '403', 4, RoomUnitStatus.AVAILABLE, HousekeepingStatus.INSPECTED, true],
-    ['Suíte Família', 'Suíte Família 404', '404', 4, RoomUnitStatus.DIRTY, HousekeepingStatus.DIRTY, true],
-    ['Chalé Romântico', 'Chalé 01', 'CHA-01', 0, RoomUnitStatus.AVAILABLE, HousekeepingStatus.CLEAN, true],
-    ['Chalé Romântico', 'Chalé 02', 'CHA-02', 0, RoomUnitStatus.AVAILABLE, HousekeepingStatus.INSPECTED, true],
-    ['Chalé Romântico', 'Chalé 03', 'CHA-03', 0, RoomUnitStatus.OUT_OF_SERVICE, HousekeepingStatus.CLEAN, true],
-    ['Villa Presidencial', 'Villa 01', 'VIL-01', 0, RoomUnitStatus.OCCUPIED, HousekeepingStatus.CLEAN, true],
+    ['Quarto Standard Vista Jardim', 'Brisa Jardim 101', '101', 1, RoomUnitStatus.OCCUPIED, HousekeepingStatus.CLEAN, true],
+    ['Quarto Standard Vista Jardim', 'Brisa Jardim 102', '102', 1, RoomUnitStatus.AVAILABLE, HousekeepingStatus.INSPECTED, true],
+    ['Quarto Standard Vista Jardim', 'Brisa Jardim 103', '103', 1, RoomUnitStatus.DIRTY, HousekeepingStatus.DIRTY, true],
+    ['Quarto Standard Vista Jardim', 'Brisa Jardim 104', '104', 1, RoomUnitStatus.CLEANING, HousekeepingStatus.IN_PROGRESS, true],
+    ['Quarto Standard Vista Jardim', 'Brisa Jardim 105', '105', 1, RoomUnitStatus.BLOCKED, HousekeepingStatus.CLEAN, true],
+    ['Quarto Standard Vista Jardim', 'Brisa Jardim 106', '106', 1, RoomUnitStatus.OUT_OF_ORDER, HousekeepingStatus.DIRTY, true],
+    ['Quarto Standard Vista Jardim', 'Brisa Jardim 107', '107', 1, RoomUnitStatus.AVAILABLE, HousekeepingStatus.CLEAN, true],
+    ['Quarto Standard Vista Jardim', 'Brisa Jardim 108', '108', 1, RoomUnitStatus.OUT_OF_SERVICE, HousekeepingStatus.CLEAN, false],
+    ['Quarto Deluxe Vista Mar', 'Maré Alta 201', '201', 2, RoomUnitStatus.AVAILABLE, HousekeepingStatus.CLEAN, true],
+    ['Quarto Deluxe Vista Mar', 'Maré Alta 202', '202', 2, RoomUnitStatus.INSPECTED, HousekeepingStatus.INSPECTED, true],
+    ['Quarto Deluxe Vista Mar', 'Maré Alta 203', '203', 2, RoomUnitStatus.OUT_OF_ORDER, HousekeepingStatus.DIRTY, true],
+    ['Quarto Deluxe Vista Mar', 'Maré Alta 204', '204', 2, RoomUnitStatus.AVAILABLE, HousekeepingStatus.CLEAN, true],
+    ['Quarto Deluxe Vista Mar', 'Maré Alta 205', '205', 2, RoomUnitStatus.AVAILABLE, HousekeepingStatus.CLEAN, true],
+    ['Quarto Deluxe Vista Mar', 'Maré Alta 206', '206', 2, RoomUnitStatus.BLOCKED, HousekeepingStatus.CLEAN, true],
+    ['Suíte Master com Hidromassagem', 'Suíte Atlântica 301', '301', 3, RoomUnitStatus.AVAILABLE, HousekeepingStatus.INSPECTED, true],
+    ['Suíte Master com Hidromassagem', 'Suíte Atlântica 302', '302', 3, RoomUnitStatus.OCCUPIED, HousekeepingStatus.CLEAN, true],
+    ['Suíte Master com Hidromassagem', 'Suíte Atlântica 303', '303', 3, RoomUnitStatus.AVAILABLE, HousekeepingStatus.CLEAN, true],
+    ['Suíte Família', 'Family Club 401', '401', 4, RoomUnitStatus.OCCUPIED, HousekeepingStatus.CLEAN, true],
+    ['Suíte Família', 'Family Club 402', '402', 4, RoomUnitStatus.AVAILABLE, HousekeepingStatus.CLEAN, true],
+    ['Suíte Família', 'Family Club 403', '403', 4, RoomUnitStatus.AVAILABLE, HousekeepingStatus.INSPECTED, true],
+    ['Suíte Família', 'Family Club 404', '404', 4, RoomUnitStatus.DIRTY, HousekeepingStatus.DIRTY, true],
+    ['Chalé Romântico', 'Chalé Reserva 01', 'CHA-01', 0, RoomUnitStatus.AVAILABLE, HousekeepingStatus.CLEAN, true],
+    ['Chalé Romântico', 'Chalé Reserva 02', 'CHA-02', 0, RoomUnitStatus.AVAILABLE, HousekeepingStatus.INSPECTED, true],
+    ['Chalé Romântico', 'Chalé Reserva 03', 'CHA-03', 0, RoomUnitStatus.OUT_OF_SERVICE, HousekeepingStatus.CLEAN, true],
+    ['Villa Presidencial', 'Villa Signature 01', 'VIL-01', 0, RoomUnitStatus.OCCUPIED, HousekeepingStatus.CLEAN, true],
   ];
 
   for (const [accommodationName, name, code, floor, status, housekeepingStatus, isActive] of roomUnitsPayload) {
@@ -250,29 +252,61 @@ export async function seedPmsData() {
   const allCategories = await prisma.productCategory.findMany();
   const categoryBySlug = new Map(allCategories.map((c) => [c.slug, c]));
 
-  const posProductsPayload: Array<[string, string, string, number, number, number, number, string, boolean, string]> = [
-    ['Água sem gás 500ml', 'BEB-001', 'BEVERAGE', 5.5, 1.8, 120, 24, 'UN', true, 'Água mineral sem gás.'],
-    ['Água com gás 500ml', 'BEB-002', 'BEVERAGE', 6, 2.1, 90, 24, 'UN', true, 'Água mineral com gás.'],
-    ['Refrigerante lata 350ml', 'BEB-003', 'BEVERAGE', 8, 3.2, 80, 18, 'UN', true, 'Sabores variados.'],
-    ['Suco integral 300ml', 'BEB-004', 'BEVERAGE', 12, 4.5, 50, 12, 'UN', true, 'Suco natural gelado.'],
-    ['Cerveja long neck', 'BEB-005', 'BEVERAGE', 16, 6.8, 64, 18, 'UN', true, 'Cerveja premium long neck.'],
-    ['Espumante 187ml', 'BEB-006', 'BEVERAGE', 39, 18, 20, 6, 'UN', true, 'Mini espumante para celebrações.'],
-    ['Café expresso', 'ALM-001', 'FOOD', 7, 1.5, 999, 0, 'UN', false, 'Café expresso do bar.'],
-    ['Sanduíche natural', 'ALM-002', 'FOOD', 24, 9.8, 25, 8, 'UN', true, 'Sanduíche leve para lanche rápido.'],
-    ['Hambúrguer artesanal', 'ALM-003', 'FOOD', 39, 15.2, 18, 6, 'UN', true, 'Hambúrguer com fritas.'],
-    ['Pizza individual marguerita', 'ALM-004', 'FOOD', 42, 17.5, 15, 4, 'UN', true, 'Pizza individual assada no forno.'],
-    ['Tábua de frios', 'ALM-005', 'FOOD', 58, 24, 12, 4, 'UN', true, 'Porção para duas pessoas.'],
-    ['Sobremesa do dia', 'ALM-006', 'FOOD', 18, 6.5, 20, 5, 'UN', true, 'Sobremesa fresca do restaurante.'],
-    ['Lavanderia - camiseta', 'SER-001', 'SERVICE', 12, 0, 999, 0, 'UN', false, 'Lavagem e passagem de camiseta.'],
-    ['Lavanderia - calça', 'SER-002', 'SERVICE', 18, 0, 999, 0, 'UN', false, 'Lavagem e passagem de calça.'],
-    ['Transfer aeroporto', 'SER-003', 'SERVICE', 160, 0, 999, 0, 'UN', false, 'Transfer compartilhado aeroporto/hotel.'],
-    ['Kit amenidades premium', 'CON-001', 'CONVENIENCE', 34, 12, 14, 4, 'UN', true, 'Kit com chinelo, hidratante e itens premium.'],
-    ['Protetor solar 200ml', 'CON-002', 'CONVENIENCE', 45, 18, 10, 3, 'UN', true, 'Protetor solar para venda avulsa.'],
-    ['Balde de gelo', 'OUT-001', 'OTHER', 15, 2, 999, 0, 'UN', false, 'Serviço de entrega de gelo no quarto.'],
+  const posProductsPayload: Array<{
+    name: string;
+    sku: string;
+    categorySlug: string;
+    price: number;
+    costPrice: number;
+    stockQuantity: number;
+    minStockQuantity: number;
+    saleUnit: string;
+    trackStock: boolean;
+    description: string;
+    isRoomServiceEnabled?: boolean;
+  }> = [
+    { name: 'Água sem gás 500ml', sku: 'BEB-001', categorySlug: 'BEVERAGE', price: 5.5, costPrice: 1.8, stockQuantity: 120, minStockQuantity: 24, saleUnit: 'UN', trackStock: true, description: 'Água mineral sem gás.', isRoomServiceEnabled: true },
+    { name: 'Água com gás 500ml', sku: 'BEB-002', categorySlug: 'BEVERAGE', price: 6, costPrice: 2.1, stockQuantity: 90, minStockQuantity: 24, saleUnit: 'UN', trackStock: true, description: 'Água mineral com gás.', isRoomServiceEnabled: true },
+    { name: 'Refrigerante lata 350ml', sku: 'BEB-003', categorySlug: 'BEVERAGE', price: 8, costPrice: 3.2, stockQuantity: 80, minStockQuantity: 18, saleUnit: 'UN', trackStock: true, description: 'Sabores variados.', isRoomServiceEnabled: true },
+    { name: 'Suco integral 300ml', sku: 'BEB-004', categorySlug: 'BEVERAGE', price: 12, costPrice: 4.5, stockQuantity: 50, minStockQuantity: 12, saleUnit: 'UN', trackStock: true, description: 'Suco natural gelado.', isRoomServiceEnabled: true },
+    { name: 'Cerveja long neck', sku: 'BEB-005', categorySlug: 'BEVERAGE', price: 16, costPrice: 6.8, stockQuantity: 64, minStockQuantity: 18, saleUnit: 'UN', trackStock: true, description: 'Cerveja premium long neck.', isRoomServiceEnabled: true },
+    { name: 'Espumante 187ml', sku: 'BEB-006', categorySlug: 'BEVERAGE', price: 39, costPrice: 18, stockQuantity: 20, minStockQuantity: 6, saleUnit: 'UN', trackStock: true, description: 'Mini espumante para celebrações.', isRoomServiceEnabled: true },
+    { name: 'Café expresso', sku: 'ALM-001', categorySlug: 'FOOD', price: 7, costPrice: 1.5, stockQuantity: 999, minStockQuantity: 0, saleUnit: 'UN', trackStock: false, description: 'Café expresso do bar.', isRoomServiceEnabled: true },
+    { name: 'Sanduíche natural', sku: 'ALM-002', categorySlug: 'FOOD', price: 24, costPrice: 9.8, stockQuantity: 25, minStockQuantity: 8, saleUnit: 'UN', trackStock: true, description: 'Sanduíche leve para lanche rápido.', isRoomServiceEnabled: true },
+    { name: 'Hambúrguer artesanal', sku: 'ALM-003', categorySlug: 'FOOD', price: 39, costPrice: 15.2, stockQuantity: 18, minStockQuantity: 6, saleUnit: 'UN', trackStock: true, description: 'Hambúrguer com fritas.', isRoomServiceEnabled: true },
+    { name: 'Pizza individual marguerita', sku: 'ALM-004', categorySlug: 'FOOD', price: 42, costPrice: 17.5, stockQuantity: 15, minStockQuantity: 4, saleUnit: 'UN', trackStock: true, description: 'Pizza individual assada no forno.', isRoomServiceEnabled: true },
+    { name: 'Tábua de frios', sku: 'ALM-005', categorySlug: 'FOOD', price: 58, costPrice: 24, stockQuantity: 12, minStockQuantity: 4, saleUnit: 'UN', trackStock: true, description: 'Porção para duas pessoas.', isRoomServiceEnabled: true },
+    { name: 'Sobremesa do dia', sku: 'ALM-006', categorySlug: 'FOOD', price: 18, costPrice: 6.5, stockQuantity: 20, minStockQuantity: 5, saleUnit: 'UN', trackStock: true, description: 'Sobremesa fresca do restaurante.', isRoomServiceEnabled: true },
+    { name: 'Lavanderia - camiseta', sku: 'SER-001', categorySlug: 'SERVICE', price: 12, costPrice: 0, stockQuantity: 999, minStockQuantity: 0, saleUnit: 'UN', trackStock: false, description: 'Lavagem e passagem de camiseta.' },
+    { name: 'Lavanderia - calça', sku: 'SER-002', categorySlug: 'SERVICE', price: 18, costPrice: 0, stockQuantity: 999, minStockQuantity: 0, saleUnit: 'UN', trackStock: false, description: 'Lavagem e passagem de calça.' },
+    { name: 'Transfer aeroporto', sku: 'SER-003', categorySlug: 'SERVICE', price: 160, costPrice: 0, stockQuantity: 999, minStockQuantity: 0, saleUnit: 'UN', trackStock: false, description: 'Transfer compartilhado aeroporto/hotel.' },
+    { name: 'Early check-in garantido', sku: 'SER-010', categorySlug: 'SERVICE', price: 120, costPrice: 0, stockQuantity: 999, minStockQuantity: 0, saleUnit: 'UN', trackStock: false, description: 'Entrada antecipada com disponibilidade confirmada.' },
+    { name: 'Late check-out estendido', sku: 'SER-011', categorySlug: 'SERVICE', price: 150, costPrice: 0, stockQuantity: 999, minStockQuantity: 0, saleUnit: 'UN', trackStock: false, description: 'Saída estendida até o fim da tarde.' },
+    { name: 'Massagem relaxante', sku: 'SER-012', categorySlug: 'SERVICE', price: 210, costPrice: 0, stockQuantity: 999, minStockQuantity: 0, saleUnit: 'UN', trackStock: false, description: 'Sessão de massagem relaxante de 50 minutos.' },
+    { name: 'Circuito spa day use', sku: 'SER-013', categorySlug: 'SERVICE', price: 180, costPrice: 0, stockQuantity: 999, minStockQuantity: 0, saleUnit: 'UN', trackStock: false, description: 'Acesso ao circuito completo de spa.' },
+    { name: 'Sala de reunião executiva', sku: 'SER-014', categorySlug: 'SERVICE', price: 380, costPrice: 0, stockQuantity: 999, minStockQuantity: 0, saleUnit: 'UN', trackStock: false, description: 'Locação de sala de reunião executiva por período.' },
+    { name: 'Coffee break corporativo', sku: 'SER-015', categorySlug: 'SERVICE', price: 48, costPrice: 0, stockQuantity: 999, minStockQuantity: 0, saleUnit: 'UN', trackStock: false, description: 'Serviço de coffee break por participante.' },
+    { name: 'Kit amenidades premium', sku: 'CON-001', categorySlug: 'CONVENIENCE', price: 34, costPrice: 12, stockQuantity: 14, minStockQuantity: 4, saleUnit: 'UN', trackStock: true, description: 'Kit com chinelo, hidratante e itens premium.', isRoomServiceEnabled: true },
+    { name: 'Protetor solar 200ml', sku: 'CON-002', categorySlug: 'CONVENIENCE', price: 45, costPrice: 18, stockQuantity: 10, minStockQuantity: 3, saleUnit: 'UN', trackStock: true, description: 'Protetor solar para venda avulsa.' },
+    { name: 'Balde de gelo', sku: 'OUT-001', categorySlug: 'OTHER', price: 15, costPrice: 2, stockQuantity: 999, minStockQuantity: 0, saleUnit: 'UN', trackStock: false, description: 'Serviço de entrega de gelo no quarto.', isRoomServiceEnabled: true },
   ];
-  for (const [name, sku, categorySlug, price, costPrice, stockQuantity, minStockQuantity, saleUnit, trackStock, description] of posProductsPayload) {
-    const categoryId = categoryBySlug.get(categorySlug)!.id;
-    await prisma.pOSProduct.create({ data: { name, sku, categoryId, price, costPrice, stockQuantity, minStockQuantity, saleUnit, trackStock, description } });
+  for (const product of posProductsPayload) {
+    const categoryId = categoryBySlug.get(product.categorySlug)!.id;
+    await prisma.pOSProduct.create({
+      data: {
+        name: product.name,
+        sku: product.sku,
+        categoryId,
+        price: product.price,
+        costPrice: product.costPrice,
+        stockQuantity: product.stockQuantity,
+        minStockQuantity: product.minStockQuantity,
+        saleUnit: product.saleUnit,
+        trackStock: product.trackStock,
+        description: product.description,
+        isRoomServiceEnabled: product.isRoomServiceEnabled ?? false,
+      },
+    });
   }
   const posProducts = await prisma.pOSProduct.findMany();
   const productBySku = new Map(posProducts.map((item) => [item.sku || item.name, item]));
@@ -287,7 +321,7 @@ export async function seedPmsData() {
       source: ReservationSource.WEBSITE, status: ReservationStatus.CHECKED_IN, paymentStatus: PaymentStatus.COMPLETED, paymentMethod: PaymentMethod.CREDIT_CARD,
       voucherSentAt: addDays(today, -3), specialRequests: 'Apartamento silencioso e próximo ao elevador.',
       payments: [{ amount: 500, method: PaymentMethod.CREDIT_CARD, status: PaymentStatus.COMPLETED, transactionId: 'PAY-SEED-001' }],
-      stay: { roomCode: '101', status: StayStatus.IN_HOUSE, adults: 2, children: 0, expectedCheckInAt: setHour(addDays(today, -1), 14), expectedCheckOutAt: setHour(addDays(today, 2), 12), actualCheckInAt: setHour(addDays(today, -1), 14, 35), notes: 'Hóspede prefere travesseiros extras.', folioEntries: [
+      stay: { roomCode: '101', status: StayStatus.IN_HOUSE, adults: 2, children: 0, expectedCheckInAt: setHour(addDays(today, -1), 14), expectedCheckOutAt: setHour(addDays(today, 2), 12), actualCheckInAt: setHour(addDays(today, -1), 14, 35), notes: 'Hóspede prefere travesseiros extras.', doNotDisturb: true, doNotDisturbNote: 'Solicitou privacidade até o fim da tarde.', folioEntries: [
         { type: FolioEntryType.ROOM_SERVICE, source: FolioEntrySource.POS, description: 'Room service - jantar no quarto', amount: 68 },
         { type: FolioEntryType.POS, source: FolioEntrySource.POS, description: 'Consumo no bar da piscina', amount: 24 },
         { type: FolioEntryType.PAYMENT, source: FolioEntrySource.MANUAL, description: 'Pagamento antecipado', amount: 500 },
@@ -335,7 +369,7 @@ export async function seedPmsData() {
       checkInDate: addDays(today, -5), checkOutDate: addDays(today, -2), numberOfGuests: 2, numberOfExtraBeds: 0,
       source: ReservationSource.WEBSITE, status: ReservationStatus.COMPLETED, paymentStatus: PaymentStatus.COMPLETED, paymentMethod: PaymentMethod.CREDIT_CARD,
       voucherSentAt: addDays(today, -7), payments: [{ amount: 1605, method: PaymentMethod.CREDIT_CARD, status: PaymentStatus.COMPLETED, transactionId: 'PAY-SEED-006' }],
-      stay: { roomCode: '301', status: StayStatus.CHECKED_OUT, adults: 2, children: 0, expectedCheckInAt: setHour(addDays(today, -5), 14), expectedCheckOutAt: setHour(addDays(today, -2), 12), actualCheckInAt: setHour(addDays(today, -5), 15, 10), actualCheckOutAt: setHour(addDays(today, -2), 11, 20), notes: 'Estadia concluída sem intercorrências.', folioEntries: [
+      stay: { roomCode: '301', status: StayStatus.CHECKED_OUT, adults: 2, children: 0, expectedCheckInAt: setHour(addDays(today, -5), 14), expectedCheckOutAt: setHour(addDays(today, -2), 12), actualCheckInAt: setHour(addDays(today, -5), 15, 10), actualCheckOutAt: setHour(addDays(today, -2), 11, 20), roomServiceConferenceAt: setHour(addDays(today, -2), 10, 45), roomServiceConferenceNotes: 'Frigobar conferido sem divergências.', notes: 'Estadia concluída sem intercorrências.', folioEntries: [
         { type: FolioEntryType.POS, source: FolioEntrySource.POS, description: 'Espumante no quarto', amount: 39 },
         { type: FolioEntryType.PAYMENT, source: FolioEntrySource.MANUAL, description: 'Liquidação no check-out', amount: 39 },
       ], closeFolio: true },
@@ -377,7 +411,7 @@ export async function seedPmsData() {
       checkInDate: addDays(today, -3), checkOutDate: today, numberOfGuests: 4, numberOfExtraBeds: 1,
       source: ReservationSource.CORPORATE, status: ReservationStatus.CHECKED_IN, paymentStatus: PaymentStatus.PROCESSING, paymentMethod: PaymentMethod.BANK_TRANSFER,
       specialRequests: 'Evento VIP com montagem de welcome desk.',
-      stay: { roomCode: 'VIL-01', status: StayStatus.IN_HOUSE, adults: 4, children: 0, expectedCheckInAt: setHour(addDays(today, -3), 14), expectedCheckOutAt: setHour(today, 12), actualCheckInAt: setHour(addDays(today, -3), 13, 50), notes: 'Check-out previsto para hoje com cobrança de extras pendentes.', folioEntries: [
+      stay: { roomCode: 'VIL-01', status: StayStatus.IN_HOUSE, adults: 4, children: 0, expectedCheckInAt: setHour(addDays(today, -3), 14), expectedCheckOutAt: setHour(today, 12), actualCheckInAt: setHour(addDays(today, -3), 13, 50), notes: 'Check-out previsto para hoje com cobrança de extras pendentes.', doNotDisturb: true, doNotDisturbNote: 'Executiva solicitou bloqueio até 14h por reunião interna.', folioEntries: [
         { type: FolioEntryType.POS, source: FolioEntrySource.POS, description: 'Espumantes e amenities VIP', amount: 240 },
         { type: FolioEntryType.ROOM_SERVICE, source: FolioEntrySource.POS, description: 'Café da manhã especial na villa', amount: 180 },
         { type: FolioEntryType.PAYMENT, source: FolioEntrySource.MANUAL, description: 'Adiantamento corporativo', amount: 2500 },
@@ -453,6 +487,9 @@ export async function seedPmsData() {
         reservationId: reservation.id, roomUnitId: roomUnit?.id, status: reservationSeed.stay.status, adults: reservationSeed.stay.adults,
         children: reservationSeed.stay.children, notes: reservationSeed.stay.notes, expectedCheckInAt: reservationSeed.stay.expectedCheckInAt,
         expectedCheckOutAt: reservationSeed.stay.expectedCheckOutAt, actualCheckInAt: reservationSeed.stay.actualCheckInAt, actualCheckOutAt: reservationSeed.stay.actualCheckOutAt,
+        doNotDisturb: reservationSeed.stay.doNotDisturb ?? false, doNotDisturbNote: reservationSeed.stay.doNotDisturbNote,
+        doNotDisturbUpdatedAt: reservationSeed.stay.doNotDisturb ? reservationSeed.stay.actualCheckInAt ?? today : null,
+        roomServiceConferenceAt: reservationSeed.stay.roomServiceConferenceAt, roomServiceConferenceNotes: reservationSeed.stay.roomServiceConferenceNotes,
       } });
       staysByReservationCode.set(reservationSeed.code, { id: stay.id });
 
@@ -487,6 +524,127 @@ export async function seedPmsData() {
       await prisma.review.create({ data: { reservationId: reservation.id, accommodationId: accommodation.id, userId: user.id, rating: reservationSeed.review.rating, title: reservationSeed.review.title, comment: reservationSeed.review.comment, isApproved: true, approvedAt: today } });
     }
   }
+
+  const roomServiceConfigurationsSeed: Array<{
+    roomCode: string;
+    sku: string;
+    configType: 'MINIBAR' | 'IN_ROOM';
+    quantity: number;
+    notes?: string;
+  }> = [
+    { roomCode: '101', sku: 'BEB-001', configType: 'MINIBAR', quantity: 2, notes: 'Reposição diária pela governança.' },
+    { roomCode: '101', sku: 'BEB-003', configType: 'MINIBAR', quantity: 2 },
+    { roomCode: '101', sku: 'CON-001', configType: 'IN_ROOM', quantity: 1, notes: 'Cobrar apenas se o lacre for rompido.' },
+    { roomCode: '201', sku: 'BEB-002', configType: 'MINIBAR', quantity: 2 },
+    { roomCode: '201', sku: 'BEB-005', configType: 'MINIBAR', quantity: 2 },
+    { roomCode: '301', sku: 'BEB-006', configType: 'MINIBAR', quantity: 1 },
+    { roomCode: '301', sku: 'SER-001', configType: 'IN_ROOM', quantity: 2, notes: 'Solicitação via bag de lavanderia.' },
+    { roomCode: '401', sku: 'BEB-001', configType: 'MINIBAR', quantity: 4 },
+    { roomCode: '401', sku: 'ALM-006', configType: 'IN_ROOM', quantity: 1, notes: 'Cortesia infantil; cobrar apenas consumo extra.' },
+    { roomCode: 'VIL-01', sku: 'BEB-006', configType: 'MINIBAR', quantity: 2 },
+    { roomCode: 'VIL-01', sku: 'OUT-001', configType: 'IN_ROOM', quantity: 1, notes: 'Balde de gelo disponível sob conferência.' },
+  ];
+
+  const roomServiceConfigByKey = new Map<string, { id: string }>();
+
+  for (const configSeed of roomServiceConfigurationsSeed) {
+    const roomUnit = roomUnitByCode.get(configSeed.roomCode);
+    const product = productBySku.get(configSeed.sku);
+    if (!roomUnit || !product) continue;
+
+    const config = await prisma.roomServiceConfiguration.create({
+      data: {
+        roomUnitId: roomUnit.id,
+        productId: product.id,
+        configType: configSeed.configType,
+        quantity: configSeed.quantity,
+        notes: configSeed.notes,
+      },
+    });
+
+    roomServiceConfigByKey.set(`${configSeed.roomCode}:${configSeed.sku}:${configSeed.configType}`, { id: config.id });
+  }
+
+  const completedConferenceStay = staysByReservationCode.get('FH-SEED-260426-006');
+  const completedConferenceFolio = foliosByReservationCode.get('FH-SEED-260426-006');
+  if (completedConferenceStay && completedConferenceFolio) {
+    const minibarProduct = productBySku.get('BEB-006');
+    const laundryProduct = productBySku.get('SER-001');
+
+    if (minibarProduct) {
+      const totalAmount = Number(minibarProduct.price);
+      const folioEntry = await prisma.folioEntry.create({
+        data: {
+          folioId: completedConferenceFolio.id,
+          type: FolioEntryType.ROOM_SERVICE,
+          source: FolioEntrySource.SYSTEM,
+          description: 'Frigobar - Espumante 187ml x1',
+          amount: totalAmount,
+          quantity: 1,
+          referenceId: minibarProduct.id,
+        },
+      });
+
+      await prisma.roomServiceCharge.create({
+        data: {
+          stayId: completedConferenceStay.id,
+          roomUnitId: roomUnitByCode.get('301')!.id,
+          productId: minibarProduct.id,
+          configurationId: roomServiceConfigByKey.get('301:BEB-006:MINIBAR')?.id,
+          folioEntryId: folioEntry.id,
+          source: 'MINIBAR',
+          quantity: 1,
+          unitPrice: Number(minibarProduct.price),
+          totalAmount,
+          notes: 'Consumido antes do checkout e confirmado na conferência.',
+          confirmedByUserId: admin?.id,
+          confirmedByEmail: admin?.email,
+        },
+      });
+    }
+
+    if (laundryProduct) {
+      const totalAmount = Number(laundryProduct.price) * 2;
+      const folioEntry = await prisma.folioEntry.create({
+        data: {
+          folioId: completedConferenceFolio.id,
+          type: FolioEntryType.ROOM_SERVICE,
+          source: FolioEntrySource.SYSTEM,
+          description: 'Quarto - Lavanderia - camiseta x2',
+          amount: totalAmount,
+          quantity: 2,
+          referenceId: laundryProduct.id,
+        },
+      });
+
+      await prisma.roomServiceCharge.create({
+        data: {
+          stayId: completedConferenceStay.id,
+          roomUnitId: roomUnitByCode.get('301')!.id,
+          productId: laundryProduct.id,
+          configurationId: roomServiceConfigByKey.get('301:SER-001:IN_ROOM')?.id,
+          folioEntryId: folioEntry.id,
+          source: 'IN_ROOM',
+          quantity: 2,
+          unitPrice: Number(laundryProduct.price),
+          totalAmount,
+          notes: 'Solicitação de lavanderia entregue no mesmo dia.',
+          confirmedByUserId: manager?.id,
+          confirmedByEmail: manager?.email,
+        },
+      });
+    }
+
+    const aggregate = await prisma.folioEntry.aggregate({
+      where: { folioId: completedConferenceFolio.id },
+      _sum: { amount: true },
+    });
+    await prisma.folio.update({
+      where: { id: completedConferenceFolio.id },
+      data: { balance: Number(aggregate._sum.amount ?? 0) },
+    });
+  }
+
   const housekeepingTasksPayload: Array<[string, string, string, HousekeepingTaskStatus, HousekeepingTaskPriority, string, Date, Date | null, Date | null, string | undefined, string | undefined]> = [
     ['103', 'Limpeza pós-saída', 'Apartamento saiu hoje e precisa liberação para nova reserva.', HousekeepingTaskStatus.PENDING, HousekeepingTaskPriority.HIGH, 'Sandra Camareira', setHour(today, 11), null, null, reservationsByCode.get('FH-SEED-260426-008')?.id, undefined],
     ['104', 'Limpeza em andamento', 'Troca completa de enxoval e reposição de minibar.', HousekeepingTaskStatus.IN_PROGRESS, HousekeepingTaskPriority.MEDIUM, 'Patrícia Gomes', setHour(today, 10), setHour(today, 10, 20), null, undefined, undefined],
@@ -596,5 +754,3 @@ export async function seedPmsData() {
   logger.info(`✅ Produtos PDV: ${await prisma.pOSProduct.count()}`);
   logger.info(`✅ Pedidos PDV: ${await prisma.pOSOrder.count()}`);
 }
-
-

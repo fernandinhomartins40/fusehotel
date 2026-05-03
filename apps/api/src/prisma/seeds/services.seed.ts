@@ -1,5 +1,7 @@
 import { PrismaClient, ServiceCategory } from '@prisma/client';
 
+const prisma = new PrismaClient();
+
 const serviceCategoryToProductSlug: Record<ServiceCategory, string> = {
   ACCOMMODATION: 'SERVICE',
   GASTRONOMY: 'FOOD',
@@ -8,11 +10,137 @@ const serviceCategoryToProductSlug: Record<ServiceCategory, string> = {
   SPECIAL: 'CONVENIENCE',
 };
 
-const prisma = new PrismaClient();
+type PublishedServiceSeed = {
+  sku: string;
+  name: string;
+  category: ServiceCategory;
+  subtitle?: string;
+  description: string;
+  image: string;
+  price: number;
+  isRoomServiceEnabled?: boolean;
+  features: string[];
+  order: number;
+};
 
+const publishedServices: PublishedServiceSeed[] = [
+  {
+    sku: 'SER-010',
+    name: 'Early check-in garantido',
+    category: ServiceCategory.ACCOMMODATION,
+    subtitle: 'Entrada antecipada',
+    description: 'Antecipe sua entrada e garanta acesso ao quarto antes do horário padrão de check-in.',
+    image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop',
+    price: 120,
+    features: ['Sujeito à confirmação operacional', 'Ideal para voos matinais'],
+    order: 1,
+  },
+  {
+    sku: 'SER-011',
+    name: 'Late check-out estendido',
+    category: ServiceCategory.ACCOMMODATION,
+    subtitle: 'Saída estendida',
+    description: 'Estenda sua permanência por algumas horas e finalize a estadia com mais conforto.',
+    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=2070&auto=format&fit=crop',
+    price: 150,
+    features: ['Saída até 18h', 'Disponibilidade limitada'],
+    order: 2,
+  },
+  {
+    sku: 'ALM-003',
+    name: 'Hambúrguer artesanal',
+    category: ServiceCategory.GASTRONOMY,
+    subtitle: 'Cozinha do hotel',
+    description: 'Hambúrguer artesanal servido com batatas rústicas, disponível para consumo direto ou entrega no quarto.',
+    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=2070&auto=format&fit=crop',
+    price: 39,
+    isRoomServiceEnabled: true,
+    features: ['Entrega no quarto', 'Produção na hora'],
+    order: 1,
+  },
+  {
+    sku: 'ALM-004',
+    name: 'Pizza individual marguerita',
+    category: ServiceCategory.GASTRONOMY,
+    subtitle: 'Forno do hotel',
+    description: 'Pizza individual assada na hora, ideal para lanche da tarde ou refeição rápida.',
+    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop',
+    price: 42,
+    isRoomServiceEnabled: true,
+    features: ['Entrega no quarto', 'Massa artesanal'],
+    order: 2,
+  },
+  {
+    sku: 'SER-012',
+    name: 'Massagem relaxante',
+    category: ServiceCategory.RECREATION,
+    subtitle: 'Spa & bem-estar',
+    description: 'Sessão de massagem relaxante com 50 minutos, agendada junto à recepção.',
+    image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=2070&auto=format&fit=crop',
+    price: 210,
+    features: ['Sessão de 50 minutos', 'Agendamento conforme disponibilidade'],
+    order: 1,
+  },
+  {
+    sku: 'SER-013',
+    name: 'Circuito spa day use',
+    category: ServiceCategory.RECREATION,
+    subtitle: 'Piscina aquecida e sauna',
+    description: 'Acesso ao circuito completo de bem-estar com piscina aquecida, sauna e área de relaxamento.',
+    image: 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?q=80&w=2070&auto=format&fit=crop',
+    price: 180,
+    features: ['Acesso por período', 'Uso das áreas úmidas'],
+    order: 2,
+  },
+  {
+    sku: 'SER-014',
+    name: 'Sala de reunião executiva',
+    category: ServiceCategory.BUSINESS,
+    subtitle: 'Até 10 pessoas',
+    description: 'Locação da sala executiva com TV, Wi-Fi dedicado e apoio de água e café.',
+    image: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?q=80&w=2070&auto=format&fit=crop',
+    price: 380,
+    features: ['Período de 4 horas', 'Internet dedicada'],
+    order: 1,
+  },
+  {
+    sku: 'SER-015',
+    name: 'Coffee break corporativo',
+    category: ServiceCategory.BUSINESS,
+    subtitle: 'Por participante',
+    description: 'Serviço de coffee break com itens doces e salgados para eventos e reuniões corporativas.',
+    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop',
+    price: 48,
+    features: ['Cobrança por participante', 'Montagem no espaço do evento'],
+    order: 2,
+  },
+  {
+    sku: 'SER-003',
+    name: 'Transfer aeroporto',
+    category: ServiceCategory.SPECIAL,
+    subtitle: 'Ida e volta sob consulta',
+    description: 'Serviço de transfer com agendamento prévio entre o hotel e o aeroporto.',
+    image: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=2070&auto=format&fit=crop',
+    price: 160,
+    features: ['Agendamento com recepção', 'Serviço terceirizado parceiro'],
+    order: 1,
+  },
+  {
+    sku: 'SER-001',
+    name: 'Lavanderia expressa',
+    category: ServiceCategory.SPECIAL,
+    subtitle: 'Peças do dia a dia',
+    description: 'Lavagem e passagem expressa para hóspedes que precisam da peça pronta no mesmo dia.',
+    image: 'https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?q=80&w=2070&auto=format&fit=crop',
+    price: 12,
+    features: ['Entrega conforme horário de coleta', 'Cobrança por peça'],
+    order: 2,
+  },
+];
 
 async function resolveProductCategoryId(category: ServiceCategory) {
   const preferredSlug = serviceCategoryToProductSlug[category];
+
   const preferred = await prisma.productCategory.findFirst({
     where: { slug: preferredSlug },
   });
@@ -29,10 +157,16 @@ async function resolveProductCategoryId(category: ServiceCategory) {
     return fallback.id;
   }
 
+  const labelMap: Record<string, string> = {
+    FOOD: 'Alimentos',
+    SERVICE: 'Serviços',
+    CONVENIENCE: 'Conveniência',
+  };
+
   const created = await prisma.productCategory.create({
     data: {
       slug: preferredSlug,
-      label: preferredSlug === 'FOOD' ? 'Alimentos' : preferredSlug === 'CONVENIENCE' ? 'Conveni?ncia' : 'Servi?os',
+      label: labelMap[preferredSlug] ?? 'Outros',
       order: 0,
       isActive: true,
     },
@@ -41,441 +175,161 @@ async function resolveProductCategoryId(category: ServiceCategory) {
   return created.id;
 }
 
-async function upsertServiceProduct(item: {
-  id: string;
-  category: ServiceCategory;
-  title: string;
-  subtitle?: string;
-  description: string;
-  image: string;
-  features: string[];
-  order: number;
-  price?: number;
-  isActive: boolean;
-}) {
+async function ensurePublishedService(item: PublishedServiceSeed) {
   const categoryId = await resolveProductCategoryId(item.category);
 
-  await prisma.pOSProduct.upsert({
-    where: { id: item.id },
-    update: {
-      name: item.title,
-      categoryId,
-      image: item.image,
-      price: item.price ?? 0,
-      description: item.description,
-      isActive: item.isActive,
-      showOnServicesPage: true,
-      servicesPageCategory: item.category,
-      servicesPageOrder: item.order,
-      servicesPageSubtitle: item.subtitle ?? null,
-      servicesPageFeatures: item.features,
-    },
-    create: {
-      id: item.id,
-      name: item.title,
-      categoryId,
-      image: item.image,
-      price: item.price ?? 0,
-      costPrice: 0,
-      stockQuantity: 0,
-      minStockQuantity: 0,
-      saleUnit: 'UN',
-      trackStock: false,
-      isActive: item.isActive,
-      description: item.description,
-      showOnServicesPage: true,
-      servicesPageCategory: item.category,
-      servicesPageOrder: item.order,
-      servicesPageSubtitle: item.subtitle ?? null,
-      servicesPageFeatures: item.features,
-    },
+  const existing =
+    (await prisma.pOSProduct.findFirst({
+      where: {
+        OR: [{ sku: item.sku }, { name: item.name }],
+      },
+    })) ?? null;
+
+  const payload = {
+    name: item.name,
+    sku: item.sku,
+    categoryId,
+    image: item.image,
+    price: item.price,
+    costPrice: 0,
+    stockQuantity: 0,
+    minStockQuantity: 0,
+    saleUnit: 'UN',
+    trackStock: false,
+    isActive: true,
+    isRoomServiceEnabled: item.isRoomServiceEnabled ?? false,
+    description: item.description,
+    showOnServicesPage: true,
+    servicesPageCategory: item.category,
+    servicesPageOrder: item.order,
+    servicesPageSubtitle: item.subtitle ?? null,
+    servicesPageFeatures: item.features,
+  };
+
+  if (existing) {
+    await prisma.pOSProduct.update({
+      where: { id: existing.id },
+      data: payload,
+    });
+    return;
+  }
+
+  await prisma.pOSProduct.create({
+    data: payload,
   });
 }
 
 export async function seedServices() {
-  console.log('Seeding services page...');
+  console.log('🌱 Seeding services page...');
 
-  // Seed configurações das seções
   const sectionsConfig = [
     {
-      id: 'seed-services-hero',
       section: 'services-hero',
       config: {
-        title: 'Nossos Serviços',
-        subtitle: 'Descubra todos os serviços e facilidades que tornam sua estadia no Hotel Águas Claras uma experiência inesquecível.',
+        title: 'Serviços do hotel',
+        subtitle: 'Descubra produtos e serviços que podem ser solicitados durante sua estadia.',
         height: '400px',
         backgroundColor: '#0466C8',
         titleColor: '#FFFFFF',
-        subtitleColor: '#FFFFFF'
-      }
+        subtitleColor: '#FFFFFF',
+      },
     },
     {
-      id: 'seed-services-accommodation',
       section: 'services-accommodation',
       config: {
-        title: 'Hospedagem',
-        subtitle: 'Acomodações',
-        description: 'Oferecemos diversas opções de acomodação para atender às suas necessidades, todas com conforto e elegância.',
+        title: 'Facilidades da hospedagem',
+        subtitle: 'Mais flexibilidade para sua estadia',
+        description: 'Personalize horários e experiências da hospedagem com serviços cobrados sob demanda.',
         backgroundColor: '#FFFFFF',
         titleColor: '#0466C8',
         subtitleColor: '#666666',
-        buttonText: 'Ver Todas as Acomodações',
+        buttonText: 'Ver quartos disponíveis',
         buttonColor: '#0466C8',
         buttonHoverColor: '#0355A6',
-        showButton: true
-      }
+        showButton: true,
+      },
     },
     {
-      id: 'seed-services-gastronomy',
       section: 'services-gastronomy',
       config: {
         title: 'Gastronomia',
-        subtitle: 'Experiências Culinárias',
-        description: 'Nossa gastronomia é um dos destaques do hotel, com pratos preparados com ingredientes frescos e regionais.',
+        subtitle: 'Pedidos e room service',
+        description: 'Seleção de itens do restaurante e da cozinha do hotel disponíveis para consumo.',
         backgroundColor: '#F9F9F9',
         titleColor: '#0466C8',
-        subtitleColor: '#666666'
-      }
+        subtitleColor: '#666666',
+      },
     },
     {
-      id: 'seed-services-recreation',
       section: 'services-recreation',
       config: {
-        title: 'Lazer e Bem-Estar',
-        subtitle: 'Atividades',
-        description: 'Desfrute de momentos de relaxamento e diversão com nossa completa infraestrutura de lazer e bem-estar.',
+        title: 'Lazer e bem-estar',
+        subtitle: 'Experiências do resort',
+        description: 'Serviços adicionais para relaxar, aproveitar as áreas comuns e elevar a experiência.',
         backgroundColor: '#FFFFFF',
         titleColor: '#0466C8',
-        subtitleColor: '#666666'
-      }
+        subtitleColor: '#666666',
+      },
     },
     {
-      id: 'seed-services-business',
       section: 'services-business',
       config: {
-        title: 'Serviços Empresariais',
-        subtitle: 'Eventos Corporativos',
-        description: 'O Hotel Águas Claras oferece espaços versáteis e serviços especializados para eventos corporativos.',
+        title: 'Eventos e negócios',
+        subtitle: 'Estrutura corporativa',
+        description: 'Itens e serviços para reuniões, treinamentos e eventos realizados dentro do hotel.',
         backgroundColor: '#F9F9F9',
         titleColor: '#0466C8',
         subtitleColor: '#666666',
-        buttonText: 'Solicitar Orçamento',
+        buttonText: 'Falar com o comercial',
         buttonColor: '#0466C8',
-        buttonUrl: '/contato'
-      }
+        buttonUrl: '/contato',
+      },
     },
     {
-      id: 'seed-services-special',
       section: 'services-special',
       config: {
-        title: 'Serviços Especiais',
-        subtitle: 'Comodidades Exclusivas',
-        description: 'Personalize sua estadia com nossos serviços adicionais de alta qualidade.',
+        title: 'Serviços especiais',
+        subtitle: 'Demandas avulsas e conveniências',
+        description: 'Serviços complementares para facilitar sua rotina antes, durante e após a hospedagem.',
         backgroundColor: '#FFFFFF',
         titleColor: '#0466C8',
         subtitleColor: '#666666',
-        iconBackgroundColor: '#EFF6FF'
-      }
+        iconBackgroundColor: '#EFF6FF',
+      },
     },
     {
-      id: 'seed-services-cta',
       section: 'services-cta',
       config: {
-        title: 'Reserve Sua Experiência',
-        description: 'Nossos serviços exclusivos estão esperando por você. Reserve agora e garanta uma estadia inesquecível.',
+        title: 'Monte sua experiência',
+        description: 'Reserve o quarto e complemente a estadia com os serviços mais adequados ao perfil do hóspede.',
         backgroundColor: '#0466C8',
         titleColor: '#FFFFFF',
         subtitleColor: '#FFFFFF',
-        primaryButtonText: 'Reservar Agora',
+        primaryButtonText: 'Reservar agora',
         primaryButtonColor: '#FFFFFF',
-        primaryButtonUrl: '#',
-        secondaryButtonText: 'Contato',
+        primaryButtonUrl: '/acomodacoes',
+        secondaryButtonText: 'Falar com o hotel',
         secondaryButtonColor: '#FFFFFF',
-        secondaryButtonUrl: '/contato'
-      }
-    }
+        secondaryButtonUrl: '/contato',
+      },
+    },
   ];
 
   for (const section of sectionsConfig) {
     await prisma.landingPageSettings.upsert({
       where: { section: section.section },
-      update: {},
-      create: section
+      update: { config: section.config, isActive: true },
+      create: {
+        section: section.section,
+        config: section.config,
+        isActive: true,
+      },
     });
   }
 
-  console.log('Services sections config created');
-
-  // Seed itens de hospedagem
-  const accommodationItems = [
-    {
-      id: 'seed-accommodation-1',
-      category: ServiceCategory.ACCOMMODATION,
-      title: 'Quarto Standard',
-      subtitle: '25m² - Queen Size',
-      description: 'Quartos confortáveis com cama queen-size ou duas camas de solteiro, ar-condicionado, TV e banheiro privativo.',
-      image: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=2070&auto=format&fit=crop',
-      features: ['Café da manhã incluso', 'Wi-Fi gratuito', 'Frigobar', 'Secador de cabelo'],
-      order: 1,
-      isActive: true
-    },
-    {
-      id: 'seed-accommodation-2',
-      category: ServiceCategory.ACCOMMODATION,
-      title: 'Suíte Luxo',
-      subtitle: '40m² - King Size',
-      description: 'Suítes espaçosas com cama king-size, sala de estar, banheira de hidromassagem e varanda com vista privilegiada.',
-      image: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?q=80&w=2070&auto=format&fit=crop',
-      features: ['Café da manhã incluso', 'Wi-Fi de alta velocidade', 'Serviço de quarto 24h', 'Amenities premium'],
-      order: 2,
-      isActive: true
-    },
-    {
-      id: 'seed-accommodation-3',
-      category: ServiceCategory.ACCOMMODATION,
-      title: 'Chalé',
-      subtitle: '60m² - 2 Quartos',
-      description: 'Chalés independentes perfeitos para famílias, com 2 quartos, sala de estar, cozinha compacta e deck privativo.',
-      image: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?q=80&w=2070&auto=format&fit=crop',
-      features: ['Café da manhã incluso', 'Lareira', 'Vista para a mata', 'Churrasqueira privativa'],
-      order: 3,
-      isActive: true
-    }
-  ];
-
-  for (const item of accommodationItems) {
-    await upsertServiceProduct(item);
+  for (const item of publishedServices) {
+    await ensurePublishedService(item);
   }
 
-  console.log('Accommodation items created');
-
-  // Seed itens de gastronomia
-  const gastronomyItems = [
-    {
-      id: 'seed-gastronomy-1',
-      category: ServiceCategory.GASTRONOMY,
-      title: 'Restaurante Principal',
-      subtitle: 'Cozinha Internacional',
-      description: 'O Restaurante Águas Claras serve café da manhã, almoço e jantar com uma rica variedade de pratos da culinária nacional e internacional. Vista panorâmica para as montanhas.',
-      image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=2070&auto=format&fit=crop',
-      features: [],
-      order: 1,
-      isActive: true
-    },
-    {
-      id: 'seed-gastronomy-2',
-      category: ServiceCategory.GASTRONOMY,
-      title: 'Bar da Piscina',
-      subtitle: 'Drinks & Petiscos',
-      description: 'Bebidas refrescantes, coquetéis e petiscos servidos à beira da piscina. O local perfeito para relaxar enquanto aprecia o pôr do sol.',
-      image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?q=80&w=2071&auto=format&fit=crop',
-      features: [],
-      order: 2,
-      isActive: true
-    },
-    {
-      id: 'seed-gastronomy-3',
-      category: ServiceCategory.GASTRONOMY,
-      title: 'Lobby Bar',
-      subtitle: 'Ambiente Sofisticado',
-      description: 'Ambiente sofisticado para desfrutar de drinques premium e uma carta de vinhos selecionada. Música ao vivo nas sextas e sábados.',
-      image: 'https://images.unsplash.com/photo-1551218808-94e220e084d2?q=80&w=2127&auto=format&fit=crop',
-      features: [],
-      order: 3,
-      isActive: true
-    }
-  ];
-
-  for (const item of gastronomyItems) {
-    await upsertServiceProduct(item);
-  }
-
-  console.log('Gastronomy items created');
-
-  // Seed itens de lazer
-  const recreationItems = [
-    {
-      id: 'seed-recreation-1',
-      category: ServiceCategory.RECREATION,
-      title: 'Piscinas',
-      description: 'Duas piscinas: externa com vista panorâmica e interna aquecida. Serviço de bar na piscina externa e espreguiçadeiras para o seu conforto.',
-      image: 'https://images.unsplash.com/photo-1575429198097-0414ec08e8cd?q=80&w=2070&auto=format&fit=crop',
-      features: [],
-      order: 1,
-      isActive: true
-    },
-    {
-      id: 'seed-recreation-2',
-      category: ServiceCategory.RECREATION,
-      title: 'Spa',
-      description: 'Espaço dedicado ao bem-estar com massagens terapêuticas, tratamentos faciais e corporais, sauna seca, sauna a vapor e ofurô.',
-      image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=2070&auto=format&fit=crop',
-      features: [],
-      order: 2,
-      isActive: true
-    },
-    {
-      id: 'seed-recreation-3',
-      category: ServiceCategory.RECREATION,
-      title: 'Academia',
-      description: 'Academia completa com equipamentos modernos de musculação e cardiovascular. Aulas de yoga e alongamento disponíveis mediante agendamento.',
-      image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop',
-      features: [],
-      order: 3,
-      isActive: true
-    },
-    {
-      id: 'seed-recreation-4',
-      category: ServiceCategory.RECREATION,
-      title: 'Trilhas Ecológicas',
-      description: 'Trilhas de diferentes níveis de dificuldade pela mata nativa, com guias especializados. Observação de pássaros e contato com a natureza.',
-      image: 'https://images.unsplash.com/photo-1626368175877-79236777e95e?q=80&w=2071&auto=format&fit=crop',
-      features: [],
-      order: 4,
-      isActive: true
-    },
-    {
-      id: 'seed-recreation-5',
-      category: ServiceCategory.RECREATION,
-      title: 'Esportes',
-      description: 'Quadras de tênis, vôlei de areia, campo de futebol society e mesa de ping-pong. Equipamentos disponíveis para empréstimo na recepção.',
-      image: 'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?q=80&w=2070&auto=format&fit=crop',
-      features: [],
-      order: 5,
-      isActive: true
-    },
-    {
-      id: 'seed-recreation-6',
-      category: ServiceCategory.RECREATION,
-      title: 'Recreação Infantil',
-      description: 'Espaço kids com monitores especializados, brinquedoteca, atividades ao ar livre e programação especial nas férias e feriados.',
-      image: 'https://images.unsplash.com/photo-1596461868807-a81baa0d7e3f?q=80&w=2070&auto=format&fit=crop',
-      features: [],
-      order: 6,
-      isActive: true
-    }
-  ];
-
-  for (const item of recreationItems) {
-    await upsertServiceProduct(item);
-  }
-
-  console.log('Recreation items created');
-
-  // Seed itens empresariais
-  const businessItems = [
-    {
-      id: 'seed-business-1',
-      category: ServiceCategory.BUSINESS,
-      title: 'Salas de Reunião',
-      description: '3 salas modulares com capacidade para até 120 pessoas, equipadas com tecnologia audiovisual e internet de alta velocidade.',
-      image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop',
-      features: [],
-      order: 1,
-      isActive: true
-    },
-    {
-      id: 'seed-business-2',
-      category: ServiceCategory.BUSINESS,
-      title: 'Business Center',
-      description: 'Espaço dedicado com computadores, impressora, scanner e serviços de secretariado para atender suas necessidades profissionais.',
-      image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop',
-      features: [],
-      order: 2,
-      isActive: true
-    },
-    {
-      id: 'seed-business-3',
-      category: ServiceCategory.BUSINESS,
-      title: 'Pacotes Corporativos',
-      description: 'Oferecemos pacotes especiais para empresas, incluindo hospedagem, coffee breaks, refeições e atividades de team building.',
-      image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop',
-      features: [],
-      order: 3,
-      isActive: true
-    },
-    {
-      id: 'seed-business-4',
-      category: ServiceCategory.BUSINESS,
-      title: 'Eventos Sociais',
-      description: 'Espaços versáteis para casamentos, aniversários, formaturas e outros eventos sociais, com serviço de buffet personalizado.',
-      image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop',
-      features: [],
-      order: 4,
-      isActive: true
-    }
-  ];
-
-  for (const item of businessItems) {
-    await upsertServiceProduct(item);
-  }
-
-  console.log('Business items created');
-
-  // Seed itens especiais
-  const specialItems = [
-    {
-      id: 'seed-special-1',
-      category: ServiceCategory.SPECIAL,
-      title: 'Decorações Especiais',
-      description: 'Decoração romântica, surpresas para aniversários, flores e outros detalhes personalizados para comemorações.',
-      image: 'https://images.unsplash.com/photo-1478146896981-b80fe463b330?q=80&w=2070&auto=format&fit=crop',
-      features: [],
-      order: 1,
-      isActive: true
-    },
-    {
-      id: 'seed-special-2',
-      category: ServiceCategory.SPECIAL,
-      title: 'Serviço de Babá',
-      description: 'Profissionais treinados para cuidar das crianças enquanto os pais aproveitam os demais serviços do hotel.',
-      image: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?q=80&w=2070&auto=format&fit=crop',
-      features: [],
-      order: 2,
-      isActive: true
-    },
-    {
-      id: 'seed-special-3',
-      category: ServiceCategory.SPECIAL,
-      title: 'Concierge',
-      description: 'Assistência personalizada para reservas em restaurantes, passeios turísticos, transfers e outras solicitações especiais.',
-      image: 'https://images.unsplash.com/photo-1556740758-90de374c12ad?q=80&w=2070&auto=format&fit=crop',
-      features: [],
-      order: 3,
-      isActive: true
-    },
-    {
-      id: 'seed-special-4',
-      category: ServiceCategory.SPECIAL,
-      title: 'Transfers',
-      description: 'Serviço de transporte privativo do aeroporto/rodoviária até o hotel e para passeios na região.',
-      image: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=2070&auto=format&fit=crop',
-      features: [],
-      order: 4,
-      isActive: true
-    }
-  ];
-
-  for (const item of specialItems) {
-    await upsertServiceProduct(item);
-  }
-
-  console.log('Special items created');
-  console.log('Services page seeded successfully!');
-}
-
-// Execute if run directly
-if (require.main === module) {
-  seedServices()
-    .then(() => {
-      console.log('Seed completed!');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('Seed failed:', error);
-      process.exit(1);
-    })
-    .finally(() => {
-      prisma.$disconnect();
-    });
+  console.log(`✅ Services page seeded with ${publishedServices.length} published items`);
 }
