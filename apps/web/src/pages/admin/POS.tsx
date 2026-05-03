@@ -133,6 +133,17 @@ const posStepLabels: Record<POSStep, string> = {
   review: 'Revisão',
 };
 
+const categoryAccentPalette = ['#0ea5e9', '#14b8a6', '#8b5cf6', '#f59e0b', '#ef4444', '#22c55e', '#ec4899'];
+
+const getCategoryAccent = (value?: string | null, seed?: string) => {
+  if (value?.trim()) return value;
+  const reference = seed ?? 'default';
+  const index =
+    Math.abs(Array.from(reference).reduce((acc, char) => acc + char.charCodeAt(0), 0)) %
+    categoryAccentPalette.length;
+  return categoryAccentPalette[index];
+};
+
 type SavedDraft = {
   id: string;
   reference: string;
@@ -792,6 +803,24 @@ export default function POS() {
     toast.success(`${product.name} adicionado ao carrinho`);
   };
 
+  const handleSearchAdd = () => {
+    const query = search.trim();
+    if (!query) {
+      toast.error('Informe um produto, SKU ou código de barras');
+      return;
+    }
+
+    if (!resolveQuickProduct(query)) {
+      toast.error('Produto não encontrado pelo termo informado');
+      return;
+    }
+
+    handleQuickAdd(query, Number(quickQuantity || 1));
+    setSearch('');
+    setQuickCode('');
+    setQuickQuantity('1');
+  };
+
   useEffect(() => {
     setSavedDrafts(loadDrafts());
   }, []);
@@ -1183,95 +1212,95 @@ export default function POS() {
         <p className="mt-1 text-sm text-slate-500">Busque, filtre por categoria ou use leitura rápida para montar a venda.</p>
       </div>
 
-      <div className="grid gap-3 2xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="space-y-3">
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+        <div className="mb-2 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-slate-500">
+          <span>Busca e leitura rápida</span>
+          <span>Alt + C</span>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_72px_112px]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar item, produto ou serviço"
-              className="h-12 rounded-2xl border-slate-200 pl-9 text-base"
-            />
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-          <div className="mb-2 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-slate-500">
-            <span>Leitura rápida</span>
-            <span>Alt + C</span>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_72px_112px]">
-            <Input
               id="pos-quick-code"
-              value={quickCode}
-              onChange={(event) => setQuickCode(event.target.value)}
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setQuickCode(event.target.value);
+              }}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
                   event.preventDefault();
-                  handleQuickAdd();
+                  handleSearchAdd();
                 }
               }}
-              placeholder="Código ou SKU"
-              className="h-11 rounded-xl bg-white"
+              placeholder="Buscar produto, serviço, SKU ou ler código de barras"
+              className="h-11 rounded-xl bg-white pl-9"
             />
-            <Input
-              value={quickQuantity}
-              onChange={(event) => setQuickQuantity(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  handleQuickAdd();
-                }
-              }}
-              placeholder="Qtd"
-              className="h-11 rounded-xl bg-white"
-            />
-            <Button className="h-11 rounded-xl" onClick={handleQuickAdd}>
-              Adicionar
-            </Button>
           </div>
+          <Input
+            value={quickQuantity}
+            onChange={(event) => setQuickQuantity(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                handleSearchAdd();
+              }
+            }}
+            placeholder="Qtd"
+            className="h-11 rounded-xl bg-white"
+          />
+          <Button className="h-11 rounded-xl" onClick={handleSearchAdd}>
+            Adicionar
+          </Button>
         </div>
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        <div className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Categorias</div>
+        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Categorias</div>
         <Button
           variant="outline"
-          className="h-10 rounded-2xl border-slate-200 px-4"
+          className="h-9 rounded-xl border-slate-200 px-3 text-xs"
           onClick={() => {
             setCategory('ALL');
             setSearch('');
+            setQuickCode('');
           }}
         >
           Limpar busca
         </Button>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto pb-1">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         <button
           type="button"
           onClick={() => setCategory('ALL')}
-          className={`min-w-[140px] rounded-2xl border px-4 py-4 text-left transition ${
+          className={`min-w-[110px] rounded-xl border px-3 py-2.5 text-left transition ${
             category === 'ALL'
-              ? 'border-sky-700 bg-sky-700 text-white shadow-sm'
-              : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
+              ? 'border-sky-600 bg-sky-600 text-white shadow-sm'
+              : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white'
           }`}
         >
-          <div className="font-semibold">Todos</div>
+          <div className="flex items-center gap-2">
+            <span className={`h-2.5 w-2.5 rounded-full ${category === 'ALL' ? 'bg-white/80' : 'bg-sky-500'}`} />
+            <span className="text-sm font-semibold">Todos</span>
+          </div>
         </button>
         {productCategories.filter((c) => c.isActive).map((cat) => (
           <button
             key={cat.id}
             type="button"
             onClick={() => setCategory(cat.id)}
-            className={`min-w-[140px] rounded-2xl border px-4 py-4 text-left transition ${
-              category === cat.id
-                ? 'border-sky-700 bg-sky-700 text-white shadow-sm'
-                : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
-            }`}
+            className="min-w-[110px] rounded-xl border px-3 py-2.5 text-left transition shadow-sm"
+            style={{
+              borderColor: category === cat.id ? getCategoryAccent(cat.color, cat.label) : '#e2e8f0',
+              backgroundColor: category === cat.id ? `${getCategoryAccent(cat.color, cat.label)}18` : '#f8fafc',
+              color: category === cat.id ? getCategoryAccent(cat.color, cat.label) : '#0f172a',
+            }}
           >
-            <div className="font-semibold">{cat.label}</div>
+            <div className="flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: getCategoryAccent(cat.color, cat.label) }} />
+              <span className="text-sm font-semibold">{cat.label}</span>
+            </div>
           </button>
         ))}
       </div>
@@ -1288,20 +1317,46 @@ export default function POS() {
                 key={product.id}
                 type="button"
                 onClick={() => addProductToCart(product)}
-                className="rounded-2xl border border-slate-200 bg-white p-4 text-left transition hover:border-sky-400 hover:bg-sky-50"
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-left transition hover:-translate-y-0.5 hover:border-sky-400 hover:shadow-md"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="line-clamp-2 font-medium text-slate-900">{product.name}</div>
-                    <div className="mt-1 text-xs text-slate-500">{product.category?.label ?? '—'}</div>
+                <div className="relative h-28 overflow-hidden bg-gradient-to-br from-sky-50 via-white to-slate-100">
+                  {product.image ? (
+                    <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <div
+                      className="flex h-full w-full items-center justify-center"
+                      style={{
+                        background: `linear-gradient(135deg, ${getCategoryAccent(product.category?.color, product.category?.label)}22, #ffffff 60%)`,
+                      }}
+                    >
+                      <div
+                        className="rounded-full px-3 py-1 text-xs font-semibold"
+                        style={{
+                          backgroundColor: `${getCategoryAccent(product.category?.color, product.category?.label)}18`,
+                          color: getCategoryAccent(product.category?.color, product.category?.label),
+                        }}
+                      >
+                        {product.category?.label ?? 'Produto'}
+                      </div>
+                    </div>
+                  )}
+                  <div className="absolute right-3 top-3 rounded-full bg-white/90 p-1.5 shadow-sm">
+                    <Grid2x2 className="h-4 w-4 shrink-0 text-slate-500" />
                   </div>
-                  <Grid2x2 className="h-4 w-4 shrink-0 text-slate-400" />
                 </div>
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="text-lg font-semibold text-slate-900">{currency.format(Number(product.price))}</span>
-                  <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">
-                    {product.trackStock ? `Estoque ${product.stockQuantity}` : 'Livre'}
-                  </span>
+
+                <div className="space-y-3 p-4">
+                  <div className="min-w-0">
+                    <div className="line-clamp-2 text-lg font-semibold leading-tight text-slate-900">{product.name}</div>
+                    <div className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-slate-500">{product.category?.label ?? '—'}</div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-2xl font-bold text-slate-900">{currency.format(Number(product.price))}</span>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                      {product.trackStock ? `Estoque ${product.stockQuantity}` : 'Livre'}
+                    </span>
+                  </div>
                 </div>
               </button>
             ))
@@ -1852,58 +1907,26 @@ export default function POS() {
 
         <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_420px]">
           <div className="space-y-4">
-          <div className="rounded-3xl border bg-slate-950 p-3 text-white shadow-sm">
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-              <SideAction icon={LogIn} label="Check-in" description="Chegadas confirmadas e walk-in" shortcut="Alt + 3" active={activeDialog === 'checkin'} onClick={() => setActiveDialog('checkin')} />
-              <SideAction icon={LogOut} label="Checkout" description="Conferência e saída do hóspede" shortcut="Alt + 4" active={activeDialog === 'checkout'} onClick={() => setActiveDialog('checkout')} />
-              <SideAction icon={ShoppingCart} label="Pedidos" description="Serviço de quarto e entrega" shortcut="Alt + 1" active={activeDialog === 'room-service-orders'} onClick={() => setActiveDialog('room-service-orders')} />
-              <SideAction icon={Receipt} label="Incluir despesas" description="Lançar produtos na conta do hóspede" shortcut="Alt + 5" active={activeDialog === 'charge-stay'} onClick={() => setActiveDialog('charge-stay')} />
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button variant="secondary" size="sm" className="rounded-2xl bg-white/10 text-white hover:bg-white/15" onClick={() => setActiveDialog('cash')}>
-                Caixa
-              </Button>
-              <Button variant="secondary" size="sm" className="rounded-2xl bg-white/10 text-white hover:bg-white/15" onClick={() => setActiveDialog('drafts')}>
-                Pré-vendas
-              </Button>
-              <Button variant="secondary" size="sm" className="rounded-2xl bg-white/10 text-white hover:bg-white/15" onClick={() => setActiveDialog('references')}>
-                Referências
-              </Button>
+            <div className="rounded-3xl border bg-slate-950 p-3 text-white shadow-sm">
+              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                <SideAction icon={ShoppingCart} label={cartDetailedItems.length || editingOrder ? 'Continuar venda' : 'Abrir venda'} description={`${cartDetailedItems.length} item(ns) na venda`} shortcut="Venda" active={activeDialog === 'sale'} tone="emerald" onClick={() => setActiveDialog('sale')} />
+                <SideAction icon={LogIn} label="Check-in" description="Chegadas confirmadas e walk-in" shortcut="Alt + 3" active={activeDialog === 'checkin'} tone="sky" onClick={() => setActiveDialog('checkin')} />
+                <SideAction icon={LogOut} label="Checkout" description="Conferência e saída do hóspede" shortcut="Alt + 4" active={activeDialog === 'checkout'} tone="violet" onClick={() => setActiveDialog('checkout')} />
+                <SideAction icon={Receipt} label="Incluir despesas" description="Lançar produtos na conta" shortcut="Alt + 5" active={activeDialog === 'charge-stay'} tone="rose" onClick={() => setActiveDialog('charge-stay')} />
+                <SideAction icon={ShoppingCart} label="Pedidos" description="Serviço de quarto e entrega" shortcut="Alt + 1" active={activeDialog === 'room-service-orders'} tone="amber" onClick={() => setActiveDialog('room-service-orders')} />
+                <SideAction icon={Wallet} label="Caixa" description="Abertura e fechamento" shortcut="Alt + 2" active={activeDialog === 'cash'} tone="teal" onClick={() => setActiveDialog('cash')} />
+                <SideAction icon={Receipt} label="Pré-vendas" description="Suspensas e retomada" shortcut="Alt + 9" active={activeDialog === 'drafts'} tone="indigo" onClick={() => setActiveDialog('drafts')} />
+                <SideAction icon={Search} label="Referências" description="Mesa, comanda ou hóspede" shortcut="Alt + 0" active={activeDialog === 'references'} tone="slate" onClick={() => setActiveDialog('references')} />
+              </div>
+              {(cartDetailedItems.length || editingOrder) ? (
+                <div className="mt-3 flex justify-end">
+                  <Button variant="secondary" size="sm" className="rounded-2xl bg-white/10 text-white hover:bg-white/15" onClick={clearDraft}>
+                    Limpar venda
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </div>
-
-          <div className="rounded-3xl border bg-white p-5 shadow-sm">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="space-y-3">
-                <div>
-                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Fluxo da venda</div>
-                  <h2 className="mt-1 text-xl font-semibold text-slate-950">
-                    {editingOrder ? `Editando ${editingOrder.orderNumber}` : cartDetailedItems.length ? 'Continuar venda atual' : 'Abrir nova venda'}
-                  </h2>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {stepSequence.map((step, index) => (
-                    <Badge key={step} variant="outline" className={currentStep === step ? 'border-sky-200 bg-sky-50 text-sky-700' : ''}>
-                      {index + 1}. {posStepLabels[step]}
-                    </Badge>
-                  ))}
-                </div>
-                <p className="max-w-2xl text-sm text-slate-600">
-                  O catálogo, leitura rápida, pagamento e revisão foram movidos para um painel lateral para liberar espaço no PDV e manter o fluxo utilizável em telas menores.
-                </p>
-              </div>
-
-              <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-[260px]">
-                <Button className="rounded-2xl" onClick={() => setActiveDialog('sale')}>
-                  {cartDetailedItems.length || editingOrder ? 'Continuar venda' : 'Abrir venda'}
-                </Button>
-                <Button variant="outline" className="rounded-2xl" onClick={clearDraft}>
-                  Limpar venda
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <div className="space-y-4 2xl:sticky 2xl:top-4 2xl:self-start">
           {renderSaleSummaryPanel(false)}
@@ -2937,6 +2960,7 @@ function SideAction({
   description,
   shortcut,
   active,
+  tone = 'sky',
   onClick,
 }: {
   icon: typeof ShoppingCart;
@@ -2944,29 +2968,77 @@ function SideAction({
   description: string;
   shortcut: string;
   active?: boolean;
+  tone?: 'emerald' | 'sky' | 'violet' | 'rose' | 'amber' | 'teal' | 'indigo' | 'slate';
   onClick: () => void;
 }) {
+  const tones = {
+    emerald: {
+      card: active ? 'border-emerald-400 bg-emerald-500 text-white' : 'border-emerald-400/20 bg-emerald-500/10 text-emerald-50 hover:border-emerald-300/40 hover:bg-emerald-500/15',
+      icon: 'bg-emerald-400/20 text-emerald-100',
+      badge: 'bg-emerald-400/20 text-emerald-100',
+      description: active ? 'text-emerald-50' : 'text-emerald-100/80',
+    },
+    sky: {
+      card: active ? 'border-sky-400 bg-sky-500 text-white' : 'border-sky-400/20 bg-sky-500/10 text-sky-50 hover:border-sky-300/40 hover:bg-sky-500/15',
+      icon: 'bg-sky-400/20 text-sky-100',
+      badge: 'bg-sky-400/20 text-sky-100',
+      description: active ? 'text-sky-50' : 'text-sky-100/80',
+    },
+    violet: {
+      card: active ? 'border-violet-400 bg-violet-500 text-white' : 'border-violet-400/20 bg-violet-500/10 text-violet-50 hover:border-violet-300/40 hover:bg-violet-500/15',
+      icon: 'bg-violet-400/20 text-violet-100',
+      badge: 'bg-violet-400/20 text-violet-100',
+      description: active ? 'text-violet-50' : 'text-violet-100/80',
+    },
+    rose: {
+      card: active ? 'border-rose-400 bg-rose-500 text-white' : 'border-rose-400/20 bg-rose-500/10 text-rose-50 hover:border-rose-300/40 hover:bg-rose-500/15',
+      icon: 'bg-rose-400/20 text-rose-100',
+      badge: 'bg-rose-400/20 text-rose-100',
+      description: active ? 'text-rose-50' : 'text-rose-100/80',
+    },
+    amber: {
+      card: active ? 'border-amber-400 bg-amber-500 text-slate-950' : 'border-amber-400/20 bg-amber-500/10 text-amber-50 hover:border-amber-300/40 hover:bg-amber-500/15',
+      icon: 'bg-amber-400/20 text-amber-100',
+      badge: 'bg-amber-400/20 text-amber-100',
+      description: active ? 'text-slate-900' : 'text-amber-100/80',
+    },
+    teal: {
+      card: active ? 'border-teal-400 bg-teal-500 text-white' : 'border-teal-400/20 bg-teal-500/10 text-teal-50 hover:border-teal-300/40 hover:bg-teal-500/15',
+      icon: 'bg-teal-400/20 text-teal-100',
+      badge: 'bg-teal-400/20 text-teal-100',
+      description: active ? 'text-teal-50' : 'text-teal-100/80',
+    },
+    indigo: {
+      card: active ? 'border-indigo-400 bg-indigo-500 text-white' : 'border-indigo-400/20 bg-indigo-500/10 text-indigo-50 hover:border-indigo-300/40 hover:bg-indigo-500/15',
+      icon: 'bg-indigo-400/20 text-indigo-100',
+      badge: 'bg-indigo-400/20 text-indigo-100',
+      description: active ? 'text-indigo-50' : 'text-indigo-100/80',
+    },
+    slate: {
+      card: active ? 'border-slate-300 bg-slate-700 text-white' : 'border-white/10 bg-white/5 text-slate-200 hover:border-white/20 hover:bg-white/10',
+      icon: 'bg-white/10 text-slate-100',
+      badge: 'bg-white/10 text-slate-200',
+      description: active ? 'text-slate-50' : 'text-slate-300',
+    },
+  }[tone];
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`min-w-[88px] rounded-2xl border p-3 text-left transition lg:min-w-0 ${
-        active
-          ? 'border-sky-500 bg-sky-600 text-white'
-          : 'border-white/5 bg-white/5 text-slate-300 hover:border-white/10 hover:bg-white/10'
-      }`}
+      className={`min-w-[88px] rounded-2xl border p-3 text-left transition lg:min-w-0 ${tones.card}`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className={`rounded-xl p-2 ${active ? 'bg-white/15' : 'bg-white/5'}`}>
+        <div className={`rounded-xl p-2 ${tones.icon}`}>
           <Icon className="h-4 w-4" />
         </div>
-        <span className={`rounded-full px-2 py-1 text-[10px] font-medium ${active ? 'bg-white/15 text-white' : 'bg-white/5 text-slate-400'}`}>
+        <span className={`rounded-full px-2 py-1 text-[10px] font-medium ${tones.badge}`}>
           {shortcut}
         </span>
       </div>
       <div className="mt-3">
         <div className="text-sm font-semibold">{label}</div>
-        <div className={`mt-1 text-xs leading-relaxed ${active ? 'text-sky-50' : 'text-slate-400'}`}>{description}</div>
+        <div className={`mt-1 text-xs leading-relaxed ${tones.description}`}>{description}</div>
       </div>
     </button>
   );
