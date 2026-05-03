@@ -1905,7 +1905,7 @@ export default function POS() {
           </div>
         </div>
 
-        <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_420px]">
           <div className="space-y-4">
             <div className="rounded-3xl border bg-slate-950 p-3 text-white shadow-sm">
               <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -1928,7 +1928,7 @@ export default function POS() {
             </div>
           </div>
 
-        <div className="space-y-4 2xl:sticky 2xl:top-4 2xl:self-start">
+        <div className="space-y-4 md:sticky md:top-4 md:self-start">
           {renderSaleSummaryPanel(false)}
         </div>
       </div>
@@ -2486,12 +2486,12 @@ export default function POS() {
         defaultRole="CUSTOMER"
       />
 
-      <Dialog open={activeDialog === 'cash'} onOpenChange={(open) => setActiveDialog(open ? 'cash' : null)}>
-        <DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Operações de caixa</DialogTitle>
-            <DialogDescription>Abertura, sangria, suprimento e fechamento.</DialogDescription>
-          </DialogHeader>
+      <Sheet open={activeDialog === 'cash'} onOpenChange={(open) => setActiveDialog(open ? 'cash' : null)}>
+        <SheetContent side="right" className="w-full sm:max-w-[760px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Operações de caixa</SheetTitle>
+            <SheetDescription>Abertura, sangria, suprimento e fechamento.</SheetDescription>
+          </SheetHeader>
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardContent className="space-y-3 p-4">
@@ -2546,15 +2546,15 @@ export default function POS() {
               </CardContent>
             </Card>
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
-      <Dialog open={activeDialog === 'drafts'} onOpenChange={(open) => setActiveDialog(open ? 'drafts' : null)}>
-        <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Pré-vendas e comandas salvas</DialogTitle>
-            <DialogDescription>Retome vendas suspensas, mesas e comandas em aberto.</DialogDescription>
-          </DialogHeader>
+      <Sheet open={activeDialog === 'drafts'} onOpenChange={(open) => setActiveDialog(open ? 'drafts' : null)}>
+        <SheetContent side="right" className="w-full sm:max-w-[920px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Pré-vendas e comandas salvas</SheetTitle>
+            <SheetDescription>Retome vendas suspensas, mesas e comandas em aberto.</SheetDescription>
+          </SheetHeader>
           <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
             <Card>
               <CardContent className="space-y-3 p-4">
@@ -2604,15 +2604,15 @@ export default function POS() {
               </CardContent>
             </Card>
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
-      <Dialog open={activeDialog === 'references'} onOpenChange={(open) => setActiveDialog(open ? 'references' : null)}>
-        <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Referências rápidas</DialogTitle>
-            <DialogDescription>Encontre mesas, comandas, nomes ou pedidos sem sair do caixa.</DialogDescription>
-          </DialogHeader>
+      <Sheet open={activeDialog === 'references'} onOpenChange={(open) => setActiveDialog(open ? 'references' : null)}>
+        <SheetContent side="right" className="w-full sm:max-w-[920px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Referências rápidas</SheetTitle>
+            <SheetDescription>Encontre mesas, comandas, nomes ou pedidos sem sair do caixa.</SheetDescription>
+          </SheetHeader>
           <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
             <Card>
               <CardContent className="space-y-3 p-4">
@@ -2734,8 +2734,8 @@ export default function POS() {
               </Card>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       <Dialog open={activeDialog === 'orders'} onOpenChange={(open) => setActiveDialog(open ? 'orders' : null)}>
         <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto">
