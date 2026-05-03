@@ -52,7 +52,7 @@ const operationItems: MenuItem[] = [
   },
   {
     path: '/admin/frontdesk',
-    label: 'Hospedagens',
+    label: 'Recepção',
     icon: BedDouble,
     activeClassName:
       'data-[active=true]:bg-emerald-50 data-[active=true]:text-emerald-700 data-[active=true]:border-r-2 data-[active=true]:border-emerald-600',
@@ -100,7 +100,7 @@ const managementItems: MenuItem[] = [
 const catalogItems: MenuItem[] = [
   {
     path: '/admin/accommodations',
-    label: 'Hospedagens',
+    label: 'Quartos',
     icon: Home,
     activeClassName:
       'data-[active=true]:bg-green-50 data-[active=true]:text-green-700 data-[active=true]:border-r-2 data-[active=true]:border-green-600',

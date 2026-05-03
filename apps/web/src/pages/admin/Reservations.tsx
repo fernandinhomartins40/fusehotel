@@ -55,8 +55,8 @@ const reservationStatusLabels: Record<ReservationStatus, string> = {
   CHECKED_IN: 'Check-in feito',
   CHECKED_OUT: 'Check-out feito',
   CANCELLED: 'Cancelada',
-  COMPLETED: 'Conclu?da',
-  NO_SHOW: 'N?o compareceu',
+  COMPLETED: 'Concluída',
+  NO_SHOW: 'Não compareceu',
 };
 
 const reservationStatusClassNames: Record<ReservationStatus, string> = {
@@ -78,22 +78,22 @@ function buildCustomerMessage(
   const checkOutDate = new Date(reservation.checkOutDate).toLocaleDateString('pt-BR');
 
   if (action === 'accepted') {
-    return `Ol? ${reservation.guestName}, sua solicita??o de reserva ${reservation.reservationCode} para ${reservation.accommodation?.name || 'a acomoda??o selecionada'} foi aceita pelo hotel.
+    return `Olá ${reservation.guestName}, sua solicitação de reserva ${reservation.reservationCode} para ${reservation.accommodation?.name || 'a acomodação selecionada'} foi aceita pelo hotel.
 
 Check-in: ${checkInDate}
 Check-out: ${checkOutDate}
 Status: Confirmada
 
-Se precisar de mais alguma informa??o, responda esta conversa.`;
+Se precisar de mais alguma informação, responda esta conversa.`;
   }
 
-  return `Ol? ${reservation.guestName}, sua solicita??o de reserva ${reservation.reservationCode} n?o foi aprovada pelo hotel.
+  return `Olá ${reservation.guestName}, sua solicitação de reserva ${reservation.reservationCode} não foi aprovada pelo hotel.
 
 Check-in: ${checkInDate}
 Check-out: ${checkOutDate}
-Motivo: ${reason || 'Indisponibilidade para o per?odo solicitado.'}
+Motivo: ${reason || 'Indisponibilidade para o período solicitado.'}
 
-Se desejar, fale conosco para buscarmos uma nova op??o de hospedagem.`;
+Se desejar, fale conosco para buscarmos uma nova opção de hospedagem.`;
 }
 
 export function Reservations() {
@@ -216,7 +216,7 @@ export function Reservations() {
           <div>
             <h1 className="text-3xl font-bold">Reservas</h1>
             <p className="mt-1 text-gray-600">
-              Frente ?nica para fila comercial, aprova??es e calend?rio operacional.
+              Frente única para fila comercial, aprovações e calendário operacional.
             </p>
           </div>
 
@@ -236,7 +236,7 @@ export function Reservations() {
         <Tabs value={section} onValueChange={(value) => setSection(value as 'queue' | 'calendar')} className="space-y-4">
           <TabsList className="h-auto flex-wrap rounded-2xl bg-slate-100 p-1">
             <TabsTrigger value="queue" className="rounded-xl px-4 py-2">Fila comercial</TabsTrigger>
-            <TabsTrigger value="calendar" className="rounded-xl px-4 py-2">Calend?rio operacional</TabsTrigger>
+            <TabsTrigger value="calendar" className="rounded-xl px-4 py-2">Calendário operacional</TabsTrigger>
           </TabsList>
 
           <TabsContent value="queue" className="mt-0 space-y-4">
@@ -262,8 +262,8 @@ export function Reservations() {
                       <SelectItem value="CHECKED_IN">Check-in feito</SelectItem>
                       <SelectItem value="CHECKED_OUT">Check-out feito</SelectItem>
                       <SelectItem value="CANCELLED">Cancelada</SelectItem>
-                      <SelectItem value="COMPLETED">Conclu?da</SelectItem>
-                      <SelectItem value="NO_SHOW">N?o compareceu</SelectItem>
+                      <SelectItem value="COMPLETED">Concluída</SelectItem>
+                      <SelectItem value="NO_SHOW">Não compareceu</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -283,14 +283,14 @@ export function Reservations() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>C?digo</TableHead>
-                        <TableHead>H?spede</TableHead>
+                        <TableHead>Código</TableHead>
+                        <TableHead>Hóspede</TableHead>
                         <TableHead>Hospedagem</TableHead>
                         <TableHead>Check-in</TableHead>
                         <TableHead>Check-out</TableHead>
                         <TableHead>Valor</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead className="text-right">A??es</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -335,7 +335,7 @@ export function Reservations() {
                   <p className="text-gray-600">
                     {statusFilter !== 'all'
                       ? 'Nenhuma reserva encontrada para o filtro selecionado.'
-                      : 'Ainda n?o h? reservas cadastradas no sistema.'}
+                      : 'Ainda não h? reservas cadastradas no sistema.'}
                   </p>
                 </CardContent>
               </Card>
@@ -381,7 +381,7 @@ export function Reservations() {
                     <TabsList>
                       <TabsTrigger value="calendar" className="gap-2">
                         <CalendarIcon className="h-4 w-4" />
-                        Calend?rio
+                        Calendário
                       </TabsTrigger>
                       <TabsTrigger value="list" className="gap-2">
                         <List className="h-4 w-4" />
@@ -396,7 +396,7 @@ export function Reservations() {
             {isLoadingSchedule ? (
               <Card className="p-12 text-center">
                 <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-gray-400" />
-                <p className="text-gray-500">Carregando calend?rio...</p>
+                <p className="text-gray-500">Carregando calendário...</p>
               </Card>
             ) : calendarViewMode === 'calendar' ? (
               <ScheduleCalendar
@@ -439,7 +439,7 @@ export function Reservations() {
         <Dialog open={!!selectedScheduleReservation} onOpenChange={() => setSelectedScheduleReservation(null)}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Calend?rio operacional</DialogTitle>
+              <DialogTitle>Calendário operacional</DialogTitle>
               <DialogDescription>
                 Reserva {selectedScheduleReservation?.reservationCode}
               </DialogDescription>
@@ -462,7 +462,7 @@ export function Reservations() {
                 </div>
 
                 <div>
-                  <h3 className="mb-3 font-semibold">H?spede</h3>
+                  <h3 className="mb-3 font-semibold">Hóspede</h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <DetailLine label="Nome" value={selectedScheduleReservation.guestName} />
                     <DetailLine label="WhatsApp" value={selectedScheduleReservation.guestWhatsApp} />
@@ -477,7 +477,7 @@ export function Reservations() {
                     <DetailLine label="Check-in" value={format(new Date(selectedScheduleReservation.checkInDate), 'dd/MM/yyyy', { locale: ptBR })} />
                     <DetailLine label="Check-out" value={format(new Date(selectedScheduleReservation.checkOutDate), 'dd/MM/yyyy', { locale: ptBR })} />
                     <DetailLine label="Noites" value={String(selectedScheduleReservation.numberOfNights)} />
-                    <DetailLine label="H?spedes" value={String(selectedScheduleReservation.numberOfGuests)} />
+                    <DetailLine label="Hóspedes" value={String(selectedScheduleReservation.numberOfGuests)} />
                   </div>
                 </div>
               </div>

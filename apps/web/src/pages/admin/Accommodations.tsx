@@ -43,20 +43,20 @@ import type { RoomUnit } from '@/types/pms';
 
 const accommodationTypeLabels: Record<string, string> = {
   ROOM: 'Quarto',
-  SUITE: 'Su?te',
-  CHALET: 'Chal?',
+  SUITE: 'Suíte',
+  CHALET: 'Chalé',
   VILLA: 'Vila',
   APARTMENT: 'Apartamento',
 };
 
 const roomStatusLabels: Record<string, string> = {
-  AVAILABLE: 'Dispon?vel',
+  AVAILABLE: 'Disponível',
   OCCUPIED: 'Ocupado',
   DIRTY: 'Sujo',
   CLEANING: 'Em limpeza',
   INSPECTED: 'Inspecionado',
   OUT_OF_ORDER: 'Fora de ordem',
-  OUT_OF_SERVICE: 'Fora de servi?o',
+  OUT_OF_SERVICE: 'Fora de serviço',
   BLOCKED: 'Bloqueado',
 };
 
@@ -210,7 +210,7 @@ export function Accommodations() {
           <div>
             <h1 className="text-3xl font-bold">Hospedagens e unidades</h1>
             <p className="mt-1 text-gray-600">
-              Cadastre o que o site vende e as unidades f?sicas usadas na opera??o do hotel em um ?nico lugar.
+              Cadastre o que o site vende e as unidades físicas usadas na operação do hotel em um único lugar.
             </p>
           </div>
           <Button
@@ -240,7 +240,7 @@ export function Accommodations() {
           </Card>
           <Card className="border-blue-200 bg-blue-50">
             <CardHeader className="pb-3">
-              <CardDescription className="text-blue-700">Unidades f?sicas ativas</CardDescription>
+              <CardDescription className="text-blue-700">Unidades físicas ativas</CardDescription>
               <CardTitle className="text-base text-blue-950">
                 {loadingRoomUnits ? '...' : activeRoomUnitsCount}
               </CardTitle>
@@ -266,11 +266,11 @@ export function Accommodations() {
                     <TableHead>Código</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead>Capacidade</TableHead>
-                    <TableHead>Pre?o</TableHead>
+                    <TableHead>Preço</TableHead>
                     <TableHead>Site</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Comodidades</TableHead>
-                    <TableHead className="text-right">A??es</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -302,7 +302,7 @@ export function Accommodations() {
                             {accommodation.name}
                             {accommodation.isFeatured && <Star className="h-4 w-4 fill-current text-yellow-500" />}
                           </div>
-                          <div className="text-sm text-gray-500">{accommodation.shortDescription || 'Sem descri??o'}</div>
+                          <div className="text-sm text-gray-500">{accommodation.shortDescription || 'Sem descrição'}</div>
                         </div>
                       </TableCell>
                       <TableCell className="font-mono">
@@ -318,7 +318,7 @@ export function Accommodations() {
                           <div className="space-y-1">
                             <Badge variant="secondary">Fora do site</Badge>
                             <div className="text-xs text-muted-foreground">
-                              {!accommodation.isAvailable ? 'Tipo indispon?vel' : 'Sem unidade ativa'}
+                              {!accommodation.isAvailable ? 'Tipo indisponível' : 'Sem unidade ativa'}
                             </div>
                           </div>
                         )}
@@ -393,7 +393,7 @@ export function Accommodations() {
                 </svg>
               </div>
               <h3 className="mb-2 text-lg font-semibold">Nenhum quarto cadastrado</h3>
-              <p className="mb-4 text-gray-600">Crie o quarto uma vez s? e ele valer? para o site e para a opera??o.</p>
+              <p className="mb-4 text-gray-600">Crie o quarto uma vez só e ele valerá para o site e para a operação.</p>
               <Button
                 onClick={() => {
                   setCurrentAccommodation(null);
@@ -436,7 +436,7 @@ export function Accommodations() {
             <AlertDialogHeader>
               <AlertDialogTitle>Excluir tipo de hospedagem?</AlertDialogTitle>
               <AlertDialogDescription>
-                Essa a??o remove o tipo de hospedagem. Use com cuidado para n?o afetar reservas ou unidades j? vinculadas.
+                Essa ação remove o tipo de hospedagem. Use com cuidado para não afetar reservas ou unidades já vinculadas.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

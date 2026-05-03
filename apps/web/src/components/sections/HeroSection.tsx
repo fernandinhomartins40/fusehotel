@@ -48,7 +48,7 @@ export const HeroSection: React.FC = () => {
             background: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.7) 100%)',
           }}
         />
-        <div className="absolute inset-0 flex flex-col justify-center px-4 md:px-12 lg:px-24 pt-28 pb-16 md:pt-36 md:pb-20 lg:pt-40">
+        <div className="absolute inset-0 flex flex-col justify-start px-4 md:px-12 lg:px-24 pt-36 pb-16 md:pt-44 md:pb-20 lg:pt-48 xl:pt-52">
           <div className="page-container flex flex-col items-start text-left">
             <div className="animate-fade-in-up">
               <div className="line-accent" style={{ backgroundColor: 'rgba(255,255,255,0.5)' }} />
@@ -134,7 +134,7 @@ export const HeroSection: React.FC = () => {
                   }}
                 />
               )}
-              <div className="absolute inset-0 flex flex-col justify-center px-4 md:px-12 lg:px-24 pt-28 pb-16 md:pt-36 md:pb-20 lg:pt-40">
+              <div className="absolute inset-0 flex flex-col justify-start px-4 md:px-12 lg:px-24 pt-36 pb-16 md:pt-44 md:pb-20 lg:pt-48 xl:pt-52">
                 <div className="page-container flex flex-col items-start text-left">
                   {slide.showSubtitle && slide.subtitle && (
                     <h2 className="text-white/60 text-[11px] md:text-[13px] tracking-[4px] font-medium mb-6 uppercase">
