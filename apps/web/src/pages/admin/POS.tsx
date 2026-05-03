@@ -24,7 +24,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -32,6 +31,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useCustomers } from '@/hooks/useCustomers';
@@ -1923,12 +1923,12 @@ export default function POS() {
         initialTab={guestSheetInitialTab}
       />
 
-      <Dialog open={activeDialog === 'checkin'} onOpenChange={(open) => setActiveDialog(open ? 'checkin' : null)}>
-        <DialogContent className="max-h-[90dvh] max-w-6xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Check-in pelo PDV</DialogTitle>
-            <DialogDescription>Use o mesmo fluxo da recepção para abrir uma hospedagem sem sair do caixa.</DialogDescription>
-          </DialogHeader>
+      <Sheet open={activeDialog === 'checkin'} onOpenChange={(open) => setActiveDialog(open ? 'checkin' : null)}>
+        <SheetContent side="right" className="w-full sm:max-w-[920px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Check-in pelo PDV</SheetTitle>
+            <SheetDescription>Use o mesmo fluxo da recepção para abrir uma hospedagem sem sair do caixa.</SheetDescription>
+          </SheetHeader>
 
           <Tabs defaultValue="arrivals" className="space-y-4">
             <TabsList>
@@ -1998,14 +1998,14 @@ export default function POS() {
                           )}
                         </div>
 
-                        <DialogFooter>
+                        <div className="flex justify-end gap-2">
                           <Button variant="outline" onClick={() => setCheckInReservation(null)}>
                             Cancelar
                           </Button>
                           <Button onClick={() => void handleConfirmCheckIn()} disabled={!checkInRoomId || checkIn.isPending}>
                             Confirmar check-in
                           </Button>
-                        </DialogFooter>
+                        </div>
                       </>
                     )}
                   </CardContent>
@@ -2195,25 +2195,25 @@ export default function POS() {
                       <div>{selectedWalkInRoom ? `${selectedWalkInRoom.code} - ${selectedWalkInRoom.name}` : 'Sem quarto definido'}</div>
                     </div>
 
-                    <DialogFooter>
+                    <div className="flex justify-end">
                       <Button onClick={() => void handleWalkInCheckIn()} disabled={!walkInForm.roomUnitId || walkInCheckIn.isPending}>
                         Fazer check-in no quarto
                       </Button>
-                    </DialogFooter>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
             </TabsContent>
           </Tabs>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
-      <Dialog open={activeDialog === 'checkout'} onOpenChange={(open) => setActiveDialog(open ? 'checkout' : null)}>
-        <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Checkout pelo PDV</DialogTitle>
-            <DialogDescription>Abra a ficha da hospedagem para conferir o quarto, receber saldo pendente e concluir a saída.</DialogDescription>
-          </DialogHeader>
+      <Sheet open={activeDialog === 'checkout'} onOpenChange={(open) => setActiveDialog(open ? 'checkout' : null)}>
+        <SheetContent side="right" className="w-full sm:max-w-[760px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Checkout pelo PDV</SheetTitle>
+            <SheetDescription>Abra a ficha da hospedagem para conferir o quarto, receber saldo pendente e concluir a saída.</SheetDescription>
+          </SheetHeader>
           <div className="grid gap-3">
             {!inHouseStays.length ? (
               <EmptyInline text="Nenhuma hospedagem ativa no momento." />
@@ -2251,15 +2251,15 @@ export default function POS() {
               })
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
-      <Dialog open={activeDialog === 'charge-stay'} onOpenChange={(open) => setActiveDialog(open ? 'charge-stay' : null)}>
-        <DialogContent className="max-h-[90dvh] max-w-4xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Incluir despesas na conta do hóspede</DialogTitle>
-            <DialogDescription>Selecione uma hospedagem ativa para lançar produtos e serviços diretamente na conta do quarto.</DialogDescription>
-          </DialogHeader>
+      <Sheet open={activeDialog === 'charge-stay'} onOpenChange={(open) => setActiveDialog(open ? 'charge-stay' : null)}>
+        <SheetContent side="right" className="w-full sm:max-w-[720px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Incluir despesas na conta do hóspede</SheetTitle>
+            <SheetDescription>Selecione uma hospedagem ativa para lançar produtos e serviços diretamente na conta do quarto.</SheetDescription>
+          </SheetHeader>
           <div className="grid gap-3">
             {!inHouseStays.length ? (
               <EmptyInline text="Nenhuma hospedagem ativa disponível para lançamento em conta." />
@@ -2279,15 +2279,15 @@ export default function POS() {
               ))
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
-      <Dialog open={activeDialog === 'room-service-orders'} onOpenChange={(open) => setActiveDialog(open ? 'room-service-orders' : null)}>
-        <DialogContent className="max-h-[90dvh] max-w-5xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Pedidos do serviço de quarto</DialogTitle>
-            <DialogDescription>Visualize, coloque em preparo, entregue e gerencie pedidos feitos pelo hóspede sem sair do PDV.</DialogDescription>
-          </DialogHeader>
+      <Sheet open={activeDialog === 'room-service-orders'} onOpenChange={(open) => setActiveDialog(open ? 'room-service-orders' : null)}>
+        <SheetContent side="right" className="w-full sm:max-w-[920px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Pedidos do serviço de quarto</SheetTitle>
+            <SheetDescription>Visualize, coloque em preparo, entregue e gerencie pedidos feitos pelo hóspede sem sair do PDV.</SheetDescription>
+          </SheetHeader>
           <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
             <Card>
               <CardContent className="space-y-3 p-4">
@@ -2389,8 +2389,8 @@ export default function POS() {
               </CardContent>
             </Card>
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       <CreateCustomerDialog
         open={customerDialogOpen}
