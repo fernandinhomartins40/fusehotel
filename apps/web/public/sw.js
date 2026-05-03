@@ -16,7 +16,13 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  const requestUrl = new URL(event.request.url);
+
   if (event.request.method !== 'GET') {
+    return;
+  }
+
+  if (!['http:', 'https:'].includes(requestUrl.protocol)) {
     return;
   }
 
