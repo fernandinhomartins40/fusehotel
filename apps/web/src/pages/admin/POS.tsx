@@ -107,6 +107,7 @@ type CartItem = {
 
 type NumericField = 'serviceFee' | 'discount' | 'payment';
 type DialogKey =
+  | 'sale'
   | 'cash'
   | 'orders'
   | 'drafts'
@@ -501,7 +502,7 @@ export default function POS() {
 
     setCheckInReservation(null);
     setCheckInRoomId('');
-    setActiveDialog(null);
+    setActiveDialog('sale');
   };
 
   const handleWalkInSearchChange = (value: string) => {
@@ -576,7 +577,7 @@ export default function POS() {
     setRoomSearch(stay.roomUnit?.code ?? '');
     setCustomerName(stay.reservation.guestName);
     setCurrentStep('items');
-    setActiveDialog(null);
+    setActiveDialog('sale');
     toast.success(`Conta do hóspede ${stay.reservation.guestName} vinculada ao PDV`);
   };
 
@@ -675,7 +676,7 @@ export default function POS() {
     setCartItems(draft.cartItems);
     setDraftReference(draft.reference);
     setCurrentStep('items');
-    setActiveDialog(null);
+    setActiveDialog('sale');
     toast.success(`Pré-venda ${draft.reference} restaurada`);
   };
 
@@ -1675,6 +1676,146 @@ export default function POS() {
     return renderReviewStep();
   };
 
+  const renderSaleStepNavigation = () => (
+    <div className="flex flex-wrap gap-2">
+      {stepSequence.map((step, index) => {
+        const active = currentStep === step;
+        const completed = index < stepIndex;
+        return (
+          <button
+            key={step}
+            type="button"
+            onClick={() => {
+              if (index <= stepIndex) setCurrentStep(step);
+            }}
+            className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-left transition ${
+              active
+                ? 'border-sky-600 bg-sky-600 text-white'
+                : completed
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  : 'border-slate-200 bg-slate-50 text-slate-500'
+            }`}
+          >
+            <span
+              className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
+                active ? 'bg-white/20 text-white' : completed ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-slate-500'
+              }`}
+            >
+              {index + 1}
+            </span>
+            <span className="text-sm font-medium">{posStepLabels[step]}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const renderSaleSummaryPanel = (showStepActions: boolean) => (
+    <div className="space-y-4">
+      <div className="rounded-3xl bg-slate-950 p-4 text-white shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-xs uppercase tracking-[0.18em] text-slate-400">Resumo da venda</div>
+            <div className="mt-1 text-xl font-semibold">{posStepLabels[currentStep]}</div>
+          </div>
+          <div className="flex items-center gap-2">
+            {editingOrder ? <Badge className="bg-amber-500/20 text-amber-200 hover:bg-amber-500/20">Editando {editingOrder.orderNumber}</Badge> : null}
+            <Badge className="bg-white/10 text-white hover:bg-white/10">{cartDetailedItems.length} itens</Badge>
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-3 text-sm">
+          <SummaryRow label="Cliente" value={resolvedCustomerName || 'Consumidor'} />
+          <SummaryRow label="CobranÃ§a" value={settlementType === 'FOLIO' ? 'Conta do hÃ³spede' : salePresetLabels[salePreset]} />
+          <SummaryRow
+            label="ReferÃªncia"
+            value={settlementType === 'FOLIO' ? (selectedStay ? `Quarto ${selectedStay.roomUnit?.code ?? 'S/N'}` : 'Aguardando') : (tableNumber || 'â€”')}
+          />
+          <SummaryRow label="Pagamento" value={settlementType === 'DIRECT' ? paymentMethodLabels[paymentMethod] : 'Conta do hÃ³spede'} />
+        </div>
+
+        <ScrollArea className="mt-4 max-h-[260px] rounded-2xl border border-white/10 bg-white/5">
+          <div className="space-y-2 p-3">
+            {!cartDetailedItems.length ? (
+              <div className="rounded-2xl border border-dashed border-white/10 p-4 text-center text-sm text-slate-400">Nenhum item adicionado.</div>
+            ) : (
+              cartDetailedItems.map((item) => (
+                <div key={item.productId} className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2">
+                  <div className="line-clamp-1 text-sm font-medium">{item.product.name}</div>
+                  <div className="mt-1 flex items-center justify-between text-xs text-slate-400">
+                    <span>{item.quantity}x</span>
+                    <span>{currency.format(item.total)}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
+
+        <div className="mt-4 rounded-3xl bg-white px-4 py-5 text-slate-950">
+          <div className="flex items-center justify-between text-sm text-slate-500">
+            <span>Subtotal</span>
+            <span>{currency.format(subtotal)}</span>
+          </div>
+          <div className="mt-2 flex items-center justify-between text-sm text-slate-500">
+            <span>Ajustes</span>
+            <span>{currency.format(Number(serviceFeeAmount || 0) - Number(discountAmount || 0))}</span>
+          </div>
+          <div className="mt-4 flex items-end justify-between gap-4">
+            <span className="text-base font-medium">Valor total</span>
+            <span className="text-4xl font-semibold">{currency.format(total)}</span>
+          </div>
+        </div>
+      </div>
+
+      {showStepActions ? (
+        <div className="rounded-3xl border bg-white p-4 shadow-sm">
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+            <Button variant="outline" className="rounded-2xl" onClick={clearDraft}>
+              Limpar venda
+            </Button>
+            {stepIndex > 0 ? (
+              <Button variant="outline" className="rounded-2xl" onClick={goToPreviousStep}>
+                Voltar etapa
+              </Button>
+            ) : null}
+            {currentStep !== 'review' ? (
+              <Button className="rounded-2xl" onClick={goToNextStep}>
+                PrÃ³xima etapa
+              </Button>
+            ) : (
+              <Button
+                className="h-14 rounded-2xl bg-emerald-500 text-base font-semibold text-white hover:bg-emerald-600"
+                onClick={handleFinalizeSale}
+                disabled={createOrder.isPending || updateOrder.isPending || registerPayment.isPending || updateOrderStatus.isPending}
+              >
+                {editingOrder
+                  ? settlementType === 'DIRECT'
+                    ? Number(paymentAmount || 0) > 0
+                      ? 'Salvar e receber'
+                      : 'Salvar comanda'
+                    : 'Atualizar e lanÃ§ar consumo'
+                  : settlementType === 'DIRECT'
+                    ? 'Receber e finalizar'
+                    : 'LanÃ§ar consumo'}
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+
+  const renderSaleFlowSheet = () => (
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="rounded-3xl border bg-white p-4 shadow-sm">
+        {renderSaleStepNavigation()}
+        <div className="mt-5">{renderStepContent()}</div>
+      </div>
+      {renderSaleSummaryPanel(true)}
+    </div>
+  );
+
   return (
     <AdminLayout>
       <div className="space-y-4 p-4 md:p-6 lg:min-h-[calc(100dvh-4rem)]">
@@ -1731,133 +1872,56 @@ export default function POS() {
             </div>
           </div>
 
-          <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_340px]">
-            <div className="rounded-3xl border bg-white p-4 shadow-sm">
-              <div className="flex flex-wrap gap-2">
-                {stepSequence.map((step, index) => {
-                  const active = currentStep === step;
-                  const completed = index < stepIndex;
-                  return (
-                    <button
-                      key={step}
-                      type="button"
-                      onClick={() => {
-                        if (index <= stepIndex) setCurrentStep(step);
-                      }}
-                      className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-left transition ${
-                        active
-                          ? 'border-sky-600 bg-sky-600 text-white'
-                          : completed
-                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                            : 'border-slate-200 bg-slate-50 text-slate-500'
-                      }`}
-                    >
-                      <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
-                        active ? 'bg-white/20 text-white' : completed ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-slate-500'
-                      }`}>
-                        {index + 1}
-                      </span>
-                      <span className="text-sm font-medium">{posStepLabels[step]}</span>
-                    </button>
-                  );
-                })}
+          <div className="rounded-3xl border bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-3">
+                <div>
+                  <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Fluxo da venda</div>
+                  <h2 className="mt-1 text-xl font-semibold text-slate-950">
+                    {editingOrder ? `Editando ${editingOrder.orderNumber}` : cartDetailedItems.length ? 'Continuar venda atual' : 'Abrir nova venda'}
+                  </h2>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {stepSequence.map((step, index) => (
+                    <Badge key={step} variant="outline" className={currentStep === step ? 'border-sky-200 bg-sky-50 text-sky-700' : ''}>
+                      {index + 1}. {posStepLabels[step]}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="max-w-2xl text-sm text-slate-600">
+                  O catálogo, leitura rápida, pagamento e revisão foram movidos para um painel lateral para liberar espaço no PDV e manter o fluxo utilizável em telas menores.
+                </p>
               </div>
 
-              <div className="mt-5">{renderStepContent()}</div>
-            </div>
-
-            <div className="space-y-4 2xl:sticky 2xl:top-4 2xl:self-start">
-              <div className="rounded-3xl bg-slate-950 p-4 text-white shadow-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-xs uppercase tracking-[0.18em] text-slate-400">Resumo da venda</div>
-                    <div className="mt-1 text-xl font-semibold">{posStepLabels[currentStep]}</div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {editingOrder && <Badge className="bg-amber-500/20 text-amber-200 hover:bg-amber-500/20">Editando {editingOrder.orderNumber}</Badge>}
-                    <Badge className="bg-white/10 text-white hover:bg-white/10">{cartDetailedItems.length} itens</Badge>
-                  </div>
-                </div>
-
-                <div className="mt-4 space-y-3 text-sm">
-                  <SummaryRow label="Cliente" value={resolvedCustomerName || 'Consumidor'} />
-                  <SummaryRow label="Cobrança" value={settlementType === 'FOLIO' ? 'Conta do hóspede' : salePresetLabels[salePreset]} />
-                  <SummaryRow label="Referência" value={settlementType === 'FOLIO' ? (selectedStay ? `Quarto ${selectedStay.roomUnit?.code ?? 'S/N'}` : 'Aguardando') : (tableNumber || '—')} />
-                  <SummaryRow label="Pagamento" value={settlementType === 'DIRECT' ? paymentMethodLabels[paymentMethod] : 'Conta do hóspede'} />
-                </div>
-
-                <ScrollArea className="mt-4 max-h-[260px] rounded-2xl border border-white/10 bg-white/5">
-                  <div className="space-y-2 p-3">
-                    {!cartDetailedItems.length ? (
-                      <div className="rounded-2xl border border-dashed border-white/10 p-4 text-center text-sm text-slate-400">Nenhum item adicionado.</div>
-                    ) : (
-                      cartDetailedItems.map((item) => (
-                        <div key={item.productId} className="rounded-2xl border border-white/10 bg-black/10 px-3 py-2">
-                          <div className="line-clamp-1 text-sm font-medium">{item.product.name}</div>
-                          <div className="mt-1 flex items-center justify-between text-xs text-slate-400">
-                            <span>{item.quantity}x</span>
-                            <span>{currency.format(item.total)}</span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </ScrollArea>
-
-                <div className="mt-4 rounded-3xl bg-white px-4 py-5 text-slate-950">
-                  <div className="flex items-center justify-between text-sm text-slate-500">
-                    <span>Subtotal</span>
-                    <span>{currency.format(subtotal)}</span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-sm text-slate-500">
-                    <span>Ajustes</span>
-                    <span>{currency.format(Number(serviceFeeAmount || 0) - Number(discountAmount || 0))}</span>
-                  </div>
-                  <div className="mt-4 flex items-end justify-between">
-                    <span className="text-base font-medium">Valor total</span>
-                    <span className="text-4xl font-semibold">{currency.format(total)}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-3xl border bg-white p-4 shadow-sm">
-                <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-1">
-                  <Button variant="outline" className="rounded-2xl" onClick={clearDraft}>
-                    Limpar venda
-                  </Button>
-                  {stepIndex > 0 ? (
-                    <Button variant="outline" className="rounded-2xl" onClick={goToPreviousStep}>
-                      Voltar etapa
-                    </Button>
-                  ) : null}
-                  {currentStep !== 'review' ? (
-                    <Button className="rounded-2xl" onClick={goToNextStep}>
-                      Próxima etapa
-                    </Button>
-                  ) : (
-                    <Button
-                      className="h-14 rounded-2xl bg-emerald-500 text-base font-semibold text-white hover:bg-emerald-600"
-                      onClick={handleFinalizeSale}
-                      disabled={createOrder.isPending || updateOrder.isPending || registerPayment.isPending || updateOrderStatus.isPending}
-                    >
-                      {editingOrder
-                        ? settlementType === 'DIRECT'
-                          ? Number(paymentAmount || 0) > 0
-                            ? 'Salvar e receber'
-                            : 'Salvar comanda'
-                          : 'Atualizar e lançar consumo'
-                        : settlementType === 'DIRECT'
-                          ? 'Receber e finalizar'
-                          : 'Lançar consumo'}
-                    </Button>
-                  )}
-                </div>
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-[260px]">
+                <Button className="rounded-2xl" onClick={() => setActiveDialog('sale')}>
+                  {cartDetailedItems.length || editingOrder ? 'Continuar venda' : 'Abrir venda'}
+                </Button>
+                <Button variant="outline" className="rounded-2xl" onClick={clearDraft}>
+                  Limpar venda
+                </Button>
               </div>
             </div>
           </div>
         </div>
+
+        <div className="space-y-4 2xl:sticky 2xl:top-4 2xl:self-start">
+          {renderSaleSummaryPanel(false)}
         </div>
       </div>
+
+      <Sheet open={activeDialog === 'sale'} onOpenChange={(open) => setActiveDialog(open ? 'sale' : null)}>
+        <SheetContent side="right" className="w-full sm:max-w-[1180px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{editingOrder ? `Editar venda ${editingOrder.orderNumber}` : 'Venda no PDV'}</SheetTitle>
+            <SheetDescription>Monte a venda em etapas sem ocupar a tela principal do caixa.</SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-6">
+            {renderSaleFlowSheet()}
+          </div>
+        </SheetContent>
+      </Sheet>
       <Dialog open={activeDialog === 'details'} onOpenChange={(open) => setActiveDialog(open ? 'details' : null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -2793,6 +2857,7 @@ export default function POS() {
           </div>
         </DialogContent>
       </Dialog>
+      </div>
     </AdminLayout>
   );
 }
