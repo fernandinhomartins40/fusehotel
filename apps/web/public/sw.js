@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fusehotel-pwa-v20260503-2';
+const CACHE_NAME = 'fusehotel-pwa-v20260504-1';
 const ASSETS = ['/manifest.webmanifest', '/icons/icon-192.svg', '/icons/icon-512.svg', '/favicon.ico'];
 
 self.addEventListener('install', (event) => {
@@ -8,11 +8,15 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((key) => key.startsWith('fusehotel-pwa-') && key !== CACHE_NAME).map((key) => caches.delete(key)))
-    )
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+      await self.clients.claim();
+
+      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      await Promise.all(clients.map((client) => client.navigate(client.url)));
+    })()
   );
-  self.clients.claim();
 });
 
 self.addEventListener('message', (event) => {
