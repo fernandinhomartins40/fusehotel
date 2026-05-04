@@ -118,7 +118,6 @@ type DialogKey =
   | 'cash'
   | 'orders'
   | 'drafts'
-  | 'references'
   | 'details'
   | 'checkin'
   | 'checkout'
@@ -220,7 +219,6 @@ export default function POS() {
   const [quickQuantity, setQuickQuantity] = useState('1');
   const [draftReference, setDraftReference] = useState('');
   const [savedDrafts, setSavedDrafts] = useState<SavedDraft[]>([]);
-  const [referenceLookup, setReferenceLookup] = useState('');
   const [currentStep, setCurrentStep] = useState<POSStep>('items');
   const [roomSearch, setRoomSearch] = useState('');
   const [guestSheetOpen, setGuestSheetOpen] = useState(false);
@@ -384,24 +382,6 @@ export default function POS() {
     [editingOrderId, orders]
   );
 
-  const normalizedReferenceLookup = useMemo(() => referenceLookup.trim().toLowerCase(), [referenceLookup]);
-
-  const referencedOpenOrders = useMemo(() => {
-    if (!normalizedReferenceLookup) return openOrders.slice(0, 8);
-
-    return openOrders.filter((order) =>
-      [order.tableNumber, order.customerName, order.orderNumber]
-        .filter(Boolean)
-        .some((value) => value!.toLowerCase().includes(normalizedReferenceLookup))
-    );
-  }, [normalizedReferenceLookup, openOrders]);
-
-  const referencedDrafts = useMemo(() => {
-    if (!normalizedReferenceLookup) return savedDrafts.slice(0, 8);
-
-    return savedDrafts.filter((draft) => draft.reference.toLowerCase().includes(normalizedReferenceLookup));
-  }, [normalizedReferenceLookup, savedDrafts]);
-
   const canEditSelectedOrder = useMemo(() => {
     if (!selectedOrder) return false;
 
@@ -485,7 +465,6 @@ export default function POS() {
     setPendingPayments([]);
     setOrderNotes('');
     setDraftReference('');
-    setReferenceLookup('');
     setRoomSearch('');
     setCurrentStep('items');
   };
@@ -759,11 +738,6 @@ export default function POS() {
     restoreDraft(latestDraft);
   };
 
-  const selectReferencedOrder = (orderId: string) => {
-    setSelectedOrderId(orderId);
-    setActiveDialog('orders');
-  };
-
   const useTableReference = (rawReference = tableNumber) => {
     const reference = rawReference.trim();
 
@@ -784,7 +758,6 @@ export default function POS() {
     setSettlementType('DIRECT');
     setTableNumber(reference);
     setDraftReference(reference);
-    setReferenceLookup(reference);
     setCurrentStep('items');
     setActiveDialog('sale');
     toast.success(`Comanda ${reference} pronta para receber itens`);
@@ -978,11 +951,6 @@ export default function POS() {
       if (event.altKey && event.key.toLowerCase() === 'g') {
         event.preventDefault();
         saveCurrentDraft();
-      }
-
-      if (event.altKey && event.key.toLowerCase() === '0') {
-        event.preventDefault();
-        setActiveDialog('references');
       }
 
       if (!event.ctrlKey && !event.altKey && !event.metaKey && event.key.length === 1) {
@@ -1603,22 +1571,18 @@ export default function POS() {
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') {
                     event.preventDefault();
+                    event.stopPropagation();
                     useTableReference();
                   }
                 }}
-                placeholder="Número da mesa ou comanda"
-                className="h-12 rounded-2xl bg-white"
+                placeholder="Mesa/comanda ou leitor"
+                className="h-12 rounded-2xl bg-white text-base font-semibold"
+                autoComplete="off"
               />
-              <p className="text-xs text-slate-500">Referência para acompanhar o consumo.</p>
+              <p className="text-xs text-slate-500">Leia o QR Code/código de barras ou digite. Se não existir, a comanda é aberta para receber itens.</p>
               <div className="flex flex-wrap gap-2">
                 <Button onClick={() => useTableReference()}>
-                  Usar / criar
-                </Button>
-                <Button variant="outline" onClick={() => setActiveDialog('references')}>
-                  Buscar referência
-                </Button>
-                <Button variant="outline" onClick={() => setActiveDialog('drafts')}>
-                  Vendas salvas
+                  Abrir comanda
                 </Button>
               </div>
             </div>
@@ -2023,7 +1987,6 @@ export default function POS() {
                 <SideAction icon={ShoppingCart} label="Pedidos" description="Serviço de quarto e entrega" shortcut="Alt + 1" active={activeDialog === 'room-service-orders'} tone="amber" onClick={() => setActiveDialog('room-service-orders')} />
                 <SideAction icon={Wallet} label="Caixa" description="Abertura e fechamento" shortcut="Alt + 2" active={activeDialog === 'cash'} tone="teal" onClick={() => setActiveDialog('cash')} />
                 <SideAction icon={Receipt} label="Pré-vendas" description="Suspensas e retomada" shortcut="Alt + 9" active={activeDialog === 'drafts'} tone="indigo" onClick={() => setActiveDialog('drafts')} />
-                <SideAction icon={Search} label="Buscar venda" description="Pedido, mesa ou comanda" shortcut="Alt + 0" active={activeDialog === 'references'} tone="slate" onClick={() => setActiveDialog('references')} />
               </div>
               {(cartDetailedItems.length || editingOrder) ? (
                 <div className="mt-3 flex justify-end">
@@ -2710,156 +2673,6 @@ export default function POS() {
                 )}
               </CardContent>
             </Card>
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      <Sheet open={activeDialog === 'references'} onOpenChange={(open) => setActiveDialog(open ? 'references' : null)}>
-        <SheetContent side="right" className="w-full sm:max-w-[920px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Buscar venda ou comanda</SheetTitle>
-            <SheetDescription>Localize pedidos em aberto e rascunhos deste caixa sem misturar os fluxos.</SheetDescription>
-          </SheetHeader>
-          <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
-            <Card>
-              <CardContent className="space-y-3 p-4">
-                <div>
-                  <div className="font-medium">Busca operacional</div>
-                  <p className="text-sm text-slate-500">Use pedido, mesa, comanda, quarto ou cliente.</p>
-                </div>
-                <Input
-                  value={referenceLookup}
-                  onChange={(event) => setReferenceLookup(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      useTableReference(referenceLookup);
-                    }
-                  }}
-                  placeholder="Pedido, mesa, comanda ou cliente"
-                />
-                <div className="grid gap-2 rounded-2xl border bg-slate-50 p-3 text-sm text-slate-600">
-                  <div className="flex items-center justify-between gap-3">
-                    <span>Pedidos salvos no sistema</span>
-                    <Badge variant="outline">{referencedOpenOrders.length}</Badge>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <span>Rascunhos deste caixa</span>
-                    <Badge variant="outline">{referencedDrafts.length}</Badge>
-                  </div>
-                </div>
-                <Button className="w-full" onClick={() => useTableReference(referenceLookup)} disabled={!referenceLookup.trim()}>
-                  Criar/usar mesa ou comanda
-                </Button>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" onClick={() => setActiveDialog('orders')}>
-                    Ver pedidos
-                  </Button>
-                  <Button variant="outline" onClick={() => setActiveDialog('drafts')}>
-                    Ver pré-vendas
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid gap-4">
-              <Card>
-                <CardContent className="space-y-3 p-4">
-                  <div>
-                    <div className="font-medium">Pedidos salvos no sistema</div>
-                    <p className="text-sm text-slate-500">Dados persistidos no backend e visíveis para todos os operadores.</p>
-                  </div>
-                  {!referencedOpenOrders.length ? (
-                    <EmptyInline text="Nenhum pedido em aberto encontrado." />
-                  ) : (
-                    referencedOpenOrders.map((order) => (
-                      <div
-                        key={order.id}
-                        onClick={() => selectReferencedOrder(order.id)}
-                        className="w-full rounded-2xl border p-4 text-left transition hover:border-slate-400 hover:bg-slate-50"
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-                            selectReferencedOrder(order.id);
-                          }
-                        }}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="font-medium">{order.orderNumber}</div>
-                            <div className="mt-1 text-sm text-slate-500">
-                              {order.tableNumber || order.customerName || 'Sem referência'} • {originLabels[order.origin]}
-                            </div>
-                          </div>
-                          <Badge variant="outline">{orderStatusLabels[order.status]}</Badge>
-                        </div>
-                        <div className="mt-3 text-sm font-medium text-slate-900">
-                          Total {currency.format(Number(order.totalAmount))} • Pago {currency.format(Number(order.paidAmount))}
-                        </div>
-                        <div className="mt-3 flex gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              reopenOrderInCart(order);
-                            }}
-                            disabled={
-                              !(
-                                (order.status === 'OPEN' || order.status === 'PREPARING') &&
-                                Number(order.paidAmount) === 0 &&
-                                !order.postedToFolioAt &&
-                                order.payments.length === 0
-                              )
-                            }
-                          >
-                            Editar no carrinho
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="space-y-3 p-4">
-                  <div>
-                    <div className="font-medium">Rascunhos deste caixa</div>
-                    <p className="text-sm text-slate-500">Pré-vendas salvas apenas neste navegador para retomada rápida.</p>
-                  </div>
-                  {!referencedDrafts.length ? (
-                    <EmptyInline text="Nenhum rascunho local encontrado." />
-                  ) : (
-                    referencedDrafts
-                      .map((draft) => (
-                        <div key={draft.id} className="rounded-2xl border p-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <div className="font-medium">{draft.reference}</div>
-                              <div className="mt-1 text-sm text-slate-500">
-                                {salePresetLabels[draft.salePreset]} • {draft.cartItems.length} item(ns)
-                              </div>
-                            </div>
-                            <Badge variant="outline">{settlementLabels[draft.settlementType]}</Badge>
-                          </div>
-                          <div className="mt-3 flex gap-2">
-                            <Button variant="outline" onClick={() => restoreDraft(draft)}>
-                              Retomar
-                            </Button>
-                            <Button variant="destructive" onClick={() => deleteDraft(draft.id)}>
-                              Excluir
-                            </Button>
-                          </div>
-                        </div>
-                      ))
-                  )}
-                </CardContent>
-              </Card>
-            </div>
           </div>
         </SheetContent>
       </Sheet>
