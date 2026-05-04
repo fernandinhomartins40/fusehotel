@@ -764,6 +764,32 @@ export default function POS() {
     setActiveDialog('orders');
   };
 
+  const useTableReference = (rawReference = tableNumber) => {
+    const reference = rawReference.trim();
+
+    if (!reference) {
+      toast.error('Informe ou leia o número da mesa/comanda');
+      return;
+    }
+
+    const existingOrder = openOrders.find((order) => order.tableNumber?.toLowerCase() === reference.toLowerCase());
+
+    if (existingOrder) {
+      reopenOrderInCart(existingOrder);
+      toast.success(`Comanda ${reference} reaberta`);
+      return;
+    }
+
+    applySalePreset('COMANDA');
+    setSettlementType('DIRECT');
+    setTableNumber(reference);
+    setDraftReference(reference);
+    setReferenceLookup(reference);
+    setCurrentStep('items');
+    setActiveDialog('sale');
+    toast.success(`Comanda ${reference} pronta para receber itens`);
+  };
+
   const reopenOrderInCart = (order: typeof orders[number]) => {
     if (
       (order.status !== 'OPEN' && order.status !== 'PREPARING') ||
@@ -1574,11 +1600,20 @@ export default function POS() {
                   setTableNumber(event.target.value);
                   setDraftReference(event.target.value);
                 }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    useTableReference();
+                  }
+                }}
                 placeholder="Número da mesa ou comanda"
                 className="h-12 rounded-2xl bg-white"
               />
               <p className="text-xs text-slate-500">Referência para acompanhar o consumo.</p>
               <div className="flex flex-wrap gap-2">
+                <Button onClick={() => useTableReference()}>
+                  Usar / criar
+                </Button>
                 <Button variant="outline" onClick={() => setActiveDialog('references')}>
                   Buscar referência
                 </Button>
@@ -2695,6 +2730,12 @@ export default function POS() {
                 <Input
                   value={referenceLookup}
                   onChange={(event) => setReferenceLookup(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      useTableReference(referenceLookup);
+                    }
+                  }}
                   placeholder="Pedido, mesa, comanda ou cliente"
                 />
                 <div className="grid gap-2 rounded-2xl border bg-slate-50 p-3 text-sm text-slate-600">
@@ -2707,6 +2748,9 @@ export default function POS() {
                     <Badge variant="outline">{referencedDrafts.length}</Badge>
                   </div>
                 </div>
+                <Button className="w-full" onClick={() => useTableReference(referenceLookup)} disabled={!referenceLookup.trim()}>
+                  Criar/usar mesa ou comanda
+                </Button>
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="outline" onClick={() => setActiveDialog('orders')}>
                     Ver pedidos
