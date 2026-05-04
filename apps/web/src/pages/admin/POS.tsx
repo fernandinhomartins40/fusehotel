@@ -758,9 +758,9 @@ export default function POS() {
     setSettlementType('DIRECT');
     setTableNumber(reference);
     setDraftReference(reference);
-    setCurrentStep('items');
+    setCurrentStep('payment');
     setActiveDialog('sale');
-    toast.success(`Comanda ${reference} pronta para receber itens`);
+    toast.success(`Comanda ${reference} vinculada à venda`);
   };
 
   const reopenOrderInCart = (order: typeof orders[number]) => {
@@ -1581,10 +1581,15 @@ export default function POS() {
               />
               <p className="text-xs text-slate-500">Leia o QR Code/código de barras ou digite. Se não existir, a comanda é aberta para receber itens.</p>
               <div className="flex flex-wrap gap-2">
-                <Button onClick={() => useTableReference()}>
+                <Button type="button" onClick={() => useTableReference()}>
                   Abrir comanda
                 </Button>
               </div>
+              {tableNumber.trim() ? (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
+                  Mesa/comanda {tableNumber.trim()} vinculada a esta venda.
+                </div>
+              ) : null}
             </div>
 
             <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
