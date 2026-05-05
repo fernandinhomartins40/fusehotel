@@ -770,7 +770,7 @@ export default function POS() {
     toast.success(`Comanda ${reference} vinculada à venda`);
   };
 
-  const reopenOrderInCart = (order: typeof orders[number]) => {
+  const reopenOrderInCart = (order: typeof orders[number], options: { keepSaleOpen?: boolean } = {}) => {
     if (
       (order.status !== 'OPEN' && order.status !== 'PREPARING') ||
       Number(order.paidAmount) > 0 ||
@@ -805,8 +805,8 @@ export default function POS() {
       setSalePreset('BALCAO');
     }
 
-    setCurrentStep('review');
-    setActiveDialog(null);
+    setCurrentStep(options.keepSaleOpen ? 'payment' : 'review');
+    setActiveDialog(options.keepSaleOpen ? 'sale' : null);
     toast.success(`Pedido ${order.orderNumber} carregado no carrinho`);
   };
 
@@ -1642,7 +1642,7 @@ export default function POS() {
                     <button
                       key={order.id}
                       type="button"
-                      onClick={() => reopenOrderInCart(order)}
+                      onClick={() => reopenOrderInCart(order, { keepSaleOpen: true })}
                       className={`w-full rounded-2xl border bg-white p-3 text-left transition hover:border-sky-300 hover:bg-sky-50 ${
                         editingOrderId === order.id || tableNumber.trim().toLowerCase() === order.tableNumber?.toLowerCase()
                           ? 'border-sky-500 ring-1 ring-sky-200'
