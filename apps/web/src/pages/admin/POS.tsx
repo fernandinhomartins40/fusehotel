@@ -265,6 +265,13 @@ export default function POS() {
     () => orders.filter((order) => order.status !== 'CLOSED' && order.status !== 'CANCELLED'),
     [orders]
   );
+  const openTableOrders = useMemo(
+    () =>
+      openOrders
+        .filter((order) => order.tableNumber && order.settlementType === 'DIRECT')
+        .sort((first, second) => String(first.tableNumber).localeCompare(String(second.tableNumber), 'pt-BR', { numeric: true })),
+    [openOrders]
+  );
   const roomServiceOrders = useMemo(
     () => orders.filter((order) => order.origin === 'ROOM_SERVICE' && order.status !== 'CANCELLED'),
     [orders]
@@ -1559,64 +1566,103 @@ export default function POS() {
 
       {salePreset === 'COMANDA' && (
         <div className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-sm font-medium text-slate-900">Mesa ou comanda</div>
-              <Input
-                value={tableNumber}
-                onChange={(event) => {
-                  setTableNumber(event.target.value);
-                  setDraftReference(event.target.value);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    useTableReference();
-                  }
-                }}
-                placeholder="Mesa/comanda ou leitor"
-                className="h-12 rounded-2xl bg-white text-base font-semibold"
-                autoComplete="off"
-              />
-              <p className="text-xs text-slate-500">Leia o QR Code/código de barras ou digite. Se não existir, a comanda é aberta para receber itens.</p>
-              <div className="flex flex-wrap gap-2">
-                <Button type="button" onClick={() => useTableReference()}>
-                  Abrir comanda
-                </Button>
-              </div>
-              {tableNumber.trim() ? (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
-                  Mesa/comanda {tableNumber.trim()} vinculada a esta venda.
+          <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_260px]">
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-slate-900">Mesa ou comanda</div>
+                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_150px]">
+                  <Input
+                    value={tableNumber}
+                    onChange={(event) => {
+                      setTableNumber(event.target.value);
+                      setDraftReference(event.target.value);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        useTableReference();
+                      }
+                    }}
+                    placeholder="Mesa/comanda ou leitor"
+                    className="h-12 rounded-2xl bg-white text-base font-semibold"
+                    autoComplete="off"
+                  />
+                  <Button type="button" className="h-12 rounded-2xl" onClick={() => useTableReference()}>
+                    Abrir comanda
+                  </Button>
                 </div>
-              ) : null}
+                <p className="text-xs text-slate-500">Leia o QR Code/código de barras ou digite. Se não existir, a comanda é aberta para receber itens.</p>
+                {tableNumber.trim() ? (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
+                    Mesa/comanda {tableNumber.trim()} vinculada a esta venda.
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-slate-900">Fechar como</div>
+                <div className="grid gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setSettlementType('DIRECT'); setSelectedStayId(''); setRoomSearch(''); }}
+                    className={`rounded-2xl border px-3 py-2 text-left text-sm transition ${
+                      settlementType === 'DIRECT'
+                        ? 'border-sky-600 bg-sky-50 font-medium text-sky-700'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    Pagamento direto no caixa
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setSettlementType('FOLIO'); setOrigin('ROOM_SERVICE'); }}
+                    className={`rounded-2xl border px-3 py-2 text-left text-sm transition ${
+                      settlementType === 'FOLIO'
+                        ? 'border-sky-600 bg-sky-50 font-medium text-sky-700'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    Lançar na conta do hóspede
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-sm font-medium text-slate-900">Fechar comanda como</div>
-              <div className="grid gap-2">
-                <button
-                  type="button"
-                  onClick={() => { setSettlementType('DIRECT'); setSelectedStayId(''); setRoomSearch(''); }}
-                  className={`rounded-2xl border p-3 text-left text-sm transition ${
-                    settlementType === 'DIRECT'
-                      ? 'border-sky-600 bg-sky-50 font-medium text-sky-700'
-                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-                  }`}
-                >
-                  Pagamento direto no caixa
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setSettlementType('FOLIO'); setOrigin('ROOM_SERVICE'); }}
-                  className={`rounded-2xl border p-3 text-left text-sm transition ${
-                    settlementType === 'FOLIO'
-                      ? 'border-sky-600 bg-sky-50 font-medium text-sky-700'
-                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-                  }`}
-                >
-                  Lançar na conta do hóspede
-                </button>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-medium text-slate-900">Mesas e comandas abertas</div>
+                <Badge variant="outline">{openTableOrders.length}</Badge>
+              </div>
+              <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+                {!openTableOrders.length ? (
+                  <EmptyInline text="Nenhuma mesa ou comanda aberta." />
+                ) : (
+                  openTableOrders.map((order) => (
+                    <button
+                      key={order.id}
+                      type="button"
+                      onClick={() => reopenOrderInCart(order)}
+                      className={`w-full rounded-2xl border bg-white p-3 text-left transition hover:border-sky-300 hover:bg-sky-50 ${
+                        editingOrderId === order.id || tableNumber.trim().toLowerCase() === order.tableNumber?.toLowerCase()
+                          ? 'border-sky-500 ring-1 ring-sky-200'
+                          : 'border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-semibold text-slate-900">Comanda {order.tableNumber}</div>
+                          <div className="mt-1 text-xs text-slate-500">{order.customerName || order.orderNumber}</div>
+                        </div>
+                        <Badge variant="outline">{orderStatusLabels[order.status]}</Badge>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between text-sm">
+                        <span className="text-slate-500">{order.items.length} item(ns)</span>
+                        <span className="font-semibold text-slate-900">{currency.format(Number(order.totalAmount))}</span>
+                      </div>
+                    </button>
+                  ))
+                )}
               </div>
             </div>
           </div>
